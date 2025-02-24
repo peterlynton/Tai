@@ -7,8 +7,14 @@ struct NightscoutConnectView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(AppState.self) var appState
 
+    @State private var originalUrl: String
+    @State private var originalSecret: String
+
     init(state: NightscoutConfig.StateModel) {
         self.state = state
+        _originalUrl = State(initialValue: state.url) // Capture initial values
+        _originalSecret = State(initialValue: state.secret)
+
         portFormatter = NumberFormatter()
         portFormatter.allowsFloats = false
         portFormatter.usesGroupingSeparator = false
@@ -46,16 +52,16 @@ struct NightscoutConnectView: View {
                         }
                     }
 
-                    if !state.isConnectedToNS {
-                        Button {
-                            state.connect()
-                        } label: {
-                            Text("Connect to Nightscout")
-                                .font(.title3) }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .buttonStyle(.bordered)
-                            .disabled(state.url.isEmpty && state.connecting)
-                    } else {
+//                    if !state.isConnectedToNS {
+                    Button {
+                        state.connect()
+                    } label: {
+                        Text("Connect to Nightscout")
+                            .font(.title3) }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .buttonStyle(.bordered)
+                        .disabled((state.url.isEmpty && state.connecting) || !hasChanges)
+                    if state.isConnectedToNS {
                         Button(role: .destructive) {
                             state.delete()
                         } label: {
@@ -81,10 +87,21 @@ struct NightscoutConnectView: View {
                 .listRowBackground(Color.clear)
             }
         }
+        .onChange(of: state.connecting) { _, newValue in
+            // When connecting changes from true to false, and we're connected, update original values
+            if newValue == false, state.isConnectedToNS {
+                originalUrl = state.url
+                originalSecret = state.secret
+            }
+        }
         .listSectionSpacing(sectionSpacing)
         .navigationTitle("Connect")
         .navigationBarTitleDisplayMode(.automatic)
         .scrollContentBackground(.hidden)
         .background(appState.trioBackgroundColor(for: colorScheme))
+    }
+
+    private var hasChanges: Bool {
+        state.url != originalUrl || state.secret != originalSecret
     }
 }

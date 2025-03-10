@@ -45,23 +45,57 @@ extension Adjustments {
         }
 
         var body: some View {
-            ZStack(alignment: .center, content: {
-                VStack {
-                    Picker("Adjustment Tabs", selection: $state.selectedTab) {
-                        ForEach(Adjustments.Tab.allCases.indexed(), id: \.1) { index, item in
-                            Text(item.name).tag(index)
+            VStack {
+                HStack(spacing: 6) {
+                    HStack {
+                        Spacer()
+                        Image(systemName: "arrow.up.circle.badge.clock")
+                            .rotationEffect(.degrees(90))
+                            .font(.system(size: 20))
+                            .foregroundStyle(Color.primary, Color.loopGreen)
+                        Text(Adjustments.Tab.tempTargets.name)
+                            .font(.subheadline)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Spacer()
+                    }
+                    .padding(.vertical, 6)
+                    .background(state.selectedTab == .tempTargets ? Color.loopGray.opacity(0.4) : Color.clear)
+                    .cornerRadius(8)
+                    .onTapGesture {
+                        withAnimation {
+                            state.selectedTab = .tempTargets
                         }
                     }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .padding(.horizontal)
-
-                    List {
-                        switch state.selectedTab {
-                        case .overrides: overrides()
-                        case .tempTargets: tempTargets() }
+                    HStack {
+                        Spacer()
+                        Image(systemName: "clock.arrow.2.circlepath")
+                            .font(.system(size: 20))
+                            .foregroundStyle(Color.primary, Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569))
+                        Text(Adjustments.Tab.overrides.name)
+                            .font(.subheadline)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        Spacer()
                     }
-                    .scrollContentBackground(.hidden)
-                    .background(appState.trioBackgroundColor(for: colorScheme))
+                    .padding(.vertical, 6)
+                    .background(state.selectedTab == .overrides ? Color.loopGray.opacity(0.4) : Color.clear)
+                    .cornerRadius(8)
+                    .onTapGesture {
+                        withAnimation {
+                            state.selectedTab = .overrides
+                        }
+                    }
+                }
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(8)
+                .padding(.horizontal)
+
+                List {
+                    switch state.selectedTab {
+                    case .overrides: overrides()
+                    case .tempTargets: tempTargets()
+                    }
                 }
                 .listSectionSpacing(10)
                 .safeAreaInset(
@@ -143,7 +177,7 @@ extension Adjustments {
                         EditTempTargetForm(tempTargetToEdit: tempTarget, state: state)
                     }
                 }
-            }).background(appState.trioBackgroundColor(for: colorScheme))
+            }.background(appState.trioBackgroundColor(for: colorScheme))
         }
 
         var defaultText: some View {

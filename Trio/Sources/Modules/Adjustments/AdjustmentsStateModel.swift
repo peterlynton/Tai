@@ -38,7 +38,7 @@ extension Adjustments {
         var uamMinutes: Decimal = 0
         var defaultSmbMinutes: Decimal = 0
         var defaultUamMinutes: Decimal = 0
-        var selectedTab: Tab = .overrides
+        var selectedTab: Tab = .tempTargets
         var activeOverrideName: String = ""
         var currentActiveOverride: OverrideStored?
         var activeTempTargetName: String = ""

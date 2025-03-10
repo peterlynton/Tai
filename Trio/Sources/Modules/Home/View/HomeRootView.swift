@@ -516,14 +516,19 @@ extension Home {
 
         @ViewBuilder func adjustmentsTempTargetView(_ tempTargetString: String) -> some View {
             Group {
-                Image(systemName: "target")
-                    .font(.title2)
-                    .foregroundStyle(Color.loopGreen)
+                let targetValue = latestTempTarget.first?.target?.doubleValue ?? 0.0
+                let rotationValue: Double = targetValue < 100 ? 180 : 0
+                Image(systemName: "arrow.up.circle.badge.clock")
+                    .rotationEffect(.degrees(rotationValue))
+                    .font(.system(size: 22))
+                    .foregroundStyle(Color.primary, Color.loopGreen)
                 VStack(alignment: .leading) {
                     Text(latestTempTarget.first?.name ?? String(localized: "Temp Target"))
                         .font(.subheadline)
+                        .frame(alignment: .leading)
                     Text(tempTargetString)
                         .font(.caption)
+                        .frame(alignment: .leading)
                 }
             }
             .onTapGesture {
@@ -533,7 +538,11 @@ extension Home {
 
         @ViewBuilder func adjustmentsCancelView(_ cancelAction: @escaping () -> Void) -> some View {
             Image(systemName: "xmark.app")
-                .font(.title)
+                .font(.system(size: 24))
+                .foregroundStyle(
+                    Color.loopGreen,
+                    Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569)
+                )
                 .onTapGesture {
                     cancelAction()
                 }
@@ -541,7 +550,8 @@ extension Home {
 
         @ViewBuilder func adjustmentsCancelTempTargetView() -> some View {
             Image(systemName: "xmark.app")
-                .font(.title)
+                .font(.system(size: 24))
+                .foregroundStyle(Color.primary, Color.loopGreen)
                 .confirmationDialog(
                     "Stop the Temp Target \"\(latestTempTarget.first?.name ?? "")\"?",
                     isPresented: $isConfirmStopTempTargetShown,
@@ -555,7 +565,6 @@ extension Home {
                     }
                     Button("Cancel", role: .cancel) {}
                 }
-                .padding(.trailing, 8)
                 .onTapGesture {
                     if !latestTempTarget.isEmpty {
                         isConfirmStopTempTargetShown = true
@@ -565,7 +574,8 @@ extension Home {
 
         @ViewBuilder func adjustmentsCancelOverrideView() -> some View {
             Image(systemName: "xmark.app")
-                .font(.title)
+                .font(.system(size: 24))
+                .foregroundStyle(Color.primary, Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569))
                 .confirmationDialog(
                     "Stop the Override \"\(latestOverride.first?.name ?? "")\"?",
                     isPresented: $isConfirmStopOverridePresented,
@@ -579,7 +589,6 @@ extension Home {
                     }
                     Button("Cancel", role: .cancel) {}
                 }
-                .padding(.trailing, 8)
                 .onTapGesture {
                     if !latestOverride.isEmpty {
                         isConfirmStopOverridePresented = true

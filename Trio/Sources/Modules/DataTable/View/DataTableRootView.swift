@@ -372,7 +372,7 @@ extension DataTable {
                 case .override:
                     return "clock.arrow.2.circlepath"
                 case .tempTarget:
-                    return "target"
+                    return "arrow.up.circle.badge.clock"
                 }
             }
 
@@ -407,7 +407,15 @@ extension DataTable {
                     VStack(alignment: .leading) {
                         HStack {
                             Image(systemName: item.type.symbolName)
-                                .foregroundStyle(item.type == .override ? Color.purple : Color.green)
+                                .rotationEffect(.degrees(
+                                    item.type == .override ? 0 : 90
+                                ))
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(
+                                    Color.primary,
+                                    item.type == .override ? Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569) :
+                                        Color.loopGreen
+                                )
                             Text(item.name)
                                 .font(.headline)
                             Spacer()

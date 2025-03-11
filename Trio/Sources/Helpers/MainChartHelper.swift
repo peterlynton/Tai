@@ -141,6 +141,20 @@ extension MainChartView {
         }
     }
 
+    var hiddenChartXAxis: some AxisContent {
+        AxisMarks(values: .stride(by: .hour, count: screenHours > 6 ? (screenHours > 12 ? 4 : 2) : 1)) { _ in
+            AxisGridLine(stroke: .init(lineWidth: 0, dash: [2, 3]))
+            AxisValueLabel(format: .dateTime.hour(.defaultDigits(amPM: .narrow)), anchor: .top)
+                .font(.footnote).foregroundStyle(Color.clear)
+        }
+    }
+
+    var dummyChartXAxis: some AxisContent {
+        AxisMarks(values: .stride(by: .hour, count: screenHours > 6 ? (screenHours > 12 ? 4 : 2) : 1)) { _ in
+            AxisGridLine(stroke: .init(lineWidth: 0, dash: [2, 3]))
+        }
+    }
+
     var basalChartXAxis: some AxisContent {
         AxisMarks(values: .stride(by: .hour, count: screenHours > 6 ? (screenHours > 12 ? 4 : 2) : 1)) { _ in
             if displayXgridLines {

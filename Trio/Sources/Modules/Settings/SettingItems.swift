@@ -201,6 +201,7 @@ enum SettingItems {
             searchContents: [
                 "Show X-Axis Grid Lines",
                 "Show Y-Axis Grid Lines",
+                "Show COB-IOB Chart",
                 "Show Low and High Thresholds",
                 "Low Threshold",
                 "High Threshold",

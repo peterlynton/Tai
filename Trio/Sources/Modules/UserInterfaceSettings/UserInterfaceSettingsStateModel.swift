@@ -6,6 +6,7 @@ extension UserInterfaceSettings {
         @Published var high: Decimal = 180
         @Published var xGridLines = false
         @Published var yGridLines: Bool = false
+        @Published var showCobIobChart: Bool = true
         @Published var rulerMarks: Bool = true
         @Published var forecastDisplayType: ForecastDisplayType = .cone
         @Published var showCarbsRequiredBadge: Bool = true
@@ -22,6 +23,7 @@ extension UserInterfaceSettings {
 
             subscribeSetting(\.xGridLines, on: $xGridLines) { xGridLines = $0 }
             subscribeSetting(\.yGridLines, on: $yGridLines) { yGridLines = $0 }
+            subscribeSetting(\.showCobIobChart, on: $showCobIobChart) { showCobIobChart = $0 }
             subscribeSetting(\.rulerMarks, on: $rulerMarks) { rulerMarks = $0 }
 
             subscribeSetting(\.forecastDisplayType, on: $forecastDisplayType) { forecastDisplayType = $0 }

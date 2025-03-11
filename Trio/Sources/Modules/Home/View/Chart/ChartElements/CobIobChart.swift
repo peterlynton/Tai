@@ -44,7 +44,7 @@ extension MainChartView {
             "IOB": Color.darkerBlue
         ])
         .chartLegend(.hidden)
-        .frame(minHeight: geo.size.height * 0.12)
+        .frame(maxHeight: geo.size.height * 0.08)
         .frame(width: fullWidth(viewWidth: screenSize.width))
         .chartXScale(domain: state.startMarker ... state.endMarker)
         .chartXSelection(value: $selection)

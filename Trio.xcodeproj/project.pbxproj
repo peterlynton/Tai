@@ -243,7 +243,6 @@
 		5825A1BE2C97335C0046467E /* EditTempTargetForm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5825A1BD2C97335C0046467E /* EditTempTargetForm.swift */; };
 		582DF9752C8CDB92001F516D /* GlucoseChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582DF9742C8CDB92001F516D /* GlucoseChartView.swift */; };
 		582DF9772C8CDBE7001F516D /* InsulinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582DF9762C8CDBE7001F516D /* InsulinView.swift */; };
-		582DF9792C8CE1E5001F516D /* MainChartHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582DF9782C8CE1E5001F516D /* MainChartHelper.swift */; };
 		582DF97B2C8CE209001F516D /* CarbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582DF97A2C8CE209001F516D /* CarbView.swift */; };
 		582FAE432C05102C00D1C13F /* CoreDataError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 582FAE422C05102C00D1C13F /* CoreDataError.swift */; };
 		583684062BD178DB00070A60 /* GlucoseStored+helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 583684052BD178DB00070A60 /* GlucoseStored+helper.swift */; };
@@ -820,7 +819,6 @@
 		3811DEE725CA063400A708ED /* PersistedProperty.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PersistedProperty.swift; sourceTree = "<group>"; };
 		3811DF0125CA9FEA00A708ED /* Credentials.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Credentials.swift; sourceTree = "<group>"; };
 		3811DF0F25CAAAE200A708ED /* APSManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APSManager.swift; sourceTree = "<group>"; };
-		3818AA45274C229000843DB3 /* LibreTransmitter */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LibreTransmitter; path = Dependencies/LibreTransmitter; sourceTree = "<group>"; };
 		3818AA49274C267000843DB3 /* CGMBLEKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = CGMBLEKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3818AA4C274C26A300843DB3 /* LoopKit.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKit.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3818AA4D274C26A300843DB3 /* LoopKitUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = LoopKitUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -958,9 +956,9 @@
 		491D6FBA2D56741C00C49F67 /* TempTargetRunStored+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TempTargetRunStored+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		491D6FBB2D56741C00C49F67 /* TempTargetStored+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TempTargetStored+CoreDataClass.swift"; sourceTree = "<group>"; };
 		491D6FBC2D56741C00C49F67 /* TempTargetStored+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TempTargetStored+CoreDataProperties.swift"; sourceTree = "<group>"; };
+		49AC5B632D7F2833005A47F3 /* CustomDateTimePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDateTimePicker.swift; sourceTree = "<group>"; };
 		49AC5CB32D7F5EB2005A47F3 /* ci_post_xcodebuild.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; name = ci_post_xcodebuild.sh; path = ci_scripts/ci_post_xcodebuild.sh; sourceTree = "<group>"; };
 		49AC5CE22D7F5F39005A47F3 /* WhatToTest.en-CA.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = "WhatToTest.en-CA.txt"; path = "Testflight/WhatToTest.en-CA.txt"; sourceTree = "<group>"; };
-		49AC5B632D7F2833005A47F3 /* CustomDateTimePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDateTimePicker.swift; sourceTree = "<group>"; };
 		49B21BBC2D7F102100D0B6C3 /* MainChartHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainChartHelper.swift; sourceTree = "<group>"; };
 		49B21BEA2D7F21D100D0B6C3 /* AutoISFHistoryRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoISFHistoryRootView.swift; sourceTree = "<group>"; };
 		49B21BEC2D7F21D100D0B6C3 /* AutoISFHistoryDataFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoISFHistoryDataFlow.swift; sourceTree = "<group>"; };
@@ -991,7 +989,6 @@
 		5825A1BD2C97335C0046467E /* EditTempTargetForm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTempTargetForm.swift; sourceTree = "<group>"; };
 		582DF9742C8CDB92001F516D /* GlucoseChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlucoseChartView.swift; sourceTree = "<group>"; };
 		582DF9762C8CDBE7001F516D /* InsulinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsulinView.swift; sourceTree = "<group>"; };
-		582DF9782C8CE1E5001F516D /* MainChartHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainChartHelper.swift; sourceTree = "<group>"; };
 		582DF97A2C8CE209001F516D /* CarbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarbView.swift; sourceTree = "<group>"; };
 		582FAE422C05102C00D1C13F /* CoreDataError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataError.swift; sourceTree = "<group>"; };
 		583684052BD178DB00070A60 /* GlucoseStored+helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GlucoseStored+helper.swift"; sourceTree = "<group>"; };
@@ -1978,7 +1975,6 @@
 		3818AA44274C229000843DB3 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				3818AA45274C229000843DB3 /* LibreTransmitter */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -2213,8 +2209,6 @@
 				E06B9119275B5EEA003C04B6 /* Array+Extension.swift */,
 				DD73FA0E2D74F57300D19D1E /* BackgroundTask+Helper.swift */,
 				DD1DB7CB2BECCA1F0048B367 /* BuildDetails.swift */,
-				49AC5B632D7F2833005A47F3 /* CustomDateTimePicker.swift */,
-				49B21BBC2D7F102100D0B6C3 /* MainChartHelper.swift */,
 				49CCD2102CAE5E99002A9476 /* BulletList.swift */,
 				FE66D16A291F74F8005D6F77 /* Bundle+Extensions.swift */,
 				BD249DA62D42FE3800412DEB /* Calendar+GlucoseStatsChart.swift */,
@@ -2238,7 +2232,6 @@
 				388E5A5B25B6F0770019842D /* JSON.swift */,
 				38A00B2225FC2B55006BC0B0 /* LRUCache.swift */,
 				49B21BBC2D7F102100D0B6C3 /* MainChartHelper.swift */,
-				582DF9782C8CE1E5001F516D /* MainChartHelper.swift */,
 				38FCF3D525E8FDF40078B0D1 /* MD5.swift */,
 				38E98A2C25F52DC400C0CED0 /* NSLocking+Extensions.swift */,
 				38C4D33925E9A1ED00D30B77 /* NSObject+AssociatedValues.swift */,
@@ -4131,7 +4124,6 @@
 				58645B9B2CA2D24F008AFCE7 /* CarbSetup.swift in Sources */,
 				38E44536274E411700EC9A94 /* Disk.swift in Sources */,
 				19A910362A24D6D700C8951B /* DateFilter.swift in Sources */,
-				582DF9792C8CE1E5001F516D /* MainChartHelper.swift in Sources */,
 				E06B911A275B5EEA003C04B6 /* Array+Extension.swift in Sources */,
 				38EA0600262091870064E39B /* BolusProgressViewStyle.swift in Sources */,
 				389ECDFE2601061500D86C4F /* View+Snapshot.swift in Sources */,

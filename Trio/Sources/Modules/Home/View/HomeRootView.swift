@@ -5,9 +5,11 @@ import SwiftUI
 import Swinject
 
 struct TimePicker: Identifiable {
+    let label: String
+    let number: String
     var active: Bool
     let hours: Int16
-    var id: String { hours.description }
+    var id: String { label }
 }
 
 extension Home {
@@ -36,11 +38,14 @@ extension Home {
         @State var showCGMSelection: Bool = false
         @State var notificationsDisabled = false
         @State var timeButtons: [TimePicker] = [
-            TimePicker(active: false, hours: 4),
-            TimePicker(active: false, hours: 6),
-            TimePicker(active: false, hours: 12),
-            TimePicker(active: false, hours: 24)
+            TimePicker(label: String(localized: "2 hours"), number: "2", active: false, hours: 2),
+            TimePicker(label: String(localized: "4 hours"), number: "4", active: false, hours: 4),
+            TimePicker(label: String(localized: "6 hours"), number: "6", active: false, hours: 6),
+            TimePicker(label: String(localized: "12 hours"), number: "12", active: false, hours: 12),
+            TimePicker(label: String(localized: "24 hours"), number: "24", active: false, hours: 24)
         ]
+
+        let buttonFont = Font.custom("TimeButtonFont", size: 14)
 
         @FetchRequest(fetchRequest: OverrideStored.fetch(
             NSPredicate.lastActiveOverride,
@@ -351,6 +356,72 @@ extension Home {
             }
         }
 
+        var timeIntervalPanel: some View {
+            HStack(alignment: .center) {
+                Spacer()
+                Button(action: { state.showModal(for: .statistics) }) {
+                    Image(systemName: "chart.bar.xaxis.ascending.badge.clock")
+                        .symbolRenderingMode(.palette)
+                        .scaleEffect(x: -1)
+                        .foregroundStyle(
+                            Color.primary,
+                            LinearGradient(colors: [
+                                Color(red: 0.7215686275, green: 0.3411764706, blue: 1),
+                                Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569),
+                                Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765),
+                                Color(red: 0.3411764706, green: 0.6666666667, blue: 0.9254901961),
+                                Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902)
+                            ], startPoint: .leading, endPoint: .trailing)
+                        )
+                        .frame(width: 24, height: 24)
+                        .background(
+                            colorScheme == .dark ? Color(red: 0.1176470588, green: 0.2352941176, blue: 0.3725490196) :
+                                Color.white
+                        )
+                        .clipShape(Circle())
+                }
+                Spacer()
+                ForEach(timeButtons) { button in
+                    Text(button.active ? button.label : button.number).onTapGesture {
+                        state.hours = button.hours
+                    }
+                    .foregroundStyle(button.active ? (colorScheme == .dark ? Color.white : Color.black).opacity(0.9) : .secondary)
+                    .frame(maxHeight: 30).padding(.horizontal, 8)
+                    .background(
+                        button.active ?
+                            // RGB(30, 60, 95)
+                            (
+                                colorScheme == .dark ? Color(red: 0.1176470588, green: 0.2352941176, blue: 0.3725490196) :
+                                    Color.white
+                            ) :
+                            Color
+                            .clear
+                    )
+                    .cornerRadius(20)
+                }
+                Spacer()
+                Button(action: {
+                    state.isLegendPresented.toggle()
+                }) {
+                    Image(systemName: "info")
+                        .foregroundColor(colorScheme == .dark ? Color.white : Color.black).opacity(0.9)
+                        .frame(width: 24, height: 24)
+                        .background(
+                            colorScheme == .dark ? Color(red: 0.1176470588, green: 0.2352941176, blue: 0.3725490196) :
+                                Color.white
+                        )
+                        .clipShape(Circle())
+                }
+                .padding([.top, .bottom])
+                Spacer()
+            }
+            .shadow(
+                color: Color.black.opacity(colorScheme == .dark ? 0.75 : 0.33),
+                radius: colorScheme == .dark ? 5 : 3
+            )
+            .font(buttonFont)
+        }
+
         @ViewBuilder func mainChart(geo: GeometryProxy) -> some View {
             ZStack {
                 MainChartView(
@@ -366,7 +437,8 @@ extension Home {
                     displayXgridLines: state.displayXgridLines,
                     displayYgridLines: state.displayYgridLines,
                     thresholdLines: state.thresholdLines,
-                    state: state
+                    state: state,
+                    showCobIobChart: state.showCobIobChart
                 )
             }
             .padding(.bottom, UIDevice.adjustPadding(min: 0, max: nil))
@@ -492,6 +564,18 @@ extension Home {
                             .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                     }
                 }
+                Spacer()
+                Text("TDD:")
+                    .foregroundColor(Color.insulin)
+                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                Text(
+                    (
+                        Formatter.insulinFormatterToIncrement(for: 0.1)
+                            .string(from: (state.fetchedTDDs.first?.totalDailyDose ?? 0) as NSNumber) ??
+                            "0"
+                    ) + String(localized: " U", comment: "Insulin unit")
+                )
+                .font(.callout).fontWeight(.bold).fontDesign(.rounded)
             }.padding(.horizontal)
         }
 
@@ -633,9 +717,9 @@ extension Home {
                                     Color.insulin.opacity(0.1)
                             ) : Color.clear // Use clear and add the Material in the background
                     )
-                    .background(colorScheme == .dark ? Color.chart.opacity(0.25) : Color.black.opacity(0.075))
+                    .background(.ultraThinMaterial.opacity(colorScheme == .dark ? 0.35 : 0))
                     .clipShape(RoundedRectangle(cornerRadius: 15))
-                    .frame(height: geo.size.height * 0.08)
+                    .frame(height: geo.size.height * 0.06)
                     .shadow(
                         color: (overrideString != nil || tempTargetString != nil) ?
                             (
@@ -709,7 +793,8 @@ extension Home {
                     } message: {
                         Text("Select Adjustment")
                     }
-            }.padding(.horizontal, 10).padding(.bottom, UIDevice.adjustPadding(min: nil, max: 10))
+            }.padding(.horizontal, 10)
+                .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 10))
         }
 
         @ViewBuilder func bolusProgressBar(_ progress: Decimal) -> some View {
@@ -719,11 +804,11 @@ extension Home {
                     .foregroundColor(.clear)
                     .background(
                         LinearGradient(colors: [
-                            Color(red: 0.7215686275, green: 0.3411764706, blue: 1),
-                            Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569),
-                            Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765),
+                            Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902),
                             Color(red: 0.3411764706, green: 0.6666666667, blue: 0.9254901961),
-                            Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902)
+                            Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765),
+                            Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569),
+                            Color(red: 0.7215686275, green: 0.3411764706, blue: 1)
                         ], startPoint: .leading, endPoint: .trailing)
                             .mask(alignment: .leading) {
                                 RoundedRectangle(cornerRadius: 15)
@@ -733,7 +818,7 @@ extension Home {
             }
         }
 
-        @ViewBuilder func bolusView(geo: GeometryProxy, _ progress: Decimal) -> some View {
+        @ViewBuilder func bolusProgressView(geo: GeometryProxy, _ progress: Decimal) -> some View {
             /// ensure that state.lastPumpBolus has a value, i.e. there is a last bolus done by the pump and not an external bolus
             /// - TRUE:  show the pump bolus
             /// - FALSE:  do not show a progress bar at all
@@ -751,30 +836,34 @@ extension Home {
                         .fill(
                             colorScheme == .dark ? Color(red: 0.03921568627, green: 0.133333333, blue: 0.2156862745) : Color
                                 .insulin
-                                .opacity(0.2)
+                                .opacity(0.1)
                         )
+                        .background(.ultraThinMaterial.opacity(colorScheme == .dark ? 0.35 : 0))
                         .clipShape(RoundedRectangle(cornerRadius: 15))
-                        .frame(height: geo.size.height * 0.08)
+                        .frame(height: geo.size.height * 0.06)
                         .shadow(
-                            color: colorScheme == .dark ? Color(red: 0.02745098039, green: 0.1098039216, blue: 0.1411764706) :
-                                Color.black.opacity(0.33),
+                            color: (overrideString != nil || tempTargetString != nil) ?
+                                (
+                                    colorScheme == .dark ? Color(red: 0.02745098039, green: 0.1098039216, blue: 0.1411764706) :
+                                        Color.black.opacity(0.33)
+                                ) : Color.clear,
                             radius: 3
                         )
 
                     /// actual bolus view
                     HStack {
-                        Image(systemName: "cross.vial.fill")
-                            .font(.system(size: 25))
+                        Image("bolus")
+                            .renderingMode(.template)
+                            .resizable()
+                            .frame(width: 25, height: 25)
+                            .foregroundColor(Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902))
 
                         Spacer()
-
-                        VStack {
+                        Group {
                             Text("Bolusing")
                                 .font(.subheadline)
-                                .frame(maxWidth: .infinity, alignment: .leading)
                             Text(bolusString)
-                                .font(.caption)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .font(.subheadline)
                         }.padding(.leading, 5)
 
                         Spacer()
@@ -785,17 +874,19 @@ extension Home {
                         } label: {
                             Image(systemName: "xmark.app")
                                 .font(.system(size: 25))
+                                .foregroundStyle(Color.primary, Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902))
                         }
                     }.padding(.horizontal, 10)
-                        .padding(.trailing, 8)
-
-                }.padding(.horizontal, 10).padding(.bottom, UIDevice.adjustPadding(min: nil, max: 10))
-                    .overlay(alignment: .bottom) {
-                        // Use a geo-based offset here to position progress bar independent of device size
-                        let offset = geo.size.height * 0.0725
-                        bolusProgressBar(progress).padding(.horizontal, 18)
-                            .offset(y: offset)
-                    }.clipShape(RoundedRectangle(cornerRadius: 15))
+                }
+                .padding(.horizontal, 10)
+                .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 10))
+                .overlay(alignment: .bottom) {
+                    let offset = geo.size.height * 0.045
+                    bolusProgressBar(progress)
+                        .padding(.leading, 42)
+                        .padding(.trailing, 50)
+                        .offset(y: offset)
+                }.clipShape(RoundedRectangle(cornerRadius: 15))
             }
         }
 
@@ -879,34 +970,40 @@ extension Home {
 
                 mainChart(geo: geo)
 
-                HStack {
-                    tappableButton(
-                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
-                        label: String(localized: "Stats", comment: "Stats icon in main view"),
-                        iconString: statsIconString,
-                        action: { state.showModal(for: .statistics) }
-                    )
+                timeIntervalPanel
+                    .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 6))
 
-                    Spacer()
-
-                    timeIntervalButtons.padding(.top, UIDevice.adjustPadding(min: 0, max: 10))
-                        .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 10))
-
-                    Spacer()
-
-                    tappableButton(
-                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
-                        label: String(localized: "Info", comment: "Info icon in main view"),
-                        iconString: "info",
-                        action: { state.isLegendPresented.toggle() }
-                    )
-                }.padding([.horizontal, .bottom])
+//                HStack {
+//                    tappableButton(
+//                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
+//                        label: String(localized: "Stats", comment: "Stats icon in main view"),
+//                        iconString: statsIconString,
+//                        action: { state.showModal(for: .statistics) }
+//                    )
+//
+//                    Spacer()
+//
+//                    timeIntervalButtons.padding(.top, UIDevice.adjustPadding(min: 0, max: 10))
+//                        .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 10))
+//
+//                    Spacer()
+//
+//                    tappableButton(
+//                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
+//                        label: String(localized: "Info", comment: "Info icon in main view"),
+//                        iconString: "info",
+//                        action: { state.isLegendPresented.toggle() }
+//                    )
+//                }
+//                .padding(.horizontal)
+//                .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 10))
 
                 if let progress = state.bolusProgress {
-                    bolusView(geo: geo, progress)
-                        .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 40))
-                } else {
-                    adjustmentView(geo: geo).padding(.bottom, UIDevice.adjustPadding(min: nil, max: 40))
+                    bolusProgressView(geo: geo, progress)
+                        .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 6))
+                } else if overrideString != nil || tempTargetString != nil {
+                    adjustmentView(geo: geo)
+                        .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 6))
                 }
             }
             .background(appState.trioBackgroundColor(for: colorScheme))

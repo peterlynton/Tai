@@ -94,6 +94,26 @@ extension Formatter {
         return formatter
     }
 
+    static func insulinFormatterToIncrement(for bolusIncrement: Decimal) -> NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumIntegerDigits = 1
+        formatter.maximumFractionDigits = bolusIncrement < 0.05 ? 3 : (bolusIncrement == 0.05 ? 2 : 1)
+        formatter.minimumFractionDigits = 1
+        formatter.roundingIncrement = bolusIncrement as NSNumber
+        return formatter
+    }
+
+    static func bolusFormatterToIncrement(for bolusIncrement: Decimal) -> NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumIntegerDigits = 0
+        formatter.maximumFractionDigits = bolusIncrement < 0.05 ? 3 : (bolusIncrement == 0.05 ? 2 : 1)
+        formatter.roundingIncrement = bolusIncrement as NSNumber
+        formatter.decimalSeparator = "."
+        return formatter
+    }
+
     static let bolusFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

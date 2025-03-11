@@ -55,6 +55,7 @@ struct TrioSettings: JSON, Equatable {
     var xGridLines: Bool = true
     var yGridLines: Bool = true
     var timeInRangeChartStyle: TimeInRangeChartStyle = .vertical
+    var showCobIobChart: Bool = true
     var rulerMarks: Bool = true
     var forecastDisplayType: ForecastDisplayType = .cone
     var maxCarbs: Decimal = 250
@@ -250,6 +251,10 @@ extension TrioSettings: Decodable {
 
         if let yGridLines = try? container.decode(Bool.self, forKey: .yGridLines) {
             settings.yGridLines = yGridLines
+        }
+
+        if let showCobIobChart = try? container.decode(Bool.self, forKey: .showCobIobChart) {
+            settings.showCobIobChart = showCobIobChart
         }
 
         if let timeInRangeChartStyle = try? container.decode(TimeInRangeChartStyle.self, forKey: .timeInRangeChartStyle) {

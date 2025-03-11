@@ -19,6 +19,7 @@ struct MainChartView: View {
     var displayYgridLines: Bool
     var thresholdLines: Bool
     var state: Home.StateModel
+    var showCobIobChart: Bool
 
     @State var basalProfiles: [BasalProfile] = []
     @State var preparedTempBasals: [(start: Date, end: Date, rate: Double)] = []
@@ -32,10 +33,6 @@ struct MainChartView: View {
 
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.calendar) var calendar
-
-    var upperLimit: Decimal {
-        units == .mgdL ? 400 : 22.2
-    }
 
     private var selectedGlucose: GlucoseStored? {
         guard let selection = selection else { return nil }
@@ -67,8 +64,10 @@ struct MainChartView: View {
                 VStack(spacing: 5) {
                     dummyBasalChart
                     staticYAxisChart
-                    Spacer()
-                    dummyCobChart
+                    if showCobIobChart {
+                        Spacer()
+                        dummyCobChart
+                    }
                 }
 
                 ScrollViewReader { scroller in
@@ -76,8 +75,10 @@ struct MainChartView: View {
                         VStack(spacing: 5) {
                             basalChart
                             mainChart
-                            Spacer()
-                            cobIobChart
+                            if showCobIobChart {
+                                Spacer()
+                                cobIobChart
+                            }
                         }.onChange(of: screenHours) {
                             scroller.scrollTo("MainChart", anchor: .trailing)
                         }
@@ -191,7 +192,7 @@ extension MainChartView {
             )
             .frame(width: fullWidth(viewWidth: screenSize.width))
             .chartXScale(domain: state.startMarker ... state.endMarker)
-            .chartXAxis { mainChartXAxis }
+            .chartXAxis { if showCobIobChart { mainChartXAxis } else { basalChartXAxis } }
             .chartYAxis { mainChartYAxis }
             .chartYAxis(.hidden)
             .chartXSelection(value: $selection)

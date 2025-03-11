@@ -107,6 +107,7 @@ extension Home {
         var cgmCurrent = cgmDefaultModel
 
         var showCarbsRequiredBadge: Bool = true
+        var showCobIobChart: Bool = true
         private(set) var setupPumpType: PumpConfig.PumpType = .minimed
         var minForecast: [Int] = []
         var maxForecast: [Int] = []
@@ -387,6 +388,7 @@ extension Home {
             lowGlucose = settingsManager.settings.low
             highGlucose = settingsManager.settings.high
             eA1cDisplayUnit = settingsManager.settings.eA1cDisplayUnit
+            showCobIobChart = settingsManager.settings.showCobIobChart
             displayXgridLines = settingsManager.settings.xGridLines
             displayYgridLines = settingsManager.settings.yGridLines
             thresholdLines = settingsManager.settings.rulerMarks
@@ -631,6 +633,7 @@ extension Home.StateModel:
         }
         eA1cDisplayUnit = settingsManager.settings.eA1cDisplayUnit
         glucoseColorScheme = settingsManager.settings.glucoseColorScheme
+        showCobIobChart = settingsManager.settings.showCobIobChart
         displayXgridLines = settingsManager.settings.xGridLines
         displayYgridLines = settingsManager.settings.yGridLines
         thresholdLines = settingsManager.settings.rulerMarks

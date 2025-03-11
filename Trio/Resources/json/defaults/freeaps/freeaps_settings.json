@@ -33,6 +33,7 @@
   "xGridLines" : true,
   "yGridLines" : true,
   "timeInRangeChartStyle" : "vertical",
+  "showCobIobChart" : true,
   "rulerMarks" : true,
   "forecastDisplayType": "cone",
   "maxCarbs": 250,

@@ -128,40 +128,6 @@ extension AlgorithmAdvancedSettings {
                 )
 
                 SettingInputSection(
-                    decimalValue: $state.insulinPeakTime,
-                    booleanValue: $state.useCustomPeakTime,
-                    shouldDisplayHint: $shouldDisplayHint,
-                    selectedVerboseHint: Binding(
-                        get: { selectedVerboseHint },
-                        set: {
-                            selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = String(localized: "Use Custom Peak Time", comment: "Use Custom Peak Time")
-                        }
-                    ),
-                    units: state.units,
-                    type: .conditionalDecimal("insulinPeakTime"),
-                    label: String(localized: "Use Custom Peak Time", comment: "Use Custom Peak Time"),
-                    conditionalLabel: String(localized: "Insulin Peak Time", comment: "Insulin Peak Time"),
-                    miniHint: String(
-                        localized: "Set a custom time for peak insulin effect.",
-                        comment: "Mini Hint for Insulin Peak Time"
-                    ),
-                    verboseHint:
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: Set by Insulin Type").bold()
-                        Text(
-                            "Insulin Peak Time defines when insulin is most effective in lowering glucose, set in minutes after dosing."
-                        )
-                        Text(
-                            "This peak informs the system when to expect the most potent glucose-lowering effect, helping it predict glucose trends more accurately."
-                        )
-                        Text("System-Determined Defaults:").bold()
-                        Text("Ultra-Rapid: 55 minutes (permitted range 35-100 minutes)")
-                        Text("Rapid-Acting: 75 minutes (permitted range 50-120 minutes)")
-                    }
-                )
-
-                SettingInputSection(
                     decimalValue: $decimalPlaceholder,
                     booleanValue: $state.skipNeutralTemps,
                     shouldDisplayHint: $shouldDisplayHint,
@@ -369,6 +335,57 @@ extension AlgorithmAdvancedSettings {
                         Text("Note: A CGM is considered noisy when it provides inconsistent readings.")
                     }
                 )
+
+                SettingInputSection(
+                    decimalValue: $decimalPlaceholder,
+                    booleanValue: $state.hideInsulinBadge,
+                    shouldDisplayHint: $shouldDisplayHint,
+                    selectedVerboseHint: Binding(
+                        get: { selectedVerboseHint },
+                        set: {
+                            selectedVerboseHint = $0.map { AnyView($0) }
+                            hintLabel = NSLocalizedString("Hide Insulin Concentration badge", comment: "Hide Badge")
+                        }
+                    ),
+                    units: state.units,
+                    type: .boolean,
+                    label: NSLocalizedString("Hide Insulin Concentration badge", comment: "Hide Badge"),
+                    miniHint: "Hide the badge that displays the Insulin Concentration near between the Glucose bobble and the pump information.",
+                    verboseHint:
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Default: Badge displayed").bold()
+                        Text(
+                            "U50 or other diluted insulins will lead to more insulin volume being pumped. So it is essential to be aware of the setting that concentrated or especially diluted insulin is used."
+                        )
+                        Text(
+                            "Having the U50 active but with U100 in the pump will be very dangerous. Don't hide the badge unless you do not change anything in the longterm - diluted insulins are shown in red, concentrated in yellow."
+                        )
+                    }
+                )
+
+                SettingInputSection(
+                    decimalValue: $decimalPlaceholder,
+                    booleanValue: $state.allowDilution,
+                    shouldDisplayHint: $shouldDisplayHint,
+                    selectedVerboseHint: Binding(
+                        get: { selectedVerboseHint },
+                        set: {
+                            selectedVerboseHint = $0.map { AnyView($0) }
+                            hintLabel = NSLocalizedString("Allow diluted Insulin", comment: "Allow diluted Insulin")
+                        }
+                    ),
+                    units: state.units,
+                    type: .boolean,
+                    label: NSLocalizedString("Allow diluted Insulin", comment: "Allow diluted Insulin"),
+                    miniHint: "Allow diluted insulin concentration settings.",
+                    verboseHint:
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Default: OFF").bold()
+                        Text(
+                            "U50 or other diluted insulins will lead to more insulin volume being pumped. Using a diluted Insulin concentration will inject larger volumes. If not set correctly potential errors can lead to severe overdosing of insulin."
+                        )
+                    }
+                )
             }
             .listSectionSpacing(sectionSpacing)
             .sheet(isPresented: $shouldDisplayHint) {
@@ -385,9 +402,6 @@ extension AlgorithmAdvancedSettings {
             .onAppear(perform: configureView)
             .navigationTitle("Additionals")
             .navigationBarTitleDisplayMode(.automatic)
-            .onDisappear {
-                state.saveIfChanged()
-            }
         }
     }
 }

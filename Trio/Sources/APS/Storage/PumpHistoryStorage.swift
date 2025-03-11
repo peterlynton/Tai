@@ -23,7 +23,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
     private let processQueue = DispatchQueue(label: "BasePumpHistoryStorage.processQueue")
     @Injected() private var storage: FileStorage!
     @Injected() private var broadcaster: Broadcaster!
-    @Injected() private var settings: SettingsManager!
+    @Injected() private var settingsManager: SettingsManager!
 
     private let updateSubject = PassthroughSubject<Void, Never>()
 
@@ -32,6 +32,16 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
     }
 
     private let context: NSManagedObjectContext
+
+    var settings: TrioSettings {
+        get { settingsManager.settings }
+        set { settingsManager.settings = newValue }
+    }
+
+    var preferences: Preferences {
+        get { settingsManager.preferences }
+        set { settingsManager.preferences = newValue }
+    }
 
     init(resolver: Resolver, context: NSManagedObjectContext? = nil) {
         self.context = context ?? CoreDataStack.shared.newTaskContext()
@@ -43,7 +53,42 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
     private func roundDose(_ dose: Double, toIncrement increment: Double) -> Decimal {
         let roundedValue = (dose / increment).rounded() * increment
-        return Decimal(roundedValue)
+        var decimalValue = Decimal(roundedValue)
+        var roundedDecimal = Decimal()
+        // Limit to 2 decimal places, or 3 for diluted insulins
+        NSDecimalRound(&roundedDecimal, &decimalValue, settings.insulinConcentration < 1 ? 3 : 2, .plain)
+        debug(
+            .service,
+            "Concentration: rounding function puts increment at: \(increment) and resulting U100-volume at: \(roundedDecimal)"
+        )
+
+        return roundedDecimal
+    }
+
+    private func adjustPumpedVolumeToU100(pumpedVolume: Double) -> Decimal {
+        let concentration = Double(settings.insulinConcentration)
+        let increment = Double(preferences.bolusIncrement)
+        let u100Volume = pumpedVolume * concentration
+        let roundedU100Volume = roundDose(
+            u100Volume,
+            toIncrement: increment
+        )
+        if concentration != 1 {
+            debug(.apsManager, "Concentration: Pumped bolus volume: \(pumpedVolume) at U\(Int(concentration * 100))")
+            debug(.apsManager, "Concentration: Adjusted bolus to U100 equivalents: \(roundedU100Volume)U")
+        }
+        return roundedU100Volume
+    }
+
+    private func adjustPumpedRateToU100(pumpedRate: Decimal) -> Decimal {
+        let concentration = settings.insulinConcentration
+        var u100Rate = pumpedRate
+        if concentration != 1, u100Rate >= 0.05 {
+            u100Rate = pumpedRate * concentration
+            debug(.apsManager, "Concentration: Pumped rate volume: \(pumpedRate) at U\(Int(concentration * 100))")
+            debug(.apsManager, "Concentration: Adjusted rate to U100 equivalents: \(u100Rate)U")
+        }
+        return u100Rate
     }
 
     func storePumpEvents(_ events: [NewPumpEvent]) async throws {
@@ -62,10 +107,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                 case .bolus:
 
                     guard let dose = event.dose else { continue }
-                    let amount = self.roundDose(
-                        dose.unitsInDeliverableIncrements,
-                        toIncrement: Double(self.settings.preferences.bolusIncrement)
-                    )
+                    let amount = self.adjustPumpedVolumeToU100(pumpedVolume: dose.unitsInDeliverableIncrements)
 
                     guard existingEvents.isEmpty else {
                         // Duplicate found, do not store the event
@@ -112,7 +154,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                         continue
                     }
 
-                    let rate = Decimal(dose.unitsPerHour)
+                    let rate = self.adjustPumpedRateToU100(pumpedRate: Decimal(dose.unitsPerHour))
                     let minutes = (dose.endDate - dose.startDate).timeInterval / 60
                     let delivered = dose.deliveredUnits
                     let date = event.date

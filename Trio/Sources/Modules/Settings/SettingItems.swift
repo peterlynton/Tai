@@ -39,7 +39,12 @@ enum SettingItems {
     ]
 
     static let devicesItems = [
-        SettingItem(title: "Insulin Pump", view: .pumpConfig, path: ["Devices"]),
+        SettingItem(
+            title: "Insulin Pump",
+            view: .pumpConfig,
+            searchContents: ["Insulin Peak Time", "Custom Peak Time", "Duration Insulin Action", "DIA"],
+            path: ["Devices"]
+        ),
         SettingItem(
             title: "CGM",
             view: .cgm,
@@ -137,9 +142,6 @@ enum SettingItems {
             searchContents: [
                 "Max Daily Safety Multiplier",
                 "Current Basal Safety Multiplier",
-                "Use Custom Peak Time",
-                "Duration of Insulin Action", "DIA",
-                "Insulin Peak Time",
                 "Skip Neutral Temps",
                 "Unsuspend If No Temp",
                 "Suspend Zeros IOB",

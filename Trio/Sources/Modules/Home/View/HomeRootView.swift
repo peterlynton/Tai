@@ -61,12 +61,13 @@ extension Home {
 
         var bolusProgressFormatter: NumberFormatter {
             let formatter = NumberFormatter()
+            let bolusIncrement = state.bolusIncrement
             formatter.numberStyle = .decimal
             formatter.minimum = 0
-            formatter.maximumFractionDigits = state.settingsManager.preferences.bolusIncrement > 0.05 ? 1 : 2
-            formatter.minimumFractionDigits = state.settingsManager.preferences.bolusIncrement > 0.05 ? 1 : 2
+            formatter.maximumFractionDigits = bolusIncrement < 0.05 ? 3 : (bolusIncrement == 0.05 ? 2 : 1)
+            formatter.minimumFractionDigits = formatter.maximumFractionDigits
             formatter.allowsFloats = true
-            formatter.roundingIncrement = Double(state.settingsManager.preferences.bolusIncrement) as NSNumber
+            formatter.roundingIncrement = Double(bolusIncrement) as NSNumber
             return formatter
         }
 
@@ -124,6 +125,8 @@ extension Home {
 
         var glucoseView: some View {
             CurrentGlucoseView(
+                concentration: state.concentration,
+                hideInsulinBadge: state.hideInsulinBadge,
                 timerDate: state.timerDate,
                 units: state.units,
                 alarm: state.alarm,

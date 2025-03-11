@@ -20,6 +20,9 @@ final class BaseBolusCalculationManager: BolusCalculationManager, Injectable {
         injectServices(resolver)
     }
 
+    private var bolusIncrement: Decimal { settingsManager.preferences.bolusIncrement }
+    private var insulinConcentration: Decimal { settingsManager.settings.insulinConcentration }
+
     // MARK: - Types
 
     private struct GlucoseVariables {
@@ -322,16 +325,32 @@ final class BaseBolusCalculationManager: BolusCalculationManager, Injectable {
     /// - Parameter input: CalculationInput containing all necessary parameters
     /// - Returns: CalculationResult with detailed breakdown of the calculation
     func calculateInsulin(input: CalculationInput) async -> CalculationResult {
+        debug(
+            .service,
+            "Concentration U\(Int(truncating: NSDecimalNumber(decimal: insulinConcentration * 100))), Bolus increment: \(bolusIncrement)"
+        )
         // insulin needed for the current blood glucose
         let targetDifference = input.currentBG - input.target
-        let targetDifferenceInsulin = apsManager.roundBolus(amount: targetDifference / input.isf)
+        let targetDifferenceInsulin = (targetDifference / input.isf)
+            .roundedToBolusIncrement(
+                increment: bolusIncrement,
+                maxBolus: settingsManager.pumpSettings.maxBolus
+            )
 
         // more or less insulin because of bg trend in the last 15 minutes
-        let fifteenMinutesInsulin = apsManager.roundBolus(amount: input.deltaBG / input.isf)
+        let fifteenMinutesInsulin = (input.deltaBG / input.isf)
+            .roundedToBolusIncrement(
+                increment: bolusIncrement,
+                maxBolus: settingsManager.pumpSettings.maxBolus
+            )
 
         // determine whole COB for which we want to dose insulin for and then determine insulin for wholeCOB
         let wholeCob = Decimal(input.cob) + input.carbs
-        let wholeCobInsulin = apsManager.roundBolus(amount: wholeCob / input.carbRatio)
+        let wholeCobInsulin = (wholeCob / input.carbRatio)
+            .roundedToBolusIncrement(
+                increment: bolusIncrement,
+                maxBolus: settingsManager.pumpSettings.maxBolus
+            )
 
         // determine how much the calculator reduces/ increases the bolus because of IOB
         let iobInsulinReduction = (-1) * input.iob
@@ -371,7 +390,10 @@ final class BaseBolusCalculationManager: BolusCalculationManager, Injectable {
         insulinCalculated = min(insulinCalculated, input.maxBolus)
 
         // round calculated recommendation to allowed bolus increment
-        insulinCalculated = apsManager.roundBolus(amount: insulinCalculated)
+        insulinCalculated = insulinCalculated.roundedToBolusIncrement(
+            increment: bolusIncrement,
+            maxBolus: settingsManager.pumpSettings.maxBolus
+        )
 
         return CalculationResult(
             insulinCalculated: insulinCalculated,

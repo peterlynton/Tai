@@ -2,6 +2,8 @@ import CoreData
 import SwiftUI
 
 struct CurrentGlucoseView: View {
+    let concentration: Decimal
+    let hideInsulinBadge: Bool
     let timerDate: Date
     let units: GlucoseUnits
     let alarm: GlucoseAlarm?
@@ -46,7 +48,8 @@ struct CurrentGlucoseView: View {
             ZStack {
                 TrendShape(gradient: angularGradient, color: triangleColor)
                     .rotationEffect(.degrees(rotationDegrees))
-
+                InsulinConcentrationBadge(concentration: concentration, hide: hideInsulinBadge)
+                    .offset(x: -65, y: 65)
                 VStack(alignment: .center) {
                     HStack {
                         if let glucoseValue = glucose.last?.glucose {
@@ -196,10 +199,12 @@ struct CircleShape: View {
     let gradient: AngularGradient
 
     var body: some View {
-        Circle()
-            .stroke(gradient, lineWidth: 6)
-            .background(Circle().fill(Color.chart))
-            .frame(width: 130, height: 130)
+        ZStack {
+            Circle()
+                .stroke(gradient, lineWidth: 6)
+                .background(Circle().fill(Color.chart))
+                .frame(width: 130, height: 130)
+        }
     }
 }
 

@@ -81,21 +81,29 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
             pumpManager?.delegateQueue = processQueue
             rawPumpManager = pumpManager?.rawValue
             UserDefaults.standard.clearLegacyPumpManagerRawValue()
+            let concentration = settingsManager.settings.insulinConcentration
+
             if let pumpManager = pumpManager {
                 pumpDisplayState.value = PumpDisplayState(name: pumpManager.localizedTitle, image: pumpManager.smallImage)
                 pumpName.send(pumpManager.localizedTitle)
 
                 var modifiedPreferences = settingsManager.preferences
-                let bolusIncrement = Decimal(
-                    pumpManager.supportedBolusVolumes.first ??
-                        Double(
-                            settingsManager.preferences
-                                .bolusIncrement
-                        )
+                let supportedPumpIncrement = Decimal(pumpManager.supportedBolusVolumes.first ?? 0.1)
+                var bolusIncrement = Decimal(
+                    pumpManager.supportedBolusVolumes
+                        .first ?? Double(settingsManager.preferences.bolusIncrement)
                 )
-                modifiedPreferences
-                    .bolusIncrement = bolusIncrement != 0.025 ? bolusIncrement : 0.1
+                let filteredSupportedIncrement = supportedPumpIncrement != 0.025 ? supportedPumpIncrement : 0.1
+
+                if concentration != 1 { bolusIncrement = filteredSupportedIncrement * concentration }
+                modifiedPreferences.bolusIncrement = bolusIncrement
+
                 storage.save(modifiedPreferences, as: OpenAPS.Settings.preferences)
+                settingsManager.preferences = modifiedPreferences
+                debug(
+                    .deviceManager,
+                    "Concentration U\(Int(truncating: NSDecimalNumber(decimal: concentration * 100))), Bolus increment set to: \(settingsManager.preferences.bolusIncrement), supported Pump Increment = \(filteredSupportedIncrement)"
+                )
 
                 if let omnipod = pumpManager as? OmnipodPumpManager {
                     guard let endTime = omnipod.state.podState?.expiresAt else {
@@ -158,8 +166,15 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
                 pumpName.send("")
                 // Reset bolusIncrement setting to default value, which is 0.1 U
                 var modifiedPreferences = settingsManager.preferences
-                modifiedPreferences.bolusIncrement = 0.1
+                if concentration != 1 {
+                    modifiedPreferences.bolusIncrement = 0.1 * concentration
+                } else { modifiedPreferences.bolusIncrement = 0.1 }
+                debug(
+                    .deviceManager,
+                    "Concentration U\(Int(truncating: NSDecimalNumber(decimal: settingsManager.settings.insulinConcentration * 100))), Bolus increment reset to: \(modifiedPreferences.bolusIncrement)"
+                )
                 storage.save(modifiedPreferences, as: OpenAPS.Settings.preferences)
+                settingsManager.preferences = modifiedPreferences
                 // Remove OpenAPS_Battery entries
                 Task {
                     await self.privateContext.perform {

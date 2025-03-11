@@ -120,9 +120,9 @@ extension Treatments {
 
         var isActive: Bool = false
 
+        var bolusIncrement: Decimal = 0.1
         var showDeterminationFailureAlert = false
         var determinationFailureMessage = ""
-
         // Queue for handling Core Data change notifications
         private let queue = DispatchQueue(label: "TreatmentsStateModel.queue", qos: .userInitiated)
         private var coreDataPublisher: AnyPublisher<Set<NSManagedObjectID>, Never>?
@@ -266,6 +266,7 @@ extension Treatments {
 
         @MainActor private func setupSettings() async {
             units = settingsManager.settings.units
+            bolusIncrement = settingsManager.preferences.bolusIncrement
             fraction = settings.settings.overrideFactor
             fattyMeals = settings.settings.fattyMeals
             fattyMealFactor = settings.settings.fattyMealFactor
@@ -375,6 +376,11 @@ extension Treatments {
             }
 
             return apsManager.roundBolus(amount: result.insulinCalculated)
+                .roundedToBolusIncrement(
+                    increment: bolusIncrement,
+                    maxBolus: maxBolus,
+                    roundingMode: .down
+                )
         }
 
         // MARK: - Button tasks

@@ -12,8 +12,6 @@ extension AlgorithmAdvancedSettings {
 
         @Published var maxDailySafetyMultiplier: Decimal = 3
         @Published var currentBasalSafetyMultiplier: Decimal = 4
-        @Published var useCustomPeakTime: Bool = false
-        @Published var insulinPeakTime: Decimal = 75
         @Published var skipNeutralTemps: Bool = false
         @Published var unsuspendIfNoTemp: Bool = false
         @Published var suspendZerosIOB: Bool = false
@@ -21,11 +19,9 @@ extension AlgorithmAdvancedSettings {
         @Published var remainingCarbsFraction: Decimal = 1.0
         @Published var remainingCarbsCap: Decimal = 90
         @Published var noisyCGMTargetMultiplier: Decimal = 1.3
+        @Published var allowDilution: Bool = false
+        @Published var hideInsulinBadge: Bool = false
         @Published var insulinActionCurve: Decimal = 10
-
-        var pumpSettings: PumpSettings {
-            provider.settings()
-        }
 
         override func subscribe() {
             units = settingsManager.settings.units
@@ -34,9 +30,6 @@ extension AlgorithmAdvancedSettings {
                 maxDailySafetyMultiplier = $0 }
             subscribePreferencesSetting(\.currentBasalSafetyMultiplier, on: $currentBasalSafetyMultiplier) {
                 currentBasalSafetyMultiplier = $0 }
-            subscribePreferencesSetting(\.useCustomPeakTime, on: $useCustomPeakTime) { useCustomPeakTime = $0 }
-            subscribePreferencesSetting(\.insulinPeakTime, on: $insulinPeakTime) { insulinPeakTime = $0 }
-            subscribePreferencesSetting(\.skipNeutralTemps, on: $skipNeutralTemps) { skipNeutralTemps = $0 }
             subscribePreferencesSetting(\.unsuspendIfNoTemp, on: $unsuspendIfNoTemp) { unsuspendIfNoTemp = $0 }
             subscribePreferencesSetting(\.suspendZerosIOB, on: $suspendZerosIOB) { suspendZerosIOB = $0 }
             subscribePreferencesSetting(\.suspendZerosIOB, on: $suspendZerosIOB) { suspendZerosIOB = $0 }
@@ -45,41 +38,8 @@ extension AlgorithmAdvancedSettings {
             subscribePreferencesSetting(\.remainingCarbsCap, on: $remainingCarbsCap) { remainingCarbsCap = $0 }
             subscribePreferencesSetting(\.noisyCGMTargetMultiplier, on: $noisyCGMTargetMultiplier) {
                 noisyCGMTargetMultiplier = $0 }
-
-            insulinActionCurve = pumpSettings.insulinActionCurve
-        }
-
-        var isPumpSettingUnchanged: Bool {
-            pumpSettings.insulinActionCurve == insulinActionCurve
-        }
-
-        func saveIfChanged() {
-            if !isPumpSettingUnchanged {
-                let settings = PumpSettings(
-                    insulinActionCurve: insulinActionCurve,
-                    maxBolus: pumpSettings.maxBolus,
-                    maxBasal: pumpSettings.maxBasal
-                )
-                provider.save(settings: settings)
-                    .receive(on: DispatchQueue.main)
-                    .sink { _ in
-                        let settings = self.provider.settings()
-                        self.insulinActionCurve = settings.insulinActionCurve
-
-                        Task.detached(priority: .low) {
-                            do {
-                                debug(.nightscout, "Attempting to upload DIA to Nightscout")
-                                try await self.nightscout.uploadProfiles()
-                            } catch {
-                                debug(
-                                    .default,
-                                    "\(DebuggingIdentifiers.failed) failed to upload DIA to Nightscout: \(error.localizedDescription)"
-                                )
-                            }
-                        }
-                    } receiveValue: {}
-                    .store(in: &lifetime)
-            }
+            subscribeSetting(\.allowDilution, on: $allowDilution) { allowDilution = $0 }
+            subscribeSetting(\.hideInsulinBadge, on: $hideInsulinBadge) { hideInsulinBadge = $0 }
         }
     }
 }

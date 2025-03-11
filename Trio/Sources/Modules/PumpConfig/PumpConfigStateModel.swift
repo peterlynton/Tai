@@ -5,13 +5,34 @@ import SwiftUI
 
 extension PumpConfig {
     final class StateModel: BaseStateModel<Provider> {
+        @Injected() var settings: SettingsManager!
+        @Injected() var nightscout: NightscoutManager!
+
         @Published var setupPump = false
         private(set) var setupPumpType: PumpType = .minimed
         @Published var pumpState: PumpDisplayState?
         private(set) var initialSettings: PumpInitialSettings = .default
         @Published var alertNotAck: Bool = false
+        @Published var useCustomPeakTime: Bool = false
+        @Published var insulinPeakTime: Decimal = 75
+        @Published var insulinActionCurve: Decimal = 10
+        @Published var allowDilution: Bool = false
+        @Published var insulinConcentration: Decimal = 1
+
+        var pumpSettings: PumpSettings {
+            provider.settings()
+        }
+
+        var units: GlucoseUnits = .mgdL
 
         override func subscribe() {
+            insulinActionCurve = pumpSettings.insulinActionCurve
+            allowDilution = settings.settings.allowDilution
+            subscribeSetting(\.insulinConcentration, on: $insulinConcentration) {
+                insulinConcentration = $0 }
+            subscribePreferencesSetting(\.useCustomPeakTime, on: $useCustomPeakTime) { useCustomPeakTime = $0 }
+            subscribePreferencesSetting(\.insulinPeakTime, on: $insulinPeakTime) { insulinPeakTime = $0 }
+
             provider.pumpDisplayState
                 .receive(on: DispatchQueue.main)
                 .assign(to: \.pumpState, on: self)
@@ -39,6 +60,39 @@ extension PumpConfig {
                         basalSchedule: basalSchedule!
                     )
                 }
+            }
+        }
+
+        var isPumpSettingUnchanged: Bool {
+            pumpSettings.insulinActionCurve == insulinActionCurve
+        }
+
+        func saveIfChanged() {
+            if !isPumpSettingUnchanged {
+                let settings = PumpSettings(
+                    insulinActionCurve: insulinActionCurve,
+                    maxBolus: pumpSettings.maxBolus,
+                    maxBasal: pumpSettings.maxBasal
+                )
+                provider.save(settings: settings)
+                    .receive(on: DispatchQueue.main)
+                    .sink { _ in
+                        let settings = self.provider.settings()
+                        self.insulinActionCurve = settings.insulinActionCurve
+
+                        Task.detached(priority: .low) {
+                            do {
+                                debug(.nightscout, "Attempting to upload DIA to Nightscout")
+                                try await self.nightscout.uploadProfiles()
+                            } catch {
+                                debug(
+                                    .default,
+                                    "\(DebuggingIdentifiers.failed) failed to upload DIA to Nightscout: \(error.localizedDescription)"
+                                )
+                            }
+                        }
+                    } receiveValue: {}
+                    .store(in: &lifetime)
             }
         }
 

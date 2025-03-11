@@ -6,8 +6,10 @@ extension PumpConfig {
         let resolver: Resolver
         let displayClose: Bool
         @StateObject var state = StateModel()
-
+        @State private var showConcentrationEditor = false
+        @State private var showEditConcentrationWarning = false
         @State private var shouldDisplayHint: Bool = false
+        @State private var shouldDisplayHintPump: Bool = false
         @State var hintDetent = PresentationDetent.large
         @State var selectedVerboseHint: AnyView?
         @State var hintLabel: String?
@@ -20,7 +22,68 @@ extension PumpConfig {
 
         var body: some View {
             NavigationView {
-                Form {
+                List {
+                    Section(
+                        content: {
+                            VStack {
+                                if state.pumpState == nil {
+                                    HStack {
+                                        Text("Current Concentration")
+                                        Spacer()
+                                        Text(
+                                            "U\(Int(truncating: NSDecimalNumber(decimal: state.insulinConcentration * 100)))"
+                                        )
+                                    }
+                                    .contentShape(Rectangle()) // Ensures full-row tappability
+                                    .navigationLink(to: .insulinConcentration, from: self)
+                                } else {
+                                    HStack {
+                                        Text("Current Concentration")
+                                        Spacer()
+                                        Text("U\(Int(truncating: NSDecimalNumber(decimal: state.insulinConcentration * 100)))")
+                                    }.foregroundColor(.secondary)
+                                        .onTapGesture { showEditConcentrationWarning = true }
+                                }
+
+                                HStack(alignment: .center) {
+                                    Text(
+                                        "The insulin concentration is given in Insulin Units per mL. The standard is U100 with 100 U/mL."
+                                    )
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(nil)
+                                    Spacer()
+                                    Button(action: {
+                                        shouldDisplayHint.toggle()
+                                        selectedVerboseHint = AnyView(
+                                            VStack(alignment: .leading, spacing: 10) {
+                                                Text("Delete pump if you need to change Insulin Concentration")
+                                                    .fontWeight(.bold)
+                                                Text(
+                                                    "The insulin concentration can only be changed if you change the insulin in your pump. To make that sure for every pump model, you will have to delete the current pump, change the Insulin Concentration and add your pump again."
+                                                )
+                                            }
+                                        )
+                                        hintLabel = NSLocalizedString(
+                                            "Insulin Concentration",
+                                            comment: "Insulin Concentration"
+                                        )
+                                    }) { HStack { Image(systemName: "questionmark.circle") }}
+                                        .buttonStyle(BorderlessButtonStyle())
+                                }.padding(.vertical)
+                            }
+                        },
+                        header: { Text("Insulin Concentration") }
+                    )
+                    .listRowBackground(Color.chart)
+                    .alert(isPresented: $showEditConcentrationWarning) {
+                        Alert(
+                            title: Text("Cannot change Concentration"),
+                            message: Text("To edit insulin concentration, you must first remove the pump."),
+                            dismissButton: .default(Text("Got it!"))
+                        )
+                    }
+
                     Section(
                         header: Text("Pump Integration to Trio"),
                         content: {
@@ -59,7 +122,7 @@ extension PumpConfig {
                                         Spacer()
                                         Button(
                                             action: {
-                                                shouldDisplayHint.toggle()
+                                                shouldDisplayHintPump.toggle()
                                             },
                                             label: {
                                                 HStack {
@@ -73,12 +136,95 @@ extension PumpConfig {
                         }
                     )
                     .listRowBackground(Color.chart)
+
+                    Section(
+                        header: Text("Insulin Curve Parameters"),
+                        content: {
+                            SettingInputSection(
+                                decimalValue: $state.insulinActionCurve,
+                                booleanValue: $booleanPlaceholder,
+                                shouldDisplayHint: $shouldDisplayHint,
+                                selectedVerboseHint: Binding(
+                                    get: { selectedVerboseHint },
+                                    set: {
+                                        selectedVerboseHint = $0.map { AnyView($0) }
+                                        hintLabel = "Duration of Insulin Action"
+                                    }
+                                ),
+                                units: state.units,
+                                type: .decimal("dia"),
+                                label: "Duration of Insulin Action",
+                                miniHint: "Number of hours insulin is active in your body.",
+                                verboseHint:
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("Default: 10 hours").bold()
+                                    Text(
+                                        "The Duration of Insulin Action (DIA) defines how long your insulin continues to lower glucose readings after a dose."
+                                    )
+                                    Text(
+                                        "This helps the system accurately track Insulin on Board (IOB), avoiding over- or under-corrections by considering the tail end of insulin's effect."
+                                    )
+                                    Text(
+                                        "Tip: It is better to use Custom Peak Time rather than adjust your Duration of Insulin Action (DIA)."
+                                    )
+                                }
+                            )
+
+                            SettingInputSection(
+                                decimalValue: $state.insulinPeakTime,
+                                booleanValue: $state.useCustomPeakTime,
+                                shouldDisplayHint: $shouldDisplayHint,
+                                selectedVerboseHint: Binding(
+                                    get: { selectedVerboseHint },
+                                    set: {
+                                        selectedVerboseHint = $0.map { AnyView($0) }
+                                        hintLabel = NSLocalizedString("Use Custom Peak Time", comment: "Use Custom Peak Time")
+                                    }
+                                ),
+                                units: state.units,
+                                type: .conditionalDecimal("insulinPeakTime"),
+                                label: NSLocalizedString("Use Custom Peak Time", comment: "Use Custom Peak Time"),
+                                conditionalLabel: NSLocalizedString("Insulin Peak Time", comment: "Insulin Peak Time"),
+                                miniHint: "Set a custom time for peak insulin effect.",
+                                verboseHint:
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("Default: Set by Insulin Type").bold()
+                                    Text(
+                                        "Insulin Peak Time defines when insulin is most effective in lowering glucose, set in minutes after dosing."
+                                    )
+                                    Text(
+                                        "This peak informs the system when to expect the most potent glucose-lowering effect, helping it predict glucose trends more accurately."
+                                    )
+                                    Text("System-Determined Defaults:").bold()
+                                    Text("Ultra-Rapid: 55 minutes (permitted range 35-100 minutes)")
+                                    Text("Rapid-Acting: 75 minutes (permitted range 50-120 minutes)")
+                                }
+                            )
+                        }
+                    )
                 }
+                .listSectionSpacing(sectionSpacing)
+                .tint(Color.tabBar)
                 .scrollContentBackground(.hidden).background(appState.trioBackgroundColor(for: colorScheme))
                 .onAppear(perform: configureView)
+                .onAppear {
+                    state.insulinConcentration = state.settings.settings.insulinConcentration
+                }
+                .onDisappear {
+                    state.saveIfChanged()
+                }
                 .navigationTitle("Insulin Pump")
                 .navigationBarTitleDisplayMode(.automatic)
                 .navigationBarItems(leading: displayClose ? Button("Close", action: state.hideModal) : nil)
+                .sheet(isPresented: $shouldDisplayHint) {
+                    SettingInputHintView(
+                        hintDetent: $hintDetent,
+                        shouldDisplayHint: $shouldDisplayHint,
+                        hintLabel: hintLabel ?? "",
+                        hintText: selectedVerboseHint ?? AnyView(EmptyView()),
+                        sheetTitle: "Help"
+                    )
+                }
                 .sheet(isPresented: $state.setupPump) {
                     if let pumpManager = state.provider.apsManager.pumpManager {
                         PumpSettingsView(
@@ -97,10 +243,10 @@ extension PumpConfig {
                         )
                     }
                 }
-                .sheet(isPresented: $shouldDisplayHint) {
+                .sheet(isPresented: $shouldDisplayHintPump) {
                     SettingInputHintView(
                         hintDetent: $hintDetent,
-                        shouldDisplayHint: $shouldDisplayHint,
+                        shouldDisplayHint: $shouldDisplayHintPump,
                         hintLabel: "Pump Pairing to Trio",
                         hintText: AnyView(
                             VStack(alignment: .leading, spacing: 10) {

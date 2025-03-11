@@ -147,8 +147,6 @@ struct SettingInputSection<VerboseHint: View>: View {
             return pickerSettingsProvider.settings.maxUAMSMBBasalMinutes
         case "smbInterval":
             return pickerSettingsProvider.settings.smbInterval
-        case "bolusIncrement":
-            return pickerSettingsProvider.settings.bolusIncrement
         case "insulinPeakTime":
             return pickerSettingsProvider.settings.insulinPeakTime
         case "carbsReqThreshold":

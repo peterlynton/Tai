@@ -63,9 +63,12 @@ extension AutoISFSettings {
                                     .scaledToFit()
                                     .frame(width: 300)
                                     .padding(2)
+                                Text(
+                                    "When autoISF is turned on the autoISF Ratio (aiSR) will be displayed on Homeview, showing the final ISF / Sensitivity adaption, instead of the regular Autosens Sensitivity Ratio (AS)"
+                                )
                                 Divider()
+                                Text("When all 4 effects are configured, how to deduce an end result?").bold()
                                 Text("""
-                                When all 4 effects are configured, how to deduce an end result? 
                                 The normal case is to pick the strongest factor as the one and only factor to be applied. Here autosense is also part of the game. But how about the exceptions, i.e., when different factors pull in different directions? In order of precedence they are:
                                 """)
                                     .font(.body)
@@ -133,6 +136,9 @@ extension AutoISFSettings {
                                 Text("Default:  OFF ").bold()
                                 Text(
                                     "autosens is not needed for autoISF as it adapts on a longer time frame than autoISF, so any autosens adjustment is lagging behind what is done by autoISF. It can be kept to ON, and in some border cases the autosens ISF will be used. Check on Discord."
+                                )
+                                Text(
+                                    "When autoISF is turned off Autosens will always be activated and on HomwView, the Autosens Sensitivity Ratio (AS) will be shown instead of the autoISF Ratio (aiSR)"
                                 )
                             }
                         )

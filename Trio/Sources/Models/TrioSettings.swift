@@ -41,6 +41,7 @@ struct TrioSettings: JSON, Equatable {
     var carbsRequiredThreshold: Decimal = 10
     var showCarbsRequiredBadge: Bool = true
     var useFPUconversion: Bool = true
+    var therapyParameterDisplayType: TherapyParameterDisplayType = .totalDailyDose
     var individualAdjustmentFactor: Decimal = 0.5
     var timeCap: Int = 8
     var minuteInterval: Int = 30
@@ -141,6 +142,13 @@ extension TrioSettings: Decodable {
 
         if let useFPUconversion = try? container.decode(Bool.self, forKey: .useFPUconversion) {
             settings.useFPUconversion = useFPUconversion
+        }
+
+        if let therapyParameterDisplayType = try? container.decode(
+            TherapyParameterDisplayType.self,
+            forKey: .therapyParameterDisplayType
+        ) {
+            settings.therapyParameterDisplayType = therapyParameterDisplayType
         }
 
         if let individualAdjustmentFactor = try? container.decode(Decimal.self, forKey: .individualAdjustmentFactor) {

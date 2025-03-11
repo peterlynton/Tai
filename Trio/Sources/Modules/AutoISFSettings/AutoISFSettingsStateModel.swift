@@ -9,8 +9,13 @@ extension AutoISFSettings {
         var units: GlucoseUnits = .mgdL
 
         // Published properties for state binding
-        @Published var autoisf: Bool = false
-        @Published var enableAutosens: Bool = false
+        @Published var autoisf: Bool = false {
+            didSet {
+                updateEnableAutosens() // Call the method whenever autoisf changes
+            }
+        }
+
+        @Published var enableAutosens: Bool = true
         @Published var enableSMBEvenOnOddOffAlways: Bool = false
         @Published var autoISFoffSport: Bool = false
         @Published var autoISFmax: Decimal = 2
@@ -31,6 +36,13 @@ extension AutoISFSettings {
         @Published var enableBGacceleration: Bool = false
 
         var insulinActionCurve: Decimal = 6
+
+        // Method to update enableAutosens when autoisf is false
+        private func updateEnableAutosens() {
+            if !autoisf {
+                enableAutosens = true // Always enable autosens to true when autoisf is false
+            }
+        }
 
         override func subscribe() {
             units = settingsManager.settings.units

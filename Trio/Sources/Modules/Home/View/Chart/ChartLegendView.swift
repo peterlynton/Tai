@@ -64,6 +64,33 @@ struct ChartLegendView: View {
                         )
 
                         DefinitionRow(
+                            term: String(localized: "TDD 24h"),
+                            definition: Text(
+                                "Shows the total dose of insulin for the last 24 hours."
+                            ),
+                            color: Color.insulin,
+                            iconString: "ivfluid.bag"
+                        )
+
+                        DefinitionRow(
+                            term: String(localized: "autoISF Sens Ratio (aiSR)"),
+                            definition: Text(
+                                "Shows current final ISF / Sensitivity adjustment Ratio as derived by autoISF algorithm."
+                            ),
+                            color: Color.loopGreen,
+                            iconString: "arrow.up.arrow.down"
+                        )
+
+                        DefinitionRow(
+                            term: String(localized: "autosens Ratio (AS)"),
+                            definition: Text(
+                                "Shows current final ISF / Sensitivity adjustment Ratio as derived by autosens algorithm. Only shown when autoISF is not enabled."
+                            ),
+                            color: Color.zt,
+                            iconString: "arrow.up.arrow.down"
+                        )
+
+                        DefinitionRow(
                             term: String(localized: "CGM Glucose Value"),
                             definition: VStack(alignment: .leading, spacing: 10) {
                                 if state.settingsManager.settings.smoothGlucose {

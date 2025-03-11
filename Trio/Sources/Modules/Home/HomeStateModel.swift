@@ -62,6 +62,7 @@ extension Home {
         var alarm: GlucoseAlarm?
         var manualTempBasal = false
         var isSmoothingEnabled = false
+        var autoisfEnabled = false
         var autosensMax: Decimal = 1.2
         var lowGlucose: Decimal = 70
         var highGlucose: Decimal = 180
@@ -78,6 +79,7 @@ extension Home {
         var statusTitle = ""
         var isLoopStatusPresented: Bool = false
         var isLegendPresented: Bool = false
+        var therapyParameterDisplayType: TherapyParameterDisplayType = .totalDailyDose
         var roundedTotalBolus: String = ""
         var selectedTab: Int = 0
         var waitForSuggestion: Bool = false
@@ -377,6 +379,7 @@ extension Home {
 
         @MainActor private func setupSettings() async {
             units = settingsManager.settings.units
+            autoisfEnabled = settingsManager.preferences.autoisf
             allowManualTemp = !settingsManager.settings.closedLoop
             closedLoop = settingsManager.settings.closedLoop
             lastLoopDate = apsManager.lastLoopDate
@@ -392,6 +395,7 @@ extension Home {
             displayXgridLines = settingsManager.settings.xGridLines
             displayYgridLines = settingsManager.settings.yGridLines
             thresholdLines = settingsManager.settings.rulerMarks
+            therapyParameterDisplayType = settingsManager.settings.therapyParameterDisplayType
             showCarbsRequiredBadge = settingsManager.settings.showCarbsRequiredBadge
             forecastDisplayType = settingsManager.settings.forecastDisplayType
             isExerciseModeActive = settingsManager.preferences.exerciseMode
@@ -637,6 +641,7 @@ extension Home.StateModel:
         displayXgridLines = settingsManager.settings.xGridLines
         displayYgridLines = settingsManager.settings.yGridLines
         thresholdLines = settingsManager.settings.rulerMarks
+        therapyParameterDisplayType = settingsManager.settings.therapyParameterDisplayType
         showCarbsRequiredBadge = settingsManager.settings.showCarbsRequiredBadge
         forecastDisplayType = settingsManager.settings.forecastDisplayType
         cgmAvailable = (fetchGlucoseManager.cgmGlucoseSourceType != CGMType.none)
@@ -650,6 +655,7 @@ extension Home.StateModel:
 
     func preferencesDidChange(_: Preferences) {
         autosensMax = settingsManager.preferences.autosensMax
+        autoisfEnabled = settingsManager.preferences.autoisf
         settingHalfBasalTarget = settingsManager.preferences.halfBasalExerciseTarget
         highTTraisesSens = settingsManager.preferences.highTemptargetRaisesSensitivity
         isExerciseModeActive = settingsManager.preferences.exerciseMode

@@ -222,6 +222,7 @@
 		49B21BF72D7F231500D0B6C3 /* autoISFHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B21BF62D7F231500D0B6C3 /* autoISFHistory.swift */; };
 		49B9B57F2D5768D2009C6B59 /* AdjustmentStored+Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B9B57E2D5768D2009C6B59 /* AdjustmentStored+Helper.swift */; };
 		49CCD2142CAE5E99002A9476 /* BulletList.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49CCD2102CAE5E99002A9476 /* BulletList.swift */; };
+		49E741542D8039C000D8E47B /* TherapyParameterDisplayType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49E741532D8039C000D8E47B /* TherapyParameterDisplayType.swift */; };
 		49F298B72D2D7DBB00E4C00D /* AutoISFSettingsDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F298B42D2D7DBB00E4C00D /* AutoISFSettingsDataFlow.swift */; };
 		49F298B82D2D7DBB00E4C00D /* AutoISFSettingsStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F298B62D2D7DBB00E4C00D /* AutoISFSettingsStateModel.swift */; };
 		49F298B92D2D7DBB00E4C00D /* AutoISFSettingsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49F298B52D2D7DBB00E4C00D /* AutoISFSettingsProvider.swift */; };
@@ -758,7 +759,6 @@
 		1967DFBD29D052C200759F30 /* Icons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Icons.swift; sourceTree = "<group>"; };
 		1967DFBF29D053AC00759F30 /* IconSelection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconSelection.swift; sourceTree = "<group>"; };
 		1967DFC129D053D300759F30 /* IconImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconImage.swift; sourceTree = "<group>"; };
-		199561C0275E61A50077B976 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS8.0.sdk/System/Library/Frameworks/HealthKit.framework; sourceTree = DEVELOPER_DIR; };
 		19A910352A24D6D700C8951B /* DateFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateFilter.swift; sourceTree = "<group>"; };
 		19B0EF2028F6D66200069496 /* Statistics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Statistics.swift; sourceTree = "<group>"; };
 		19D466A229AA2B80004D5F33 /* MealSettingsDataFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealSettingsDataFlow.swift; sourceTree = "<group>"; };
@@ -968,6 +968,7 @@
 		49B21BF62D7F231500D0B6C3 /* autoISFHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = autoISFHistory.swift; sourceTree = "<group>"; };
 		49B9B57E2D5768D2009C6B59 /* AdjustmentStored+Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AdjustmentStored+Helper.swift"; sourceTree = "<group>"; };
 		49CCD2102CAE5E99002A9476 /* BulletList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulletList.swift; sourceTree = "<group>"; };
+		49E741532D8039C000D8E47B /* TherapyParameterDisplayType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TherapyParameterDisplayType.swift; sourceTree = "<group>"; };
 		49F298B42D2D7DBB00E4C00D /* AutoISFSettingsDataFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoISFSettingsDataFlow.swift; sourceTree = "<group>"; };
 		49F298B52D2D7DBB00E4C00D /* AutoISFSettingsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoISFSettingsProvider.swift; sourceTree = "<group>"; };
 		49F298B62D2D7DBB00E4C00D /* AutoISFSettingsStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoISFSettingsStateModel.swift; sourceTree = "<group>"; };
@@ -1565,7 +1566,6 @@
 		192F0FF5276AC36D0085BE4D /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
-				199561C0275E61A50077B976 /* HealthKit.framework */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -2143,6 +2143,7 @@
 		388E5A5925B6F0250019842D /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				49E741532D8039C000D8E47B /* TherapyParameterDisplayType.swift */,
 				CE82E02628E869DF00473A9C /* AlertEntry.swift */,
 				49B21BF62D7F231500D0B6C3 /* autoISFHistory.swift */,
 				388E5A5F25B6F2310019842D /* Autosens.swift */,
@@ -3815,6 +3816,7 @@
 				3811DE8F25C9D80400A708ED /* User.swift in Sources */,
 				5825A1BE2C97335C0046467E /* EditTempTargetForm.swift in Sources */,
 				19D466A329AA2B80004D5F33 /* MealSettingsDataFlow.swift in Sources */,
+				49E741542D8039C000D8E47B /* TherapyParameterDisplayType.swift in Sources */,
 				3811DEB225C9D88300A708ED /* KeychainItemAccessibility.swift in Sources */,
 				38AEE73D25F0200C0013F05B /* TrioSettings.swift in Sources */,
 				38FCF3FD25E997A80078B0D1 /* PumpHistoryStorage.swift in Sources */,

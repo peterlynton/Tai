@@ -564,18 +564,66 @@ extension Home {
                             .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                     }
                 }
-                Spacer()
-                Text("TDD:")
-                    .foregroundColor(Color.insulin)
+                if state.therapyParameterDisplayType == .autoisfSensRatio {
+                    Spacer()
+                    HStack {
+                        if state.autoisfEnabled {
+                            Text("aiSR")
+                                .font(.callout).fontWeight(.bold)
+                                .foregroundColor(Color.loopGreen)
+
+                            if let determination = state.determinationsFromPersistence.first,
+                               let autoISFratioValue = determination.autoISFratio as? Decimal
+                            {
+                                Text(
+                                    Formatter.decimalFormatterWithTwoFractionDigits.string(
+                                        from: NSDecimalNumber(decimal: autoISFratioValue)
+                                    ) ?? "0"
+                                )
+                                .font(.callout).fontWeight(.bold)
+                                .fontDesign(.rounded)
+                            } else {
+                                Text("--")
+                                    .font(.callout).fontWeight(.bold)
+                                    .fontDesign(.rounded)
+                            }
+                        } else {
+                            Text("AS")
+                                .font(.callout).fontWeight(.bold)
+                                .foregroundColor(Color.zt)
+
+                            if let determination = state.determinationsFromPersistence.first,
+                               let autoISFratioValue = determination.autoISFratio as? Decimal
+                            {
+                                Text(
+                                    Formatter.decimalFormatterWithTwoFractionDigits.string(
+                                        from: NSDecimalNumber(decimal: autoISFratioValue)
+                                    ) ?? "0"
+                                )
+                                .font(.callout).fontWeight(.bold)
+                                .fontDesign(.rounded)
+                            } else {
+                                Text("--")
+                                    .font(.callout).fontWeight(.bold)
+                                    .fontDesign(.rounded)
+                            }
+                        }
+                    }
+                } else {
+                    Spacer()
+
+                    Text("TDD:")
+                        .foregroundColor(Color.insulin)
+                        .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    Text(
+                        (
+                            Formatter.insulinFormatterToIncrement(for: 0.1)
+                                .string(from: (state.fetchedTDDs.first?.totalDailyDose ?? 0) as NSNumber) ??
+                                "0"
+                        ) + String(localized: " U", comment: "Insulin unit")
+                    )
                     .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                Text(
-                    (
-                        Formatter.insulinFormatterToIncrement(for: 0.1)
-                            .string(from: (state.fetchedTDDs.first?.totalDailyDose ?? 0) as NSNumber) ??
-                            "0"
-                    ) + String(localized: " U", comment: "Insulin unit")
-                )
-                .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                }
             }.padding(.horizontal)
         }
 

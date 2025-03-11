@@ -191,7 +191,26 @@ final class BaseDeterminationStorage: DeterminationStorage, Injectable {
                         minPredBG: nil,
                         threshold: self.decimal(from: orefDetermination.threshold),
                         carbRatio: self.decimal(from: orefDetermination.carbRatio),
-                        received: orefDetermination.enacted // this is actually part of NS...
+                        received: orefDetermination.enacted, // this is actually part of NS...
+                        // autoISF
+                        smbRatio: self.decimal(from: orefDetermination.smbRatio),
+                        duraISFratio: self.decimal(from: orefDetermination.duraISFratio),
+                        bgISFratio: self.decimal(from: orefDetermination.bgISFratio),
+                        ppISFratio: self.decimal(from: orefDetermination.ppISFratio),
+                        acceISFratio: self.decimal(from: orefDetermination.acceISFratio),
+                        autoISFratio: self.decimal(from: orefDetermination.autoISFratio),
+                        iobTH: self.decimal(from: orefDetermination.iobTH),
+                        tick: nil,
+                        parabolaFitMinutes: self.decimal(from: orefDetermination.parabolaFitMinutes),
+                        parabolaFitLastDelta: self.decimal(from: orefDetermination.parabolaFitLastDelta),
+                        parabolaFitNextDelta: self.decimal(from: orefDetermination.parabolaFitNextDelta),
+                        parabolaFitCorrelation: self.decimal(from: orefDetermination.parabolaFitCorrelation),
+                        parabolaFitA0: self.decimal(from: orefDetermination.parabolaFitA0),
+                        parabolaFitA1: self.decimal(from: orefDetermination.parabolaFitA1),
+                        parabolaFitA2: self.decimal(from: orefDetermination.parabolaFitA2),
+                        duraMin: self.decimal(from: orefDetermination.duraMin),
+                        duraAvg: self.decimal(from: orefDetermination.duraAvg),
+                        bgAcce: self.decimal(from: orefDetermination.bgAcce)
                     )
                 }
             } catch {

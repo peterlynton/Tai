@@ -36,6 +36,22 @@ extension Formatter {
         return formatter
     }()
 
+    static var logdateFormatter: DateFormatter {
+        let logdateFormatter = DateFormatter()
+        logdateFormatter.dateFormat = "yyyy-MM-dd"
+        return logdateFormatter
+    }
+
+    static var timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        formatter.amSymbol = "a"
+        formatter.pmSymbol = "p"
+        formatter.locale = Locale.autoupdatingCurrent
+        return formatter
+    }()
+
     static let dateFormatter: DateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.timeStyle = .short

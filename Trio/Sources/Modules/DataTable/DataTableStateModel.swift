@@ -20,19 +20,29 @@ extension DataTable {
         var treatments: [Treatment] = []
         var manualGlucose: Decimal = 0
         var waitForSuggestion: Bool = false
+        var autoisf: Bool = true
 
         var insulinEntryDeleted: Bool = false
         var carbEntryDeleted: Bool = false
 
         var units: GlucoseUnits = .mgdL
+        var useFPUconversion = false
+        var bolusIncrement: Decimal = 0.1
 
         var carbEntryToEdit: CarbEntryStored?
         var showCarbEntryEditor = false
 
         override func subscribe() {
             units = settingsManager.settings.units
+            useFPUconversion = settingsManager.settings.useFPUconversion
+            bolusIncrement = settingsManager.preferences.bolusIncrement
+            autoisf = settingsManager.preferences.autoisf
             broadcaster.register(DeterminationObserver.self, observer: self)
             broadcaster.register(SettingsObserver.self, observer: self)
+        }
+
+        func updateAutoisf() {
+            autoisf = settingsManager.preferences.autoisf
         }
 
         /// Checks if the glucose data is fresh based on the given date
@@ -594,5 +604,9 @@ extension DataTable.StateModel: DeterminationObserver, SettingsObserver {
 
     func settingsDidChange(_: TrioSettings) {
         units = settingsManager.settings.units
+    }
+
+    func preferencesDidChange(_: Preferences) {
+        bolusIncrement = settingsManager.preferences.bolusIncrement
     }
 }

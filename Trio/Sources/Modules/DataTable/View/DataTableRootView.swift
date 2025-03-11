@@ -74,18 +74,111 @@ extension DataTable {
         }
 
         var body: some View {
+            let toggleCustomPicker: Bool = state.autoisf
             ZStack(alignment: .center, content: {
                 VStack {
-                    Picker("Mode", selection: $state.mode) {
-                        ForEach(
-                            Mode.allCases.indexed(),
-                            id: \.1
-                        ) { index, item in
-                            Text(item.name).tag(index)
+                    if toggleCustomPicker {
+                        let textHeight: CGFloat = UIFont.preferredFont(forTextStyle: .footnote).lineHeight
+                        HStack(spacing: 2) {
+                            HStack {
+                                Text(DataTable.Mode.treatments.name)
+                                    .font(.subheadline)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.5)
+                                    .layoutPriority(1)
+                            }
+                            .layoutPriority(1)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 8)
+                            .background(state.mode == .treatments ? Color.loopGray.opacity(0.4) : Color.clear)
+                            .cornerRadius(8)
+                            .onTapGesture {
+                                withAnimation {
+                                    state.mode = .treatments
+                                }
+                            }
+                            Divider().frame(height: textHeight + 4).background(Color.secondary)
+                            HStack {
+                                Text(DataTable.Mode.meals.name)
+                                    .font(.subheadline)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.5)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 8)
+                            .background(state.mode == .meals ? Color.loopGray.opacity(0.4) : Color.clear)
+                            .cornerRadius(8)
+                            .onTapGesture {
+                                withAnimation {
+                                    state.mode = .meals
+                                }
+                            }
+                            Divider().frame(height: textHeight + 4).background(Color.secondary)
+                            HStack {
+                                Text(DataTable.Mode.glucose.name)
+                                    .font(.subheadline)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.5)
+                                    .layoutPriority(1)
+                            }
+                            .layoutPriority(1)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 8)
+                            .background(state.mode == .glucose ? Color.loopGray.opacity(0.4) : Color.clear)
+                            .cornerRadius(8)
+                            .onTapGesture {
+                                withAnimation {
+                                    state.mode = .glucose
+                                }
+                            }
+                            Divider().frame(height: textHeight + 4).background(Color.secondary)
+                            HStack {
+                                Text(DataTable.Mode.adjustments.name)
+                                    .font(.subheadline)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.5)
+                                    .layoutPriority(1)
+                            }
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 8)
+                            .background(state.mode == .adjustments ? Color.loopGray.opacity(0.4) : Color.clear)
+                            .cornerRadius(8)
+                            .onTapGesture {
+                                withAnimation {
+                                    state.mode = .adjustments
+                                }
+                            }
+                            Divider().frame(height: textHeight + 4).background(Color.secondary)
+                            HStack(spacing: 2) {
+                                Image(systemName: "list.bullet.rectangle")
+                                    .foregroundColor(Color.uam)
+                                    .font(.subheadline)
+                            }
+
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 8)
+                            .background(Color.clear)
+                            .cornerRadius(8)
+                            .onTapGesture {
+                                state.showModal(for: .autoisfHistory)
+                            }
                         }
+                        .font(.footnote)
+                        .background(Color.gray.opacity(0.2))
+                        .cornerRadius(8)
+                        .padding(.horizontal)
+                    } else {
+                        Picker("Mode", selection: $state.mode) {
+                            ForEach(
+                                Mode.allCases.indexed(),
+                                id: \.1
+                            ) { index, item in
+                                Text(item.name).tag(index)
+                            }
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .padding(.horizontal)
                     }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .padding(.horizontal)
 
                     Form {
                         switch state.mode {
@@ -106,6 +199,7 @@ extension DataTable {
             })
                 .background(appState.trioBackgroundColor(for: colorScheme))
                 .onAppear(perform: configureView)
+                .onAppear(perform: state.updateAutoisf)
                 .onDisappear {
                     state.carbEntryDeleted = false
                     state.insulinEntryDeleted = false

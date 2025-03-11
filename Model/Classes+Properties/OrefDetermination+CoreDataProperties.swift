@@ -38,6 +38,25 @@ public extension OrefDetermination {
     @NSManaged var timestamp: Date?
     @NSManaged var timestampEnacted: Date?
     @NSManaged var forecasts: Set<Forecast>?
+    //    autoISF
+    @NSManaged var smbRatio: NSDecimalNumber?
+    @NSManaged var duraISFratio: NSDecimalNumber?
+    @NSManaged var bgISFratio: NSDecimalNumber?
+    @NSManaged var ppISFratio: NSDecimalNumber?
+    @NSManaged var acceISFratio: NSDecimalNumber?
+    @NSManaged var autoISFratio: NSDecimalNumber?
+    @NSManaged var iobTH: NSDecimalNumber?
+    @NSManaged var tick: Int16
+    @NSManaged var parabolaFitMinutes: NSDecimalNumber?
+    @NSManaged var parabolaFitLastDelta: NSDecimalNumber?
+    @NSManaged var parabolaFitNextDelta: NSDecimalNumber?
+    @NSManaged var parabolaFitCorrelation: NSDecimalNumber?
+    @NSManaged var parabolaFitA0: NSDecimalNumber?
+    @NSManaged var parabolaFitA1: NSDecimalNumber?
+    @NSManaged var parabolaFitA2: NSDecimalNumber?
+    @NSManaged var duraMin: NSDecimalNumber?
+    @NSManaged var duraAvg: NSDecimalNumber?
+    @NSManaged var bgAcce: NSDecimalNumber?
 }
 
 // MARK: Generated accessors for forecasts

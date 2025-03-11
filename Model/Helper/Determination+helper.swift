@@ -55,4 +55,9 @@ extension NSPredicate {
         let date = Date.threeMonthsAgo
         return NSPredicate(format: "deliverAt >= %@", date as NSDate)
     }
+
+    // for autoISF History
+    static func determinationPeriod(from startDate: Date, to endDate: Date) -> NSPredicate {
+        NSPredicate(format: "deliverAt >= %@ AND deliverAt <= %@", startDate as NSDate, endDate as NSDate)
+    }
 }

@@ -57,6 +57,24 @@ final class OpenAPS {
             newOrefDetermination.smbToDeliver = determination.units.map { NSDecimalNumber(decimal: $0) }
             newOrefDetermination.carbsRequired = Int16(Int(determination.carbsReq ?? 0))
             newOrefDetermination.isUploadedToNS = false
+            newOrefDetermination.smbRatio = self.decimalToNSDecimalNumber(determination.smbRatio)
+            newOrefDetermination.duraISFratio = self.decimalToNSDecimalNumber(determination.duraISFratio)
+            newOrefDetermination.bgISFratio = self.decimalToNSDecimalNumber(determination.bgISFratio)
+            newOrefDetermination.ppISFratio = self.decimalToNSDecimalNumber(determination.ppISFratio)
+            newOrefDetermination.acceISFratio = self.decimalToNSDecimalNumber(determination.acceISFratio)
+            newOrefDetermination.autoISFratio = self.decimalToNSDecimalNumber(determination.autoISFratio)
+            newOrefDetermination.iobTH = self.decimalToNSDecimalNumber(determination.iobTH)
+            newOrefDetermination.tick = Int16(Int(determination.tick ?? 0))
+            newOrefDetermination.parabolaFitMinutes = self.decimalToNSDecimalNumber(determination.parabolaFitMinutes)
+            newOrefDetermination.parabolaFitLastDelta = self.decimalToNSDecimalNumber(determination.parabolaFitLastDelta)
+            newOrefDetermination.parabolaFitNextDelta = self.decimalToNSDecimalNumber(determination.parabolaFitNextDelta)
+            newOrefDetermination.parabolaFitCorrelation = self.decimalToNSDecimalNumber(determination.parabolaFitCorrelation)
+            newOrefDetermination.parabolaFitA0 = self.decimalToNSDecimalNumber(determination.parabolaFitA0)
+            newOrefDetermination.parabolaFitA1 = self.decimalToNSDecimalNumber(determination.parabolaFitA1)
+            newOrefDetermination.parabolaFitA2 = self.decimalToNSDecimalNumber(determination.parabolaFitA2)
+            newOrefDetermination.duraMin = self.decimalToNSDecimalNumber(determination.duraMin)
+            newOrefDetermination.duraAvg = self.decimalToNSDecimalNumber(determination.duraAvg)
+            newOrefDetermination.bgAcce = self.decimalToNSDecimalNumber(determination.bgAcce)
 
             if let predictions = determination.predictions {
                 ["iob": predictions.iob, "zt": predictions.zt, "cob": predictions.cob, "uam": predictions.uam]

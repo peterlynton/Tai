@@ -29,6 +29,26 @@ struct Determination: JSON, Equatable {
     var threshold: Decimal?
     let carbRatio: Decimal?
     let received: Bool?
+    //    autoISF
+    let smbRatio: Decimal?
+    let duraISFratio: Decimal?
+    let bgISFratio: Decimal?
+    let ppISFratio: Decimal?
+    let acceISFratio: Decimal?
+    let autoISFratio: Decimal?
+    let iobTH: Decimal?
+    let tick: Int?
+    // acce calc
+    let parabolaFitMinutes: Decimal?
+    let parabolaFitLastDelta: Decimal?
+    let parabolaFitNextDelta: Decimal?
+    let parabolaFitCorrelation: Decimal?
+    let parabolaFitA0: Decimal?
+    let parabolaFitA1: Decimal?
+    let parabolaFitA2: Decimal?
+    let duraMin: Decimal?
+    let duraAvg: Decimal?
+    let bgAcce: Decimal?
 }
 
 struct Predictions: JSON, Equatable {
@@ -68,6 +88,26 @@ extension Determination {
         case threshold
         case carbRatio = "CR"
         case received
+        // autoISF
+        case smbRatio = "SMBratio"
+        case duraISFratio = "dura_ISFratio"
+        case bgISFratio = "bg_ISFratio"
+        case ppISFratio = "pp_ISFratio"
+        case acceISFratio = "acce_ISFratio"
+        case autoISFratio = "auto_ISFratio"
+        case iobTH = "iob_THeffective"
+        case tick
+        // acce calc
+        case parabolaFitMinutes = "parabola_fit_minutes"
+        case parabolaFitLastDelta = "parabola_fit_last_delta"
+        case parabolaFitNextDelta = "parabola_fit_next_delta"
+        case parabolaFitCorrelation = "parabola_fit_correlation"
+        case parabolaFitA0 = "parabola_fit_a0"
+        case parabolaFitA1 = "parabola_fit_a1"
+        case parabolaFitA2 = "parabola_fit_a2"
+        case duraMin = "dura_min"
+        case duraAvg = "dura_avg"
+        case bgAcce = "bg_acce"
     }
 }
 

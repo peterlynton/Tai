@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24C101" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23231" systemVersion="24D60" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
     <entity name="BolusStored" representedClassName="BolusStored" syncable="YES">
         <attribute name="amount" optional="YES" attributeType="Decimal" defaultValueString="0"/>
         <attribute name="isExternal" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
@@ -107,12 +107,19 @@
         </fetchIndex>
     </entity>
     <entity name="OrefDetermination" representedClassName="OrefDetermination" syncable="YES">
+        <attribute name="acceISFratio" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="autoISFratio" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="bgAcce" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="bgISFratio" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="bolus" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="carbRatio" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="carbsRequired" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="cob" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="currentTarget" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="deliverAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="duraAvg" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="duraISFratio" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="duraMin" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="duration" optional="YES" attributeType="Decimal" defaultValueString="0"/>
         <attribute name="enacted" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="eventualBG" optional="YES" attributeType="Decimal" defaultValueString="0"/>
@@ -123,19 +130,30 @@
         <attribute name="insulinReq" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="insulinSensitivity" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="iob" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="iobTH" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="isUploadedToNS" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="manualBolusErrorString" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="minDelta" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="parabolaFitA0" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="parabolaFitA1" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="parabolaFitA2" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="parabolaFitCorrelation" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="parabolaFitLastDelta" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="parabolaFitMinutes" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="parabolaFitNextDelta" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="ppISFratio" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="rate" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="reason" optional="YES" attributeType="String"/>
         <attribute name="received" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="reservoir" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="scheduledBasal" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="sensitivityRatio" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="smbRatio" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="smbToDeliver" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="temp" optional="YES" attributeType="String"/>
         <attribute name="tempBasal" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
         <attribute name="threshold" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="tick" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="timestampEnacted" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="forecasts" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Forecast" inverseName="orefDetermination" inverseEntity="Forecast"/>

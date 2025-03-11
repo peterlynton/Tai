@@ -737,7 +737,27 @@ extension Treatments.StateModel {
                     insulinForManualBolus: 0,
                     manualBolusErrorString: 0,
                     carbRatio: 0,
-                    received: false
+                    received: false,
+                    // autoISF
+                    smbRatio: 0,
+                    duraISFratio: 0,
+                    bgISFratio: 0,
+                    ppISFratio: 0,
+                    acceISFratio: 0,
+                    autoISFratio: 0,
+                    iobTH: 0,
+                    tick: 0,
+                    // acce calc
+                    parabolaFitMinutes: 0,
+                    parabolaFitLastDelta: 0,
+                    parabolaFitNextDelta: 0,
+                    parabolaFitCorrelation: 0,
+                    parabolaFitA0: 0,
+                    parabolaFitA1: 0,
+                    parabolaFitA2: 0,
+                    duraMin: 0,
+                    duraAvg: 0,
+                    bgAcce: 0
                 )
             }
 

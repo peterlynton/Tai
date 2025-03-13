@@ -8,3 +8,4 @@ help texts updated
 personal adaptions
 oref adaptions from SamKing
 AS when autoISF is off
+Dexcom Fix

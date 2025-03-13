@@ -504,7 +504,7 @@ extension Home {
         @ViewBuilder func mealPanel(_: GeometryProxy) -> some View {
             HStack {
                 HStack {
-                    Image(systemName: "syringe.fill")
+                    Image(systemName: "drop.circle")
                         .font(.callout)
                         .foregroundColor(Color.insulin)
                     Text(
@@ -520,8 +520,10 @@ extension Home {
                 Spacer()
 
                 HStack {
-                    Image(systemName: "fork.knife")
-                        .font(.callout)
+                    Image("premeal")
+                        .renderingMode(.template)
+                        .resizable()
+                        .frame(width: 16, height: 16)
                         .foregroundColor(.loopYellow)
                     Text(
                         (
@@ -542,9 +544,16 @@ extension Home {
                             .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                             .foregroundColor(.loopGray)
                     } else if let tempBasalString = tempBasalString {
-                        Image(systemName: "drop.circle")
-                            .font(.callout)
-                            .foregroundColor(.insulinTintColor)
+                        Image(systemName: "chart.bar.xaxis")
+                            .font(.system(size: 16))
+                            .rotationEffect(Angle(degrees: 180))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.insulinTintColor.opacity(1), .insulinTintColor.opacity(0.4)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
                         if tempBasalString.count > 5 {
                             Text(tempBasalString)
                                 .font(.callout).fontWeight(.bold).fontDesign(.rounded)
@@ -557,9 +566,16 @@ extension Home {
                             Text(tempBasalString).font(.callout).fontWeight(.bold).fontDesign(.rounded)
                         }
                     } else {
-                        Image(systemName: "drop.circle")
-                            .font(.callout)
-                            .foregroundColor(.insulinTintColor)
+                        Image(systemName: "chart.bar.xaxis")
+                            .font(.system(size: 16))
+                            .rotationEffect(Angle(degrees: 180))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.insulinTintColor.opacity(1), .insulinTintColor.opacity(0.4)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
                         Text("No Data")
                             .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                     }

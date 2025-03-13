@@ -58,6 +58,7 @@ extension Home {
         var eventualBG: Int?
         var allowManualTemp = false
         var units: GlucoseUnits = .mgdL
+        var bolusIncrement: Decimal = 0.1
         var pumpDisplayState: PumpDisplayState?
         var alarm: GlucoseAlarm?
         var manualTempBasal = false
@@ -380,6 +381,7 @@ extension Home {
         @MainActor private func setupSettings() async {
             units = settingsManager.settings.units
             autoisfEnabled = settingsManager.preferences.autoisf
+            bolusIncrement = settingsManager.preferences.bolusIncrement
             allowManualTemp = !settingsManager.settings.closedLoop
             closedLoop = settingsManager.settings.closedLoop
             lastLoopDate = apsManager.lastLoopDate
@@ -660,6 +662,7 @@ extension Home.StateModel:
         highTTraisesSens = settingsManager.preferences.highTemptargetRaisesSensitivity
         isExerciseModeActive = settingsManager.preferences.exerciseMode
         lowTTlowersSens = settingsManager.preferences.lowTemptargetLowersSensitivity
+        bolusIncrement = settingsManager.preferences.bolusIncrement
     }
 
     func pumpSettingsDidChange(_: PumpSettings) {

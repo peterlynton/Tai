@@ -150,7 +150,8 @@ extension MainChartView {
                 InsulinView(
                     glucoseData: state.glucoseFromPersistence,
                     insulinData: state.insulinFromPersistence,
-                    units: state.units
+                    units: state.units,
+                    bolusIncrement: state.bolusIncrement
                 )
 
                 CarbView(

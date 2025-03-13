@@ -38,36 +38,51 @@ struct GlucoseChartView: ChartContent {
                     y: .value("Value", glucoseToDisplay)
                 )
                 .foregroundStyle(pointMarkColor)
-                .symbolSize(20)
                 .symbol {
                     if item.isManual {
-                        Image(systemName: "drop.fill")
-                            .font(.caption2)
-                            .symbolRenderingMode(.monochrome)
-                            .bold()
-                            .foregroundStyle(.red)
+                        ZStack {
+                            Image(systemName: "drop.fill")
+                                .font(.system(size: 8))
+                                .symbolRenderingMode(.monochrome)
+                                .bold()
+                                .foregroundStyle(.white)
+                            Image(systemName: "drop.fill")
+                                .font(.system(size: 6))
+                                .symbolRenderingMode(.monochrome)
+                                .bold()
+                                .foregroundStyle(.red)
+                        }
                     } else {
                         Image(systemName: "circle.fill")
-                            .font(.system(size: 5))
+                            .font(.system(size: 3))
                             .bold()
                             .foregroundStyle(pointMarkColor)
                     }
                 }
             } else {
-                PointMark(
+                LineMark(
                     x: .value("Time", item.date ?? Date(), unit: .second),
                     y: .value("Value", glucoseToDisplay)
                 )
+                .foregroundStyle(.gray)
+                .lineStyle(StrokeStyle(lineWidth: 0.5))
                 .symbol {
                     if item.isManual {
-                        Image(systemName: "drop.fill")
-                            .font(.caption2)
-                            .symbolRenderingMode(.monochrome)
-                            .bold()
-                            .foregroundStyle(.red)
+                        ZStack {
+                            Image(systemName: "drop.fill")
+                                .font(.system(size: 8))
+                                .symbolRenderingMode(.monochrome)
+                                .bold()
+                                .foregroundStyle(.white)
+                            Image(systemName: "drop.fill")
+                                .font(.system(size: 6))
+                                .symbolRenderingMode(.monochrome)
+                                .bold()
+                                .foregroundStyle(.red)
+                        }
                     } else {
                         Image(systemName: "record.circle.fill")
-                            .font(.system(size: 8))
+                            .font(.system(size: 4))
                             .bold()
                             .foregroundStyle(pointMarkColor)
                     }

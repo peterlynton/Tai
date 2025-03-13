@@ -40,10 +40,10 @@ enum MainChartHelper {
 
     enum Config {
         static let bolusSize: CGFloat = 5
-        static let bolusScale: CGFloat = 1.8
+        static let bolusScale: CGFloat = 6
         static let carbsSize: CGFloat = 5
         static let maxCarbSize: CGFloat = 30
-        static let carbsScale: CGFloat = 0.3
+        static let carbsScale: CGFloat = 3
         static let fpuSize: CGFloat = 10
         static let maxGlucose = 270
         static let minGlucose = 45
@@ -168,8 +168,14 @@ extension MainChartView {
     }
 
     var mainChartYAxis: some AxisContent {
-        AxisMarks(position: .trailing) { value in
-
+        AxisMarks(
+            position: .trailing,
+            values: stride(
+                from: units == .mgdL ? 50 : 4,
+                through: units == .mgdL ? state.maxYAxisValue : state.maxYAxisValue.asMmolL,
+                by: units == .mgdL ? 50 : 3
+            ).map { $0 }
+        ) { value in
             if displayYgridLines {
                 AxisGridLine(stroke: .init(lineWidth: 0.5, dash: [2, 3]))
             } else {

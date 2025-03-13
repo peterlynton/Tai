@@ -26,7 +26,7 @@ struct CarbView: ChartContent {
                 let yPosition = (units == .mgdL ? Decimal(glucose) : Decimal(glucose).asMmolL) - MainChartHelper
                     .bolusOffset(units: units)
                 let size = min(
-                    MainChartHelper.Config.carbsSize + CGFloat(carbAmount) * MainChartHelper.Config.carbsScale,
+                    sqrt(CGFloat(carbAmount) / .pi) * MainChartHelper.Config.carbsScale,
                     MainChartHelper.Config.maxCarbSize
                 )
 
@@ -35,9 +35,10 @@ struct CarbView: ChartContent {
                     y: .value("Value", yPosition)
                 )
                 .symbol {
-                    Image(systemName: "arrowtriangle.down.fill").font(.system(size: size)).foregroundStyle(Color.orange)
-                        .rotationEffect(.degrees(180))
-                }
+                    Image(systemName: "circle.fill").font(.system(size: size)).foregroundStyle(Color.loopYellow)
+                        .overlay(
+                            Circle().stroke(Color.primary, lineWidth: 1)
+                        ) }
                 .annotation(position: .bottom) {
                     Text(Formatter.integerFormatter.string(from: carbAmount as NSNumber)!).font(.caption2)
                         .foregroundStyle(Color.primary)

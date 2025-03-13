@@ -126,20 +126,37 @@ struct ChartLegendView: View {
                         )
 
                         DefinitionRow(
-                            term: String(localized: "Bolus"),
+                            term: String(localized: "SMB"),
                             definition: Text(
-                                "Shows an insulin dose, which can be a small automated dose (super-micro-bolus), a manually entered dose, or one given externally (e.g., a pen shot)."
+                                "Shows a small automated insulin dose (super-micro-bolus)."
                             ),
                             color: Color.insulin,
                             iconString: "arrowtriangle.down.fill"
                         )
 
                         DefinitionRow(
+                            term: String(localized: "Manual Bolus"),
+                            definition: Text(
+                                "Shows a manually entered insulin dose."
+                            ),
+                            color: Color.teal,
+                            iconString: "circle.fill"
+                        )
+
+                        DefinitionRow(
+                            term: String(localized: "External Bolus"),
+                            definition: Text(
+                                "Shows an externally administered insulin dose (e.g., a pen shot)."
+                            ),
+                            color: Color.purple,
+                            iconString: "rhombus.fill"
+                        )
+
+                        DefinitionRow(
                             term: String(localized: "Carb Entry"),
                             definition: Text("Tracks the carbohydrates you eat, entered to guide insulin dosing."),
-                            color: Color.orange,
-                            iconString: "arrowtriangle.down.fill",
-                            shouldRotateIcon: true
+                            color: Color.loopYellow,
+                            iconString: "circle.fill"
                         )
 
                         DefinitionRow(

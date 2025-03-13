@@ -21,15 +21,19 @@ struct GlucoseTargetsView: ChartContent {
                 x: .value("Time", Date(timeIntervalSinceReferenceDate: profile.startTime)),
                 y: .value("Target", profile.value)
             )
-            .lineStyle(.init(lineWidth: 1))
-            .foregroundStyle(Color.green.gradient)
+            .lineStyle(
+                .init(lineWidth: 1, dash: [4, 2]) //
+            )
+            .foregroundStyle(Color.loopGreen.gradient.opacity(0.6))
 
             LineMark(
                 x: .value("Time", Date(timeIntervalSinceReferenceDate: profile.endTime)),
                 y: .value("Target", profile.value)
             )
-            .lineStyle(.init(lineWidth: 1))
-            .foregroundStyle(Color.green.gradient)
+            .lineStyle(
+                .init(lineWidth: 1, dash: [4, 2]) //
+            )
+            .foregroundStyle(Color.loopGreen.gradient.opacity(0.6))
         }
     }
 }

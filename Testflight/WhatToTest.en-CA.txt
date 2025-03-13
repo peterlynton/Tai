@@ -1,4 +1,7 @@
-4th Beta update 0.4.1
+6th Beta update 0.4.1
 
 rebase to Trio closed beta 0.3.0 (13)
 Statistics
+Launch Screen
+autosens / autoISF Ratio on Homescreen
+help texts updated

@@ -1,3 +1,5 @@
+<img src="https://github.com/mountrcg/tai/blob/Tai-master/Trio/Resources/Assets.xcassets/app_icons/taiCircledNoBackgound.imageset/ComplicationIcon.png" width="120">
+
 # **T**rio **a**uto**I**SF fork aka *Tai*
 
 ## Introduction of Trio

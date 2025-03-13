@@ -40,9 +40,9 @@ final class AppVersionChecker {
         var url: String {
             switch self {
             case .versionConfig:
-                return "https://raw.githubusercontent.com/nightscout/Trio/refs/heads/main/Config.xcconfig"
+                return "https://raw.githubusercontent.com/mountrcg/Trio/refs/heads/dev-Tai/Config.xcconfig"
             case .blacklistedVersions:
-                return "https://raw.githubusercontent.com/nightscout/Trio/refs/heads/main/blacklisted-versions.json"
+                return "https://raw.githubusercontent.com/mountrcg/Trio/refs/heads/dev-Tai/blacklisted-versions.json"
             }
         }
     }
@@ -168,7 +168,7 @@ final class AppVersionChecker {
         // Use cached data if it is valid (less than 24 hours old) and matches the current version.
         if let cachedVersion = cachedVersion,
            cachedVersion == currentVersion,
-           now.timeIntervalSince(lastChecked) < 24 * 3600,
+           now.timeIntervalSince(lastChecked) < 24 * 60 * 60, // 24 hours
            let persistedLatest = persistedLatest
         {
             let isNewer = isVersion(persistedLatest, newerThan: currentVersion)

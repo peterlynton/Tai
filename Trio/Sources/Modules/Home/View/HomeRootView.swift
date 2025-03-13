@@ -168,6 +168,29 @@ extension Home {
             }
         }
 
+        var horizontalPumpView: some View {
+            HorizontalPumpView(
+                reservoir: state.reservoir,
+                name: state.pumpName,
+                expiresAtDate: state.pumpExpiresAtDate,
+                timerDate: state.timerDate,
+                pumpStatusHighlightMessage: state.pumpStatusHighlightMessage,
+                battery: state.batteryFromPersistence,
+                autoISFratio: (state.determinationsFromPersistence.first?.autoISFratio ?? 1) as Decimal,
+                totalDaily: state.fetchedTDDs.first?.totalDailyDose ?? 0,
+                autoisfEnabled: state.autoisfEnabled
+            )
+            .onTapGesture {
+                if state.pumpDisplayState == nil {
+                    // shows user confirmation dialog with pump model choices, then proceeds to setup
+                    showPumpSelection.toggle()
+                } else {
+                    // sends user to pump settings
+                    state.shouldDisplayPumpSetupSheet.toggle()
+                }
+            }
+        }
+
         var tempBasalString: String? {
             guard let lastTempBasal = state.tempBasals.last?.tempBasal, let tempRate = lastTempBasal.rate else {
                 return nil
@@ -451,7 +474,47 @@ extension Home {
         }
 
         @ViewBuilder func rightHeaderPanel(_: GeometryProxy) -> some View {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .trailing, spacing: 15) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.system(size: 16))
+                        .foregroundColor(.loopGreen)
+                    let isfValue = state.enactedAndNonEnactedDeterminations.first?.insulinSensitivity ?? NSDecimalNumber.zero
+                    let isfValueDecimal = isfValue.decimalValue
+                    let convertedISF = state.units == .mgdL ? isfValueDecimal.description : isfValueDecimal
+                        .formattedAsMmolL
+                    Text(convertedISF)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+//                    Text("\(state.units.rawValue)/U")
+//                        .font(.system(size: 12, design: .rounded))
+                }
+
+                /// eventualBG string
+                if let eventualBG = state.enactedAndNonEnactedDeterminations.first?.eventualBG {
+                    let bg = eventualBG as Decimal
+                    HStack {
+                        Text(
+                            "⇢"
+                        ).font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.secondary)
+                        Text(
+                            Formatter.decimalFormatterWithTwoFractionDigits.string(
+                                from: (
+                                    state.units == .mmolL ? bg
+                                        .asMmolL : bg
+                                ) as NSNumber
+                            )!
+                        )
+                        .font(.system(size: 16, weight: .bold)) }
+                } else {
+                    HStack {
+                        Text("⇢")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.secondary)
+                        Text("--")
+                    }
+                }
+                /// Loop view at bottomLeading
                 /// Loop view at bottomLeading
                 LoopView(
                     closedLoop: state.closedLoop,
@@ -472,29 +535,72 @@ extension Home {
                     impactHeavy.impactOccurred()
                     state.runLoop()
                 }
-                /// eventualBG string at bottomTrailing
+            }
+        }
 
-                if let eventualBG = state.enactedAndNonEnactedDeterminations.first?.eventualBG {
-                    let bg = eventualBG as Decimal
-                    HStack {
-                        Image(systemName: "arrow.right.circle")
-                            .font(.callout).fontWeight(.bold)
-                        Text(
+        @ViewBuilder func leftHeaderPanel(_: GeometryProxy) -> some View {
+            VStack(alignment: .leading, spacing: 15) {
+                HStack {
+                    Image(systemName: "drop.circle")
+                        .font(.system(size: 16))
+                        .foregroundColor(.insulin)
+                    Text(
+                        (
+                            Formatter.decimalFormatterWithTwoFractionDigits
+                                .string(from: (state.enactedAndNonEnactedDeterminations.first?.iob ?? 0) as NSNumber) ?? "0"
+                        ) +
+                            String(localized: " U", comment: "Insulin unit")
+                    )
+                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+//                    InsulinConcentrationBadge(concentration: 1)
+                }
+                HStack {
+                    Image("premeal")
+                        .renderingMode(.template)
+                        .resizable()
+                        .frame(width: 15, height: 15)
+                        .foregroundColor(.loopYellow)
+                        .padding(.leading, 3)
+                    Text(
+                        (
                             Formatter.decimalFormatterWithTwoFractionDigits.string(
-                                from: (
-                                    state.units == .mmolL ? bg
-                                        .asMmolL : bg
-                                ) as NSNumber
-                            )!
-                        ).font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                    }
-                    // aligns the evBG icon exactly with the first pixel of loop status icon
-                    .padding(.leading, 12)
-                } else {
-                    HStack {
-                        Image(systemName: "arrow.right.circle")
-                            .font(.callout).fontWeight(.bold)
-                        Text("--")
+                                from: NSNumber(value: state.enactedAndNonEnactedDeterminations.first?.cob ?? 0)
+                            ) ?? "0"
+                        ) +
+                            String(localized: " g", comment: "gram of carbs")
+                    )
+                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                }
+                HStack {
+                    if state.pumpSuspended {
+                        Text("Pump suspended")
+                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            .foregroundColor(.loopGray)
+                    } else if let tempBasalString = tempBasalString {
+                        Image(systemName: "chart.bar.xaxis")
+                            .font(.system(size: 16))
+                            .rotationEffect(Angle(degrees: 180))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.insulinTintColor.opacity(0.9), .insulinTintColor.opacity(0.2)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                        Text(tempBasalString)
+                            .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    } else {
+                        Image(systemName: "chart.bar.xaxis")
+                            .font(.system(size: 16))
+                            .rotationEffect(Angle(degrees: 180))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.insulinTintColor.opacity(0.9), .insulinTintColor.opacity(0.2)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                        Text("No Data")
                             .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                     }
                 }
@@ -1012,9 +1118,9 @@ extension Home {
                         rightHeaderPanel(geo)
                     }.padding(.trailing, 20)
 
-                    /// left panel with pump related info
+                    /// left panel with meal related info
                     HStack {
-                        pumpView
+                        leftHeaderPanel(geo)
                         Spacer()
                     }.padding(.leading, 20)
                 }
@@ -1029,8 +1135,12 @@ extension Home {
                     }
                 }
 
-                mealPanel(geo).padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
-                    .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 20))
+//                mealPanel(geo).padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
+//                    .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 20))
+
+                horizontalPumpView
+                    .padding(.top, UIDevice.adjustPadding(min: nil, max: 10))
+                    .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 10))
 
                 mainChart(geo: geo)
 

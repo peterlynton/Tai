@@ -83,7 +83,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
     private func adjustPumpedRateToU100(pumpedRate: Decimal) -> Decimal {
         let concentration = settings.insulinConcentration
         var u100Rate = pumpedRate
-        if concentration != 1, u100Rate >= 0.05 {
+        if concentration != 1 {
             u100Rate = pumpedRate * concentration
             debug(.apsManager, "Concentration: Pumped rate volume: \(pumpedRate) at U\(Int(concentration * 100))")
             debug(.apsManager, "Concentration: Adjusted rate to U100 equivalents: \(u100Rate)U")

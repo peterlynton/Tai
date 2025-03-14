@@ -596,6 +596,12 @@ final class BaseAPSManager: APSManager, Injectable {
         bolusProgress.send(nil)
     }
 
+    func checkMaxBasal(rate: Double) -> Double {
+        guard let pump = pumpManager else { return rate }
+        let maxBasal = Double(pump.roundToSupportedBolusVolume(units: Double(settingsManager.pumpSettings.maxBasal)))
+        return min(rate, maxBasal)
+    }
+
     func enactTempBasal(rate: Double, duration: TimeInterval) async {
         if let error = verifyStatus() {
             processError(error)
@@ -610,9 +616,11 @@ final class BaseAPSManager: APSManager, Injectable {
             return
         }
 
-        debug(.apsManager, "Enact temp basal \(rate) - \(duration)")
+        let safeRate = checkMaxBasal(rate: rate)
 
-        let adjustedRate = adjustPumpedRateToConcentration(rate)
+        debug(.apsManager, "Enact temp basal \(safeRate) - \(duration)")
+
+        let adjustedRate = adjustPumpedRateToConcentration(safeRate)
         let roundedAmount = pump.roundToSupportedBasalRate(unitsPerHour: adjustedRate)
 
         do {

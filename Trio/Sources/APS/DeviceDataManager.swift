@@ -526,14 +526,14 @@ extension BaseDeviceDataManager: PumpManagerDelegate {
         completion: @escaping (_ error: Error?) -> Void
     ) {
         dispatchPrecondition(condition: .onQueue(processQueue))
-
+        let concentration = settingsManager.settings.insulinConcentration
         Task {
             do {
                 // filter buggy TBRs > maxBasal from MDT
                 let events = events.filter {
                     // type is optional...
                     guard let type = $0.type, type == .tempBasal else { return true }
-                    return $0.dose?.unitsPerHour ?? 0 <= Double(settingsManager.pumpSettings.maxBasal)
+                    return $0.dose?.unitsPerHour ?? 0 <= Double(settingsManager.pumpSettings.maxBasal / concentration)
                 }
                 try await pumpHistoryStorage.storePumpEvents(events)
                 lastEventDate = events.last?.date

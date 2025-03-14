@@ -1,9 +1,9 @@
-oref0 branch: autoISF3.01 - git version: 4e8c1b8
+oref0 branch: autoISF3.01 - git version: 2a0bd4e
 
 Last commits:
-4e8c1b8 Merge remote-tracking branch 'sam/iob-splitter-bug-fix' into tcd
-0b5f9e3 resistanceMode active multiply with autoISF
-03735be increment correction
+2a0bd4e bolusIncrement for oref
+b555d7b Merge remote-tracking branch 'sam/iob-splitter-bug-fix' into tcd
+a1e5f0c resistanceMode active multiply with autoISF
 53e8fbb fix B30 suppress SMB condition
 b21e9b3 Fixes an incorrect undefined check
 c31d48c insert enable SMB with high BG option

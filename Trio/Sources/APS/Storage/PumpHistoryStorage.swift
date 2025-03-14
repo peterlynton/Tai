@@ -51,43 +51,38 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
     typealias PumpEvent = PumpEventStored.EventType
     typealias TempType = PumpEventStored.TempType
 
-    private func roundDose(_ dose: Double, toIncrement increment: Double) -> Decimal {
-        let roundedValue = (dose / increment).rounded() * increment
-        var decimalValue = Decimal(roundedValue)
-        var roundedDecimal = Decimal()
-        // Limit to 2 decimal places, or 3 for diluted insulins
-        NSDecimalRound(&roundedDecimal, &decimalValue, settings.insulinConcentration < 1 ? 3 : 2, .plain)
-        debug(
-            .service,
-            "Concentration: rounding function puts increment at: \(increment) and resulting U100-volume at: \(roundedDecimal)"
-        )
-
-        return roundedDecimal
-    }
-
     private func adjustPumpedVolumeToU100(pumpedVolume: Double) -> Decimal {
-        let concentration = Double(settings.insulinConcentration)
-        let increment = Double(preferences.bolusIncrement)
-        let u100Volume = pumpedVolume * concentration
-        let roundedU100Volume = roundDose(
-            u100Volume,
-            toIncrement: increment
+        guard settings.insulinConcentration != 1 else { return Decimal(pumpedVolume) }
+
+        let concentration = settings.insulinConcentration
+        let roundedVolume = Decimal(pumpedVolume).precisionRounded()
+        let u100Volume = (Decimal(pumpedVolume) * concentration)
+            .precisionRounded()
+            .roundedWithIncrement(
+                increment: preferences.bolusIncrement,
+                roundingMode: .plain
+            )
+        debug(
+            .apsManager,
+            "Concentration: Pumped bolus volume \(roundedVolume) at U\(Int(concentration * 100)), adjusted to U100 bolus: \(u100Volume) U"
         )
-        if concentration != 1 {
-            debug(.apsManager, "Concentration: Pumped bolus volume: \(pumpedVolume) at U\(Int(concentration * 100))")
-            debug(.apsManager, "Concentration: Adjusted bolus to U100 equivalents: \(roundedU100Volume)U")
-        }
-        return roundedU100Volume
+        return u100Volume
     }
 
     private func adjustPumpedRateToU100(pumpedRate: Decimal) -> Decimal {
+        guard settings.insulinConcentration != 1 else { return pumpedRate }
+
         let concentration = settings.insulinConcentration
-        var u100Rate = pumpedRate
-        if concentration != 1 {
-            u100Rate = pumpedRate * concentration
-            debug(.apsManager, "Concentration: Pumped rate volume: \(pumpedRate) at U\(Int(concentration * 100))")
-            debug(.apsManager, "Concentration: Adjusted rate to U100 equivalents: \(u100Rate)U")
-        }
+        let u100Rate = (pumpedRate * concentration)
+            .precisionRounded()
+            .roundedWithIncrement(
+                increment: preferences.bolusIncrement,
+                roundingMode: .plain
+            )
+        debug(
+            .apsManager,
+            "Concentration: Pumped rate volume \(pumpedRate.precisionRounded()) U\(Int(concentration * 100))/hr, adjusted to U100 rate: \(u100Rate) IU/hr."
+        )
         return u100Rate
     }
 

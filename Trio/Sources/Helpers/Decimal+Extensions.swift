@@ -2,33 +2,98 @@ import CoreGraphics
 import Foundation
 
 extension Decimal {
-    /// Rounds the Decimal to the nearest BuolisIncrment ncrement, ensuring it does not exceed maxBolus.
+    /// Rounds to a specified number of decimal places to prevent floating-point artifacts
+    /// - Parameters:
+    ///   - scale: Number of decimal places to round to
+    ///   - mode: Rounding mode (default is .plain)
+    /// - Returns: Rounded Decimal
+    func precisionRounded(
+        scale: Int = 3,
+        mode: NSDecimalNumber.RoundingMode = .plain
+    ) -> Decimal {
+        var result = Decimal()
+        var localCopy = self
+        NSDecimalRound(&result, &localCopy, scale, mode)
+        return result
+    }
+
+    /// Rounds the Decimal with optional increment and rounding mode
+    /// - Parameters:
+    ///   - increment: Optional increment to round to
+    ///   - maxBolus: Optional maximum bolus value
+    ///   - roundingMode: Rounding mode
+    /// - Returns: Rounded Decimal
+    func roundedWithIncrement(
+        increment: Decimal? = nil,
+        maxBolus: Decimal? = nil,
+        roundingMode: NSDecimalNumber.RoundingMode = .plain
+    ) -> Decimal {
+        // First, precision round to remove floating-point artifacts
+        let precisionRounded = self.precisionRounded()
+
+        guard let increment = increment else { return precisionRounded }
+
+        return precisionRounded.roundedToBolusIncrement(
+            increment: increment,
+            maxBolus: maxBolus,
+            roundingMode: roundingMode
+        )
+    }
+
+    /// Rounds to bolus increment with precise Decimal operations
+    /// - Parameters:
+    ///   - increment: Increment to round to
+    ///   - maxBolus: Optional maximum bolus value
+    ///   - roundingMode: Rounding mode (default is .down)
+    /// - Returns: Rounded Decimal value
     func roundedToBolusIncrement(
         increment: Decimal,
         maxBolus: Decimal? = nil,
         roundingMode: NSDecimalNumber.RoundingMode = .down
     ) -> Decimal {
         guard increment > 0 else { return self }
-
         let doubleValue = (self as NSDecimalNumber).doubleValue
         let doubleIncrement = (increment as NSDecimalNumber).doubleValue
-
         let adjustedDouble: Double
         if roundingMode == .down {
             adjustedDouble = floor(doubleValue / doubleIncrement) * doubleIncrement // Always round down
         } else {
             adjustedDouble = (doubleValue / doubleIncrement).rounded() * doubleIncrement // Round to nearest
         }
-
         var adjustedDecimal = Decimal(adjustedDouble)
         var result = Decimal()
         NSDecimalRound(&result, &adjustedDecimal, 3, roundingMode)
-
         if let maxBolus = maxBolus {
             return min(result, maxBolus)
         }
-
         return result
+    }
+
+    /// Determines the maximum fraction digits based on bolus increment
+    /// - Parameter increment: Bolus increment
+    /// - Returns: Number of maximum fraction digits
+    static func maxFractionDigits(for increment: Decimal) -> Int {
+        switch increment {
+        case 0.005:
+            return 3
+        case 0.01:
+            return 2
+        case 0.025:
+            return 3
+        case 0.05:
+            return 2
+        case 0.1:
+            return 1
+        default:
+            // Fallback for any unexpected increment
+            if increment < 0.01 {
+                return 3
+            } else if increment < 0.1 {
+                return 2
+            } else {
+                return 1
+            }
+        }
     }
 }
 
@@ -38,6 +103,17 @@ extension Double {
     /// Initializes a Double from a Decimal.
     init(_ decimal: Decimal) {
         self.init(truncating: decimal as NSNumber)
+    }
+
+    /// Rounds the double to a specified number of decimal places
+    func roundedDouble(toPlaces places: Int) -> Double {
+        let divisor = pow(10.0, Double(places))
+        return (self * divisor).rounded() / divisor
+    }
+
+    /// Rounds insulin rates to a consistent precision (e.g., 2 decimal places)
+    func roundedInsulinRate() -> Double {
+        roundedDouble(toPlaces: 2)
     }
 }
 

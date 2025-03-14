@@ -64,8 +64,8 @@ extension Home {
             let bolusIncrement = state.bolusIncrement
             formatter.numberStyle = .decimal
             formatter.minimum = 0
-            formatter.maximumFractionDigits = bolusIncrement < 0.05 ? 3 : (bolusIncrement == 0.05 ? 2 : 1)
-            formatter.minimumFractionDigits = formatter.maximumFractionDigits
+            formatter.maximumFractionDigits = Decimal.maxFractionDigits(for: bolusIncrement)
+            formatter.minimumFractionDigits = 1
             formatter.allowsFloats = true
             formatter.roundingIncrement = Double(bolusIncrement) as NSNumber
             return formatter
@@ -198,18 +198,19 @@ extension Home {
             guard let lastTempBasal = state.tempBasals.last?.tempBasal, let tempRate = lastTempBasal.rate else {
                 return nil
             }
-            let rateString = Formatter.decimalFormatterWithTwoFractionDigits.string(from: tempRate as NSNumber) ?? "0"
+            let rateString = Formatter.insulinFormatterToIncrement(for: state.bolusIncrement)
+                .string(from: tempRate as NSNumber) ?? "0"
             var manualBasalString = ""
 
-            if let apsManager = state.apsManager, apsManager.isManualTempBasal {
-                manualBasalString = String(
-                    localized:
-                    " - Manual Basal ⚠️",
-                    comment: "Manual Temp basal"
-                )
-            }
+//            if let apsManager = state.apsManager, apsManager.isManualTempBasal {
+//                manualBasalString = String(
+//                    localized:
+//                    " - Manual Basal ⚠️",
+//                    comment: "Manual Temp basal"
+//                )
+//            }
 
-            return rateString + " " + String(localized: " U/hr", comment: "Unit per hour with space") + manualBasalString
+            return rateString + String(localized: " U/hr", comment: "Unit per hour with space") + manualBasalString
         }
 
         var overrideString: String? {
@@ -1000,7 +1001,7 @@ extension Home {
                 let bolusString =
                     (bolusProgressFormatter.string(from: bolusFraction as NSNumber) ?? "0")
                         + String(localized: " of ", comment: "Bolus string partial message: 'x U of y U' in home view") +
-                        (Formatter.decimalFormatterWithTwoFractionDigits.string(from: bolusTotal as NSNumber) ?? "0")
+                        (bolusProgressFormatter.string(from: bolusTotal as NSNumber) ?? "0")
                         + String(localized: " U", comment: "Insulin unit")
 
                 ZStack {

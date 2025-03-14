@@ -437,10 +437,10 @@ struct PopupView: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
+        formatter.maximumFractionDigits = 3
         formatter.locale = Locale.current // Uses the user's locale
 
-        return formatter.string(from: roundedValue as NSNumber) ?? String(format: "%.2f", toRound)
+        return formatter.string(from: roundedValue as NSNumber) ?? String(format: "%.3f", toRound)
     }
 
     struct DividerDouble: View {

@@ -666,7 +666,7 @@ extension DataTable {
 
                     Text(bolus.isSMB ? "SMB" : item.type ?? "Bolus")
                     Text(
-                        (Formatter.decimalFormatterWithTwoFractionDigits.string(from: amount) ?? "0") +
+                        (Formatter.insulinFormatterToIncrement(for: state.bolusIncrement).string(from: amount) ?? "0") +
                             String(localized: " U", comment: "Insulin unit")
                     )
                     .foregroundColor(.secondary)
@@ -677,7 +677,7 @@ extension DataTable {
                     Image(systemName: "circle.fill").foregroundColor(Color.insulin.opacity(0.4))
                     Text("Temp Basal")
                     Text(
-                        (Formatter.decimalFormatterWithTwoFractionDigits.string(from: rate) ?? "0") +
+                        (Formatter.insulinFormatterToIncrement(for: state.bolusIncrement).string(from: rate) ?? "0") +
                             String(localized: " U/hr", comment: "Unit insulin per hour")
                     )
                     .foregroundColor(.secondary)

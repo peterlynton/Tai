@@ -98,9 +98,7 @@ extension Formatter {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.minimumIntegerDigits = 1
-        formatter.maximumFractionDigits = bolusIncrement < 0.05 ? 3 : (bolusIncrement == 0.05 ? 2 : 1)
-        formatter.minimumFractionDigits = 1
-        formatter.roundingIncrement = bolusIncrement as NSNumber
+        formatter.maximumFractionDigits = Decimal.maxFractionDigits(for: bolusIncrement)
         return formatter
     }
 
@@ -108,7 +106,7 @@ extension Formatter {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.minimumIntegerDigits = 0
-        formatter.maximumFractionDigits = bolusIncrement < 0.05 ? 3 : (bolusIncrement == 0.05 ? 2 : 1)
+        formatter.maximumFractionDigits = Decimal.maxFractionDigits(for: bolusIncrement)
         formatter.roundingIncrement = bolusIncrement as NSNumber
         formatter.decimalSeparator = "."
         return formatter

@@ -88,6 +88,16 @@ final class BaseAPSManager: APSManager, Injectable {
         set { deviceDataManager.pumpManager = newValue }
     }
 
+    var settings: TrioSettings {
+        get { settingsManager.settings }
+        set { settingsManager.settings = newValue }
+    }
+
+    var preferences: Preferences {
+        get { settingsManager.preferences }
+        set { settingsManager.preferences = newValue }
+    }
+
     var bluetoothManager: BluetoothStateManager? { deviceDataManager.bluetoothManager }
 
     @Persisted(key: "isManualTempBasal") var isManualTempBasal: Bool = false
@@ -108,11 +118,6 @@ final class BaseAPSManager: APSManager, Injectable {
 
     var pumpExpiresAtDate: CurrentValueSubject<Date?, Never> {
         deviceDataManager.pumpExpiresAtDate
-    }
-
-    var settings: TrioSettings {
-        get { settingsManager.settings }
-        set { settingsManager.settings = newValue }
     }
 
     init(resolver: Resolver) {
@@ -319,30 +324,49 @@ final class BaseAPSManager: APSManager, Injectable {
         }
     }
 
-    // Converts insulin bolus to its equivalent based on concentration
     private func adjustPumpedVolumeToConcentration(_ volume: Double) -> Double {
-        guard settings.insulinConcentration != 1 else { return volume } // No conversion needed for U100
+        guard settings.insulinConcentration != 1 else { return volume }
 
-        let convertedVolume = volume / Double(settings.insulinConcentration)
+        let roundedVolume = Decimal(volume).precisionRounded()
+        let convertedVolume = (Decimal(volume) / settings.insulinConcentration).precisionRounded()
+
         debug(
             .apsManager,
-            "Concentration: Adjusting \(volume)U to U\(Int(settings.insulinConcentration * 100))-Volume of \(convertedVolume)"
+            "Concentration: Bolus \(roundedVolume) U adjusted to U\(Int(settings.insulinConcentration * 100))-Volume of \(convertedVolume)"
         )
 
-        return convertedVolume
+        return Double(truncating: convertedVolume as NSNumber)
     }
 
-    // Converts basal rate to its equivalent based on concentration
     private func adjustPumpedRateToConcentration(_ rate: Double) -> Double {
-        guard settings.insulinConcentration != 1 else { return rate } // No conversion needed for U100
+        guard settings.insulinConcentration != 1 else { return rate }
 
-        let convertedRate = rate / Double(settings.insulinConcentration)
+        let roundedRate = Decimal(rate).precisionRounded()
+        let convertedRate = (Decimal(rate) / settings.insulinConcentration).precisionRounded()
+
         debug(
             .apsManager,
-            "Concentration: Adjusting rate \(rate)U/hr to U\(Int(settings.insulinConcentration * 100))-Rate of \(convertedRate)"
+            "Concentration: Rate \(roundedRate) IU/hr adjusted to U\(Int(settings.insulinConcentration * 100))-Rate of \(convertedRate)"
         )
 
-        return convertedRate
+        return Double(truncating: convertedRate as NSNumber)
+    }
+
+    private func adjustPumpedRateToU100(_ rate: Decimal) -> Decimal {
+        guard settings.insulinConcentration != 1 else { return rate }
+        let u100Rate = (rate * settings.insulinConcentration)
+            .precisionRounded()
+            .roundedWithIncrement(
+                increment: preferences.bolusIncrement,
+                roundingMode: .plain
+            )
+
+        debug(
+            .apsManager,
+            "Concentration: Pumped rate volume \(rate.precisionRounded()) U\(Int(settings.insulinConcentration * 100))/hr, adjusted to U100 rate of \(u100Rate) IU/hr"
+        )
+
+        return u100Rate
     }
 
 //     Loop exit point
@@ -654,7 +678,10 @@ final class BaseAPSManager: APSManager, Injectable {
             let delta = Int((date.timeIntervalSince1970 - eventTimestamp.timeIntervalSince1970) / 60)
             let duration = max(0, Int(tempBasal.duration) - delta)
             let rate = tempBasal.rate as? Decimal ?? 0
-            debug(.apsManager, "Concentration: fetched TB rate \(rate) started \(eventTimestamp) for another \(duration) minutes")
+            debug(
+                .apsManager,
+                "Concentration: last fetched TB rate \(rate) IU/hr started \(Formatter.timeFormatter.string(from: eventTimestamp)) for another \(duration) minutes from PumpHistory"
+            )
             return TempBasal(duration: duration, rate: rate, temp: .absolute, timestamp: date)
         }
 
@@ -664,8 +691,9 @@ final class BaseAPSManager: APSManager, Injectable {
         case .active:
             return TempBasal(duration: 0, rate: 0, temp: .absolute, timestamp: date)
         case let .tempBasal(dose):
-            let rate = Decimal(dose.unitsPerHour)
+            let rate = adjustPumpedRateToU100(Decimal(dose.unitsPerHour))
             let durationMin = max(0, Int((dose.endDate.timeIntervalSince1970 - date.timeIntervalSince1970) / 60))
+            debug(.apsManager, "Concentration: last fetched TB rate \(rate) IU/hr for \(durationMin)m from PumpManager")
             return TempBasal(duration: durationMin, rate: rate, temp: .absolute, timestamp: date)
         default:
             return fetchedTempBasal

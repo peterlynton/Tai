@@ -8,14 +8,18 @@ struct TDDStats: Identifiable {
     let date: Date
     /// Total insulin in units
     let amount: Double
+    /// different moving average of insulin
+    let movingAvgWeek: Double
+    let movingAvgMonth: Double
+    let movingAvgTotal: Double
 }
 
 extension Stat.StateModel {
     /// Sets up TDD statistics by fetching and processing insulin data
-    func setupTDDStats() {
+    func setupTDDStats(selectedInterval: Stat.StateModel.StatsTimeInterval) {
         Task {
             do {
-                let (hourly, daily) = try await fetchTDDStats()
+                let (hourly, daily) = try await fetchTDDStats(selectedInterval: selectedInterval)
 
                 await MainActor.run {
                     self.hourlyTDDStats = hourly
@@ -33,16 +37,12 @@ extension Stat.StateModel {
     /// Fetches and processes Total Daily Dose (TDD) statistics from CoreData
     /// - Returns: A tuple containing hourly and daily TDD statistics arrays
     /// - Note: Processes both hourly statistics for the last 10 days and complete daily statistics
-    private func fetchTDDStats() async throws -> (hourly: [TDDStats], daily: [TDDStats]) {
-        // MARK: - Fetch Required Data
-
-        // Fetch data for daily statistics (TDDStored for week, month, total views)
+    private func fetchTDDStats(
+        selectedInterval: Stat.StateModel
+            .StatsTimeInterval
+    ) async throws -> (hourly: [TDDStats], daily: [TDDStats]) {
         let tddResults = try await fetchTDDStoredRecords()
-
-        // Fetch data for hourly statistics (BolusStored and TempBasalStored for day view)
         let (bolusResults, tempBasalResults, suspendEvents, resumeEvents) = try await fetchHourlyInsulinRecords()
-
-        // MARK: - Process Data on Background Context
 
         var hourlyStats: [TDDStats] = []
         var dailyStats: [TDDStats] = []
@@ -52,7 +52,7 @@ extension Stat.StateModel {
 
             // Process daily statistics from TDDStored
             if let fetchedTDDs = tddResults as? [TDDStored] {
-                dailyStats = self.processDailyTDDs(fetchedTDDs, calendar: calendar)
+                dailyStats = self.processDailyTDDs(fetchedTDDs, calendar: calendar, selectedInterval: selectedInterval)
             }
 
             // Process hourly statistics from BolusStored and TempBasalStored
@@ -274,7 +274,10 @@ extension Stat.StateModel {
         return insulinByHour.keys.sorted().map { hourDate in
             TDDStats(
                 date: hourDate,
-                amount: insulinByHour[hourDate, default: 0]
+                amount: insulinByHour[hourDate, default: 0],
+                movingAvgWeek: 0,
+                movingAvgMonth: 0,
+                movingAvgTotal: 0
             )
         }
     }
@@ -452,47 +455,67 @@ extension Stat.StateModel {
     /// - Note: This method groups TDD records by day and uses only the last (most recent) entry
     ///         for each day, as this represents the complete TDD value for that day. This approach
     ///         is appropriate for week, month, and total views where we want the final daily totals.
-    private func processDailyTDDs(_ tdds: [TDDStored], calendar: Calendar) -> [TDDStats] {
+    private func processDailyTDDs(
+        _ tdds: [TDDStored],
+        calendar: Calendar,
+        selectedInterval _: Stat.StateModel.StatsTimeInterval
+    ) -> [TDDStats] {
         // MARK: - Group TDDs by Calendar Day
 
         // Create a dictionary where keys are start-of-day dates and values are arrays of TDD entries for that day
         let dailyGrouped = Dictionary(grouping: tdds) { tdd in
             guard let timestamp = tdd.date else { return Date() }
-            // Use start of day (midnight) as the key for grouping
-            return calendar.startOfDay(for: timestamp)
+            return calendar.startOfDay(for: timestamp) // Grouping by start of day
         }
 
-        // MARK: - Process Each Day's Entries
+        // MARK: - Select Most Recent Entry Per Day
 
-        // Create a TDDStats object for each day using the most recent TDD entry
-        return dailyGrouped.keys.sorted().map { dayDate in
-            // Get all TDD entries for this day
-            let entries = dailyGrouped[dayDate, default: []]
+        // Dictionary to store daily total values
+        var dailyTotals: [Date: Double] = [:]
 
-            // MARK: - Sort and Select Most Recent Entry
+        for (dayDate, entries) in dailyGrouped {
+            // Sort entries chronologically and take the last one (most recent)
+            let sortedEntries = entries.sorted { ($0.date ?? Date.distantPast) < ($1.date ?? Date.distantPast) }
 
-            // Sort entries chronologically to find the most recent one for the day
-            let sortedEntries = entries.sorted {
-                ($0.date ?? Date.distantPast) < ($1.date ?? Date.distantPast)
-            }
-
-            // MARK: - Create TDDStats from Most Recent Entry
-
-            // The last entry in the sorted array contains the complete TDD for the day
             if let lastEntry = sortedEntries.last, let total = lastEntry.total?.doubleValue {
-                // Create TDDStats with the day's date and the total insulin amount
-                return TDDStats(
-                    date: dayDate,
-                    amount: total
-                )
+                dailyTotals[dayDate] = total
             } else {
-                // Fallback if no valid entry exists for this day
-                return TDDStats(
-                    date: dayDate,
-                    amount: 0.0
-                )
+                dailyTotals[dayDate] = 0.0 // Default to zero if no valid entry
             }
         }
+
+        // MARK: - Compute Moving Averages
+
+        // Create an ordered list of sorted days (from oldest to newest)
+        let sortedDays = dailyTotals.keys.sorted()
+
+        var stats: [TDDStats] = []
+
+        for dayDate in sortedDays {
+            let amount = dailyTotals[dayDate, default: 0.0]
+
+            let movingAvgWeek = calculateMovingAverage(
+                for: dayDate, selectedInterval: .week, sortedDays: sortedDays, dailyTotals: dailyTotals
+            )
+            let movingAvgMonth = calculateMovingAverage(
+                for: dayDate, selectedInterval: .month, sortedDays: sortedDays, dailyTotals: dailyTotals
+            )
+            let movingAvgTotal = calculateMovingAverage(
+                for: dayDate, selectedInterval: .total, sortedDays: sortedDays, dailyTotals: dailyTotals
+            )
+
+            stats.append(
+                TDDStats(
+                    date: dayDate,
+                    amount: amount,
+                    movingAvgWeek: movingAvgWeek,
+                    movingAvgMonth: movingAvgMonth,
+                    movingAvgTotal: movingAvgTotal
+                )
+            )
+        }
+
+        return stats
     }
 
     /// Calculates and caches the daily averages of Total Daily Dose (TDD) insulin values
@@ -556,4 +579,42 @@ extension Stat.StateModel {
         // Return average TDD
         return total / count
     }
-}
+
+    /// Calculates the moving average for a given date over a specified number of days.
+    /// - Parameters:
+    ///   - date: The date for which to calculate the moving average.
+    ///   - days: Number of days to include in the average (including the current day).
+    ///   - sortedDays: Ordered list of available dates.
+    ///   - dailyTotals: Dictionary of daily insulin totals.
+    /// - Returns: The calculated moving average, or the previous day's moving average if the current day's TDD is 0.
+    private func calculateMovingAverage(
+        for date: Date,
+        selectedInterval: StatsTimeInterval,
+        sortedDays: [Date],
+        dailyTotals: [Date: Double]
+    ) -> Double {
+        let windowSize = Stat.StateModel.windowSizeAverages(for: selectedInterval)
+
+        guard let index = sortedDays.firstIndex(of: date) else { return 0.0 }
+
+        let startIndex = max(0, index - (windowSize - 1))
+        let validValues = sortedDays[startIndex ... index]
+            .compactMap { dailyTotals[$0] }
+            .filter { $0 > 0 } // Ensure we skip zero values
+
+        return validValues.isEmpty ? 0.0 : validValues.reduce(0.0, +) / Double(validValues.count)
+    }
+
+    /// Determines the window size for moving averages based on the selected interval.
+    static func windowSizeAverages(for selectedInterval: StatsTimeInterval) -> Int {
+        switch selectedInterval {
+        case .day:
+            return 1
+        case .week:
+            return 3
+        case .month:
+            return 7
+        case .total:
+            return 21
+        }
+    }}

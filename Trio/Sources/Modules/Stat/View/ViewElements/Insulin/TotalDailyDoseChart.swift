@@ -149,123 +149,218 @@ struct TotalDailyDoseChart: View {
 
     /// A view displaying the bar chart for TDD statistics.
     private var chartsView: some View {
-        Chart {
-            ForEach(tddStats) { stat in
-                let isWeekend = Calendar.current.isDateInWeekend(stat.date)
+        VStack(spacing: 0) { // Add a container view
+            Chart {
+                ForEach(tddStats) { stat in
+                    let isWeekend = Calendar.current.isDateInWeekend(stat.date)
 
-                BarMark(
-                    x: .value("Date", stat.date, unit: selectedInterval == .day ? .hour : .day),
-                    y: .value("Amount", stat.amount)
-                )
-                .foregroundStyle(isWeekend ? Color.basal : Color.insulin)
-                .opacity(
-                    selectedDate.map { date in
-                        StatChartUtils.isSameTimeUnit(stat.date, date, for: selectedInterval) ? 1 : 0.3
-                    } ?? 1
-                )
-                .annotation(position: .top) {
-                    if selectedInterval == .week {
-                        Text(stat.amount.formatted(.number.precision(.fractionLength(1))))
-                            .font(.footnote)
-                            .foregroundColor(Color.primary)
-                    }
-                }
-            }
-
-            // Selection popover outside of the ForEach loop!
-            if let selectedDate,
-               let selectedTDD = getTDDForDate(selectedDate)
-            {
-                RuleMark(
-                    x: .value("Selected Date", selectedDate)
-                )
-                .foregroundStyle(Color.insulin.opacity(0.5))
-                .annotation(
-                    position: .top,
-                    spacing: 0,
-                    overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))
-                ) {
-                    TDDSelectionPopover(
-                        selectedDate: selectedDate,
-                        tdd: selectedTDD,
-                        selectedInterval: selectedInterval,
-                        domain: visibleDateRange,
-                        chartWidth: chartWidth
+                    BarMark(
+                        x: .value("Date", stat.date, unit: selectedInterval == .day ? .hour : .day),
+                        y: .value("Amount", stat.amount)
+                    )
+                    .foregroundStyle(isWeekend ? Color.basal : Color.insulin)
+                    .opacity(
+                        selectedDate.map { date in
+                            StatChartUtils.isSameTimeUnit(stat.date, date, for: selectedInterval) ? 1 : 0.3
+                        } ?? 1
                     )
                 }
-            }
+                // Dummy PointMark to force SwiftCharts to render a visible domain of 00:00-23:59
+                // i.e. single day from midnight to midnight
+                if selectedInterval == .day {
+                    let calendar = Calendar.current
+                    let midnight = calendar.startOfDay(for: Date())
+                    let nextMidnight = calendar.date(byAdding: .day, value: 1, to: midnight)!
 
-            /// Dummy PointMark to force SwiftCharts to render a visible domain
-            /// of 00:00-23:59 for `Day` view, i.e. single day from midnight to midnight
-            ///  days depending on other views
-            let calendar = Calendar.current
-            let midnight = calendar.startOfDay(for: Date())
-            let mostRightChartPoint = calendar.date(byAdding: .day, value: daysToAdd(for: selectedInterval), to: midnight)!
+                    PointMark(
+                        x: .value("Time", nextMidnight),
+                        y: .value("Dummy", 0)
+                    )
+                    .opacity(0) // ensures dummy ChartContent is hidden                    }
+                }
+                // make it possible to also show a 3day avg
+                if selectedInterval == .week {
+                    let calendar = Calendar.current
+                    let midnight = calendar.startOfDay(for: Date())
+                    let nextMidnight = calendar.date(byAdding: .day, value: 5, to: midnight)!
 
-            PointMark(
-                x: .value("Time", mostRightChartPoint),
-                y: .value("Dummy", 0)
-            )
-            .opacity(0)
-        }
-        .chartYAxis {
-            AxisMarks(position: .trailing) { value in
-                if let amount = value.as(Double.self) {
-                    AxisValueLabel {
-                        Text(amount.formatted(.number.precision(.fractionLength(0))))
-                            .font(.footnote)
+                    PointMark(
+                        x: .value("Time", nextMidnight),
+                        y: .value("Dummy", 0)
+                    )
+                    .opacity(0) // ensures dummy ChartContent is hidden
+                }
+
+                // Line Chart for 3-Day Moving Average (Only in Weekly View)
+                if selectedInterval == .week {
+                    ForEach(tddStats) { stat in
+                        LineMark(
+                            x: .value("Date", stat.date, unit: .day),
+                            y: .value("\(String(describing: movingAverageWindowSize))-Day moving Avg of TDD", stat.movingAvgWeek)
+                        )
+                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
+                        .interpolationMethod(.catmullRom)
                     }
-                    AxisGridLine()
+                }
+
+                // Line Chart for 7-Day Moving Average (Only in Monthly View)
+                if selectedInterval == .month {
+                    ForEach(tddStats) { stat in
+                        LineMark(
+                            x: .value("Date", stat.date, unit: .day),
+                            y: .value("\(String(describing: movingAverageWindowSize))-Day moving Avg of TDD", stat.movingAvgMonth)
+                        )
+                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
+                        .interpolationMethod(.catmullRom)
+                    }
+                }
+
+                // Line Chart for 21-Day Moving Average (3-Month View)
+                if selectedInterval == .total {
+                    ForEach(tddStats) { stat in
+                        LineMark(
+                            x: .value("Date", stat.date, unit: .day),
+                            y: .value("\(String(describing: movingAverageWindowSize))-Day moving Avg of TDD", stat.movingAvgTotal)
+                        )
+                        .foregroundStyle(Color.primary.opacity(0.7))
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
+                        .interpolationMethod(.catmullRom)
+                    }
+                }
+
+                // Selection popover outside of the ForEach loop!
+                if let selectedDate,
+                   let selectedTDD = getTDDForDate(selectedDate)
+                {
+                    RuleMark(
+                        x: .value("Selected Date", selectedDate)
+                    )
+                    .foregroundStyle(Color.insulin.opacity(0.5))
+                    .annotation(
+                        position: .top,
+                        spacing: 0,
+                        overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))
+                    ) {
+                        TDDSelectionPopover(
+                            selectedDate: selectedDate,
+                            tdd: selectedTDD,
+                            selectedInterval: selectedInterval,
+                            domain: visibleDateRange,
+                            chartWidth: chartWidth
+                        )
+                    }
+                }
+
+                // Dummy PointMark to force SwiftCharts to render a visible domain of 00:00-23:59
+                // i.e. single day from midnight to midnight
+                if selectedInterval == .day {
+                    let calendar = Calendar.current
+                    let midnight = calendar.startOfDay(for: Date())
+                    let nextMidnight = calendar.date(byAdding: .day, value: 1, to: midnight)!
+
+                    PointMark(
+                        x: .value("Time", nextMidnight),
+                        y: .value("Dummy", 0)
+                    )
+                    .opacity(0) // ensures dummy ChartContent is hidden
                 }
             }
-        }
-        .chartXAxis {
-            AxisMarks(preset: .aligned, values: .stride(by: selectedInterval == .day ? .hour : .day)) { value in
-                if let date = value.as(Date.self) {
-                    let day = Calendar.current.component(.day, from: date)
-                    let hour = Calendar.current.component(.hour, from: date)
-
-                    switch selectedInterval {
-                    case .day:
-                        if hour % 6 == 0 { // Show only every 6 hours
-                            AxisValueLabel(format: StatChartUtils.dateFormat(for: selectedInterval), centered: true)
+            .chartYAxis {
+                AxisMarks(position: .trailing) { value in
+                    if let amount = value.as(Double.self) {
+                        AxisValueLabel {
+                            Text(amount.formatted(.number.precision(.fractionLength(0))))
                                 .font(.footnote)
-                            AxisGridLine()
                         }
-                    case .month:
-                        if day % 3 == 0 { // Only show every 3rd day
-                            AxisValueLabel(format: StatChartUtils.dateFormat(for: selectedInterval), centered: true)
-                                .font(.footnote)
-                            AxisGridLine()
-                        }
-                    case .total:
-                        // Only show every other month
-                        if day == 1 && Calendar.current.component(.month, from: date) % 2 == 1 {
-                            AxisValueLabel(format: StatChartUtils.dateFormat(for: selectedInterval), centered: true)
-                                .font(.footnote)
-                            AxisGridLine()
-                        }
-                    default:
-                        AxisValueLabel(format: StatChartUtils.dateFormat(for: selectedInterval), centered: true)
-                            .font(.footnote)
                         AxisGridLine()
                     }
                 }
             }
-        }
-        .chartScrollableAxes(.horizontal)
-        .chartXSelection(value: $selectedDate.animation(.easeInOut))
-        .chartScrollPosition(x: $scrollPosition)
-        .chartScrollTargetBehavior(
-            .valueAligned(
-                matching: selectedInterval == .day ?
-                    DateComponents(minute: 0) :
-                    DateComponents(hour: 0),
-                majorAlignment: .matching(StatChartUtils.alignmentComponents(for: selectedInterval))
+            .chartYAxis {
+                AxisMarks(position: .trailing) { value in
+                    if let amount = value.as(Double.self) {
+                        AxisValueLabel {
+                            Text(amount.formatted(.number.precision(.fractionLength(0))))
+                                .font(.footnote)
+                        }
+                    }
+                }
+            }
+            .chartXAxis {
+                AxisMarks(preset: .aligned, values: .stride(by: selectedInterval == .day ? .hour : .day)) { value in
+                    if let date = value.as(Date.self) {
+                        let day = Calendar.current.component(.day, from: date)
+                        let hour = Calendar.current.component(.hour, from: date)
+
+                        switch selectedInterval {
+                        case .day:
+                            if hour % 6 == 0 { // Show only every 6 hours
+                                AxisValueLabel(format: StatChartUtils.dateFormat(for: selectedInterval), centered: true)
+                                    .font(.footnote)
+                                AxisGridLine()
+                            }
+                        case .month:
+                            if day % 3 == 0 { // Only show every 3rd day
+                                AxisValueLabel(format: StatChartUtils.dateFormat(for: selectedInterval), centered: true)
+                                    .font(.footnote)
+                                AxisGridLine()
+                            }
+                        case .total:
+                            // Only show every other month
+                            if day == 1 && Calendar.current.component(.month, from: date) % 2 == 1 {
+                                AxisValueLabel(format: StatChartUtils.dateFormat(for: selectedInterval), centered: true)
+                                    .font(.footnote)
+                                AxisGridLine()
+                            }
+                        default:
+                            AxisValueLabel(format: StatChartUtils.dateFormat(for: selectedInterval), centered: true)
+                                .font(.footnote)
+                            AxisGridLine()
+                        }
+                    }
+                }
+            }
+            .chartScrollableAxes(.horizontal)
+            .chartXSelection(value: $selectedDate.animation(.easeInOut))
+            .chartScrollPosition(x: $scrollPosition)
+            .chartScrollTargetBehavior(
+                .valueAligned(
+                    matching: selectedInterval == .day ?
+                        DateComponents(minute: 0) :
+                        DateComponents(hour: 0),
+                    majorAlignment: .matching(StatChartUtils.alignmentComponents(for: selectedInterval))
+                )
             )
-        )
-        .chartXVisibleDomain(length: StatChartUtils.visibleDomainLength(for: selectedInterval))
-        .frame(height: 250)
+            .chartXVisibleDomain(length: StatChartUtils.visibleDomainLength(for: selectedInterval))
+            .frame(height: 250)
+            if let windowSize = movingAverageWindowSize {
+                HStack {
+                    GeometryReader { geometry in
+                        Path { path in
+                            let width = geometry.size.width
+                            let height = geometry.size.height * 0.5
+                            path.move(to: CGPoint(x: 0, y: height))
+                            path.addLine(to: CGPoint(x: width, y: height))
+                        }
+                        .stroke(Color.primary.opacity(0.7), style: StrokeStyle(lineWidth: 2, dash: [4, 4]))
+                    }
+                    .frame(width: 20, height: 10)
+                    Text("\(windowSize)-Day Moving Average of TDD")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+                .padding(.top, 10)
+            }
+        }
+    }
+
+    /// Determines the moving average window size based on the selected duration.
+    /// Determines the moving average window size based on the selected interval.
+    private var movingAverageWindowSize: Int? {
+        Stat.StateModel.windowSizeAverages(for: selectedInterval)
     }
 }
 

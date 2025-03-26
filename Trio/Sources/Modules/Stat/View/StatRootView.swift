@@ -16,7 +16,7 @@ extension Stat {
         @Environment(AppState.self) var appState
 
         @State var state = StateModel()
-        @State private var selectedView: StateModel.StatisticViewType = .glucose
+        @State private var selectedView: StateModel.StatisticViewType = .insulin
 
         var body: some View {
             VStack {

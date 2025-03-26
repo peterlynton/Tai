@@ -314,23 +314,22 @@ extension Stat.StateModel {
 
     /// Defines the main categories of statistics available in the app
     enum StatisticViewType: String, CaseIterable, Identifiable {
-        /// Glucose-related statistics including AGP and distributions
-        case glucose
         /// Insulin delivery statistics including TDD and bolus distributions
         case insulin
-        /// Loop performance and system status statistics
-        case looping
+        /// Glucose-related statistics including AGP and distributions
+        case glucose
         /// Meal-related statistics and correlations
         case meals
-
+        /// Loop performance and system status statistics
+        case looping
         var id: String { rawValue }
 
         var displayName: String {
             switch self {
-            case .glucose: return "Glucose"
             case .insulin: return "Insulin"
-            case .looping: return "Looping"
+            case .glucose: return "Glucose"
             case .meals: return "Meals"
+            case .looping: return "Looping"
             }
         }
     }

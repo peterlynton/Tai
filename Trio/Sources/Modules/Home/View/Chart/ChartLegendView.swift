@@ -38,30 +38,74 @@ struct ChartLegendView: View {
                         Text("Other Elements & Shapes").bold().padding(.bottom, 5).textCase(.uppercase)
 
                         DefinitionRow(
-                            term: String(localized: "Scheduled Basal Rate"),
-                            definition: VStack(alignment: .leading, spacing: 10) {
-                                Text("This dotted line represents the hourly insulin rate of your scheduled basal insulin.")
-                                Text("To review or change your scheduled basal rates, go to Settings > Therapy > Basal Rates.")
-                            },
-                            color: Color.insulin,
-                            iconString: "ellipsis"
-                        )
-
-                        DefinitionRow(
-                            term: String(localized: "Temporary Basal Rate (TBR)"),
+                            term: String(localized: "IOB value"),
                             definition: Text(
-                                "Shows current or past TBRs, which can be set by the oref algorithm or manually."
+                                "Shows current IOB in insulin units."
                             ),
                             color: Color.insulin,
-                            iconString: "square"
+                            iconString: "drop.circle"
                         )
 
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Image("premeal")
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .frame(width: 15, height: 15)
+                                    .foregroundColor(.loopYellow)
+                                Text("COB value").font(.subheadline).fontWeight(.semibold)
+                            }.padding(.bottom, 5)
+                            Text(
+                                "Shows current COB amount in g."
+                            )
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 5)
+
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Image(systemName: "chart.bar.xaxis")
+                                    .rotationEffect(Angle(degrees: 180))
+                                    .foregroundStyle(LinearGradient(
+                                        colors: [.insulinTintColor.opacity(1), .insulinTintColor.opacity(0.4)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    ))
+                                Text("Basal rate").font(.subheadline).fontWeight(.semibold)
+                            }.padding(.bottom, 5)
+                            Text(
+                                "Shows current basal rate being delivered in insulin units per hour."
+                            )
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 5)
+
                         DefinitionRow(
-                            term: String(localized: "Pump Suspension"),
-                            definition: Text("Indicates when insulin delivery was paused, i.e. pump is suspended."),
-                            color: Color.loopGray.opacity(colorScheme == .dark ? 0.3 : 0.8),
-                            iconString: "square.fill"
+                            term: String(localized: "ISF value"),
+                            definition: Text(
+                                "Currently used Insulin Sensitivity Factor (ISF) in mg/dL or mmol/L per IU."
+                            ),
+                            color: Color.loopGreen,
+                            iconString: "arrow.up.arrow.down"
                         )
+
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Text("⇢")
+                                    .font(.subheadline)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.secondary)
+                                Text("Eventual BG value").font(.subheadline).fontWeight(.semibold)
+                            }.padding(.bottom, 5)
+                            Text(
+                                "If all insulin delivery stopped, and assuming no food is eaten or other significant changes occur, at what level would blood glucose eventually level off within 3-4 hrs."
+                            )
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 5)
 
                         DefinitionRow(
                             term: String(localized: "TDD 24h"),
@@ -88,6 +132,32 @@ struct ChartLegendView: View {
                             ),
                             color: Color.zt,
                             iconString: "arrow.up.arrow.down"
+                        )
+
+                        DefinitionRow(
+                            term: String(localized: "Scheduled Basal Rate"),
+                            definition: VStack(alignment: .leading, spacing: 10) {
+                                Text("This dotted line represents the hourly insulin rate of your scheduled basal insulin.")
+                                Text("To review or change your scheduled basal rates, go to Settings > Therapy > Basal Rates.")
+                            },
+                            color: Color.insulin,
+                            iconString: "ellipsis"
+                        )
+
+                        DefinitionRow(
+                            term: String(localized: "Temporary Basal Rate (TBR)"),
+                            definition: Text(
+                                "Shows current or past TBRs, which can be set by the oref algorithm or manually."
+                            ),
+                            color: Color.insulin,
+                            iconString: "square"
+                        )
+
+                        DefinitionRow(
+                            term: String(localized: "Pump Suspension"),
+                            definition: Text("Indicates when insulin delivery was paused, i.e. pump is suspended."),
+                            color: Color.loopGray.opacity(colorScheme == .dark ? 0.3 : 0.8),
+                            iconString: "square.fill"
                         )
 
                         DefinitionRow(

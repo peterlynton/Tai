@@ -10,6 +10,9 @@ struct HorizontalPumpView: View {
     let autoISFratio: Decimal
     let totalDaily: Decimal
     let autoisfEnabled: Bool
+    @Binding var showPumpSelection: Bool
+    @Binding var shouldDisplayPumpSetupSheet: Bool
+    let pumpSet: Bool
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -24,75 +27,88 @@ struct HorizontalPumpView: View {
     var body: some View {
         HStack(spacing: 4) {
             Spacer()
-            if let pumpStatusHighlightMessage = pumpStatusHighlightMessage {
-                Text(pumpStatusHighlightMessage)
-                    .font(.footnote)
-                    .fontWeight(.bold)
-                    .layoutPriority(2) // Higher priority to ensure it scales less
-            } else {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    if reservoir == nil && battery.isEmpty {
-                        Image(systemName: "keyboard.onehanded.left")
-                            .font(.body)
-                            .imageScale(.large)
-                        Text("Add pump")
-                            .font(.caption)
-                            .bold()
-                            .layoutPriority(1)
-                    }
-                    if let reservoir = reservoir {
-                        HStack(spacing: 4) {
-                            Image(systemName: "cross.vial.fill")
-                                .font(.callout)
-                                .foregroundColor(reservoirColor)
-                            if reservoir == 0xDEAD_BEEF {
-                                Text("\(50 * concentration)+ " + String(localized: "U", comment: "Insulin unit"))
+            Group {
+                if let pumpStatusHighlightMessage = pumpStatusHighlightMessage {
+                    Text(pumpStatusHighlightMessage)
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                        .layoutPriority(2) // Higher priority to ensure it scales less
+                } else {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        if reservoir == nil && battery.isEmpty {
+                            Image(systemName: "keyboard.onehanded.left")
+                                .font(.body)
+                                .imageScale(.large)
+                            Text("Add pump")
+                                .font(.caption)
+                                .bold()
+                                .layoutPriority(1)
+                        }
+                        if let reservoir = reservoir {
+                            HStack(spacing: 4) {
+                                Image(systemName: "cross.vial.fill")
+                                    .font(.callout)
+                                    .foregroundColor(reservoirColor)
+                                if reservoir == 0xDEAD_BEEF {
+                                    Text("\(50 * concentration)+ " + String(localized: "U", comment: "Insulin unit"))
+                                        .font(.callout)
+                                        .fontWeight(.bold)
+                                        .fontDesign(.rounded)
+                                } else {
+                                    Text(
+                                        Formatter.integerFormatter
+                                            .string(from: reservoir * concentration as NSNumber)! +
+                                            String(localized: " U", comment: "Insulin unit")
+                                    )
                                     .font(.callout)
                                     .fontWeight(.bold)
                                     .fontDesign(.rounded)
-                            } else {
-                                Text(
-                                    Formatter.integerFormatter
-                                        .string(from: reservoir * concentration as NSNumber)! +
-                                        String(localized: " U", comment: "Insulin unit")
-                                )
-                                .font(.callout)
-                                .fontWeight(.bold)
-                                .fontDesign(.rounded)
+                                }
+                            }
+                        }
+                        if (battery.first?.display) != nil, let shouldBatteryDisplay = battery.first?.display,
+                           shouldBatteryDisplay
+                        {
+                            HStack {
+                                Image(systemName: "battery.100")
+                                    .font(.callout)
+                                    .foregroundStyle(batteryColor)
+                                Text("\(Formatter.integerFormatter.string(for: battery.first?.percent ?? 100) ?? "100") %")
+                                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                            }
+                        }
+                        if let date = expiresAtDate {
+                            HStack {
+                                Image(systemName: "stopwatch.fill")
+                                    .font(.callout)
+                                    .foregroundStyle(timerColor)
+
+                                let remainingTimeString = remainingTimeString(time: date.timeIntervalSince(timerDate))
+
+                                Text(remainingTimeString)
+                                    .font(date.timeIntervalSince(timerDate) > 0 ? .callout : .subheadline)
+                                    .fontWeight(.bold)
+                                    .fontDesign(.rounded)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.leading)
+                                    .frame(
+                                        // If the string is > 6 chars, i.e., exceeds "xd yh", limit width to 80 pts
+                                        // This forces the "Replace pod" string to wrap to 2 lines.
+                                        maxWidth: remainingTimeString.count > 6 ? 80 : .infinity,
+                                        alignment: .leading
+                                    )
                             }
                         }
                     }
-                    if (battery.first?.display) != nil, let shouldBatteryDisplay = battery.first?.display, shouldBatteryDisplay {
-                        HStack {
-                            Image(systemName: "battery.100")
-                                .font(.callout)
-                                .foregroundStyle(batteryColor)
-                            Text("\(Formatter.integerFormatter.string(for: battery.first?.percent ?? 100) ?? "100") %")
-                                .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                        }
-                    }
-                    if let date = expiresAtDate {
-                        HStack {
-                            Image(systemName: "stopwatch.fill")
-                                .font(.callout)
-                                .foregroundStyle(timerColor)
-
-                            let remainingTimeString = remainingTimeString(time: date.timeIntervalSince(timerDate))
-
-                            Text(remainingTimeString)
-                                .font(date.timeIntervalSince(timerDate) > 0 ? .callout : .subheadline)
-                                .fontWeight(.bold)
-                                .fontDesign(.rounded)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
-                                .frame(
-                                    // If the string is > 6 chars, i.e., exceeds "xd yh", limit width to 80 pts
-                                    // This forces the "Replace pod" string to wrap to 2 lines.
-                                    maxWidth: remainingTimeString.count > 6 ? 80 : .infinity,
-                                    alignment: .leading
-                                )
-                        }
-                    }
+                }
+            }
+            .onTapGesture {
+                if pumpSet == false {
+                    // shows user confirmation dialog with pump model choices, then proceeds to setup
+                    showPumpSelection.toggle()
+                } else {
+                    // sends user to pump settings
+                    shouldDisplayPumpSetupSheet.toggle()
                 }
             }
 

@@ -181,17 +181,11 @@ extension Home {
                 battery: state.batteryFromPersistence,
                 autoISFratio: (state.determinationsFromPersistence.first?.autoISFratio ?? 1) as Decimal,
                 totalDaily: state.fetchedTDDs.first?.totalDailyDose ?? 0,
-                autoisfEnabled: state.autoisfEnabled
+                autoisfEnabled: state.autoisfEnabled,
+                showPumpSelection: $showPumpSelection,
+                shouldDisplayPumpSetupSheet: $state.shouldDisplayPumpSetupSheet,
+                pumpSet: state.pumpSet
             )
-            .onTapGesture {
-                if state.pumpDisplayState == nil {
-                    // shows user confirmation dialog with pump model choices, then proceeds to setup
-                    showPumpSelection.toggle()
-                } else {
-                    // sends user to pump settings
-                    state.shouldDisplayPumpSetupSheet.toggle()
-                }
-            }
         }
 
         var tempBasalString: String? {

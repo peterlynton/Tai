@@ -1,9 +1,7 @@
-6th Beta update 0.4.1
+7th Beta update 0.4.1
 
-rebase to Trio closed beta 0.3.0 (13)
-Trio closed beta 0.3.0 (14)
-Statistics
-Launch Screen
-autosens or autoISF Ratio on Homescreen
-help texts updated
-submodule update browser builds
+Trio fixes for closed beta 0.3.0 (14)
+- incl. hotfix for treatmentStateModel crashes for Mateo
+mvg. Avg for TDD stats
+autoISF handles flatCGM values
+

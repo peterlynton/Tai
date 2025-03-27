@@ -51,7 +51,7 @@ extension Stat {
         }
 
         // Selected Duration for Insulin Stats
-        var selectedIntervalForInsulinStats: StatsTimeInterval = .week
+        var selectedIntervalForInsulinStats: StatsTimeInterval = .day
 
         // Selected Duration for Meal Stats
         var selectedIntervalForMealStats: StatsTimeInterval = .week
@@ -314,22 +314,23 @@ extension Stat.StateModel {
 
     /// Defines the main categories of statistics available in the app
     enum StatisticViewType: String, CaseIterable, Identifiable {
-        /// Insulin delivery statistics including TDD and bolus distributions
-        case insulin
         /// Glucose-related statistics including AGP and distributions
         case glucose
-        /// Meal-related statistics and correlations
-        case meals
+        /// Insulin delivery statistics including TDD and bolus distributions
+        case insulin
         /// Loop performance and system status statistics
         case looping
+        /// Meal-related statistics and correlations
+        case meals
+
         var id: String { rawValue }
 
         var displayName: String {
             switch self {
-            case .insulin: return "Insulin"
             case .glucose: return "Glucose"
-            case .meals: return "Meals"
+            case .insulin: return "Insulin"
             case .looping: return "Looping"
+            case .meals: return "Meals"
             }
         }
     }

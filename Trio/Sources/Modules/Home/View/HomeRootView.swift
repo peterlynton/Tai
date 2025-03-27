@@ -184,7 +184,16 @@ extension Home {
                 autoisfEnabled: state.autoisfEnabled,
                 showPumpSelection: $showPumpSelection,
                 shouldDisplayPumpSetupSheet: $state.shouldDisplayPumpSetupSheet,
-                pumpSet: state.pumpSet
+                pumpSet: state.pumpSet,
+                onTDDTap: {
+                    // Set preferences in AppState
+                    appState.statSelectedViewType = .insulin
+                    appState.statSelectedInsulinChartType = .totalDailyDose
+                    appState.statSelectedInsulinTimeInterval = .week
+
+                    // Show statistics modal
+                    state.showModal(for: .statistics)
+                }
             )
         }
 
@@ -380,7 +389,11 @@ extension Home {
         var timeIntervalPanel: some View {
             HStack(alignment: .center) {
                 Spacer()
-                Button(action: { state.showModal(for: .statistics) }) {
+                Button(action: {
+                    appState.statSelectedViewType = .glucose
+                    appState.statSelectedInsulinTimeInterval = .day
+                    state.showModal(for: .statistics)
+                }) {
                     Image(systemName: "chart.bar.xaxis.ascending.badge.clock")
                         .symbolRenderingMode(.palette)
                         .scaleEffect(x: -1)

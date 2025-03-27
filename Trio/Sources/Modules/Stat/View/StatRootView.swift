@@ -16,7 +16,7 @@ extension Stat {
         @Environment(AppState.self) var appState
 
         @State var state = StateModel()
-        @State private var selectedView: StateModel.StatisticViewType = .insulin
+        @State private var selectedView: StateModel.StatisticViewType = .glucose
 
         var body: some View {
             VStack {
@@ -45,7 +45,12 @@ extension Stat {
                 }
             }
             .background(appState.trioBackgroundColor(for: colorScheme))
-            .onAppear(perform: configureView)
+            .onAppear {
+                configureView()
+                selectedView = appState.statSelectedViewType
+                state.selectedInsulinChartType = appState.statSelectedInsulinChartType
+                state.selectedIntervalForInsulinStats = appState.statSelectedInsulinTimeInterval
+            }
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle("Statistics")
             .toolbar {

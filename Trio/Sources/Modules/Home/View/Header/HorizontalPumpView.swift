@@ -13,6 +13,7 @@ struct HorizontalPumpView: View {
     @Binding var showPumpSelection: Bool
     @Binding var shouldDisplayPumpSetupSheet: Bool
     let pumpSet: Bool
+    var onTDDTap: (() -> Void)?
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -126,6 +127,9 @@ struct HorizontalPumpView: View {
                 Text(Formatter.decimalFormatterWithOneFractionDigit.string(from: totalDaily as NSNumber) ?? "0.0")
                     .font(.callout).fontDesign(.rounded).fontWeight(.bold)
                     .layoutPriority(2)
+            }
+            .onTapGesture {
+                onTDDTap?()
             }
 
             Spacer()

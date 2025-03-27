@@ -1,4 +1,7 @@
 Beta update 0.4.3
 
-concentration
-mov Avgs
+concentration updates
+* basal profile with suitable increments
+* additional warnings to change basal profile after concentration change
+* highlight adjusted basal rates due to larger increment than before
+

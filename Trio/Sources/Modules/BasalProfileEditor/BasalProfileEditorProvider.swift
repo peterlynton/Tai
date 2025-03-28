@@ -4,6 +4,8 @@ import LoopKit
 
 extension BasalProfileEditor {
     final class Provider: BaseProvider, BasalProfileEditorProvider {
+        @Injected() var settingsManager: SettingsManager!
+
         private let processQueue = DispatchQueue(label: "BasalProfileEditorProvider.processQueue")
 
         var profile: [BasalProfileEntry] {
@@ -23,7 +25,10 @@ extension BasalProfileEditor {
             }
 
             let syncValues = profile.map {
-                RepeatingScheduleValue(startTime: TimeInterval($0.minutes * 60), value: Double($0.rate))
+                RepeatingScheduleValue(
+                    startTime: TimeInterval($0.minutes * 60),
+                    value: Double($0.rate) / Double(settingsManager.settings.insulinConcentration)
+                )
             }
 
             return Future { promise in

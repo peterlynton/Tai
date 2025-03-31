@@ -197,7 +197,8 @@ extension Home {
                 onAISRTap: {
                     // Show autoISF history
                     state.showModal(for: .autoisfHistory)
-                }
+                },
+                concentration: state.concentration
             )
         }
 

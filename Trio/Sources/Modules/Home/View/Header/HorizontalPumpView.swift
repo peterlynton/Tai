@@ -15,10 +15,9 @@ struct HorizontalPumpView: View {
     let pumpSet: Bool
     var onTDDTap: (() -> Void)?
     var onAISRTap: (() -> Void)?
+    let concentration: Decimal
 
     @Environment(\.colorScheme) var colorScheme
-
-    let concentration: Decimal = 1
 
     private var batteryFormatter: NumberFormatter {
         let formatter = NumberFormatter()
@@ -59,7 +58,7 @@ struct HorizontalPumpView: View {
                                 } else {
                                     Text(
                                         Formatter.integerFormatter
-                                            .string(from: reservoir * concentration as NSNumber)! +
+                                            .string(from: (reservoir * concentration) as NSNumber)! +
                                             String(localized: " U", comment: "Insulin unit")
                                     )
                                     .font(.callout)

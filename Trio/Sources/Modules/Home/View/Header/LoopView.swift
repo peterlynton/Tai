@@ -55,9 +55,9 @@ struct LoopView: View {
         if minutesAgo > 1440 {
             return "--"
         } else if minutesAgo <= 1 {
-            return "<" + "\u{00A0}" + "1" + String(localized: "m", comment: "Abbreviation for Minutes")
+            return "<" + "1" + String(localized: "m", comment: "Abbreviation for Minutes")
         } else {
-            return minuteString + "\u{00A0}" + String(localized: "m", comment: "Abbreviation for Minutes")
+            return minuteString + String(localized: "m", comment: "Abbreviation for Minutes")
         }
     }
 

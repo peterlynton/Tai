@@ -159,11 +159,13 @@ struct TotalDailyDoseChart: View {
                         y: .value("Amount", stat.amount)
                     )
                     .foregroundStyle(isWeekend ? Color.basal : Color.insulin)
-                    .opacity(
-                        selectedDate.map { date in
-                            StatChartUtils.isSameTimeUnit(stat.date, date, for: selectedInterval) ? 1 : 0.3
-                        } ?? 1
-                    )
+                    .annotation(position: .top) {
+                        if selectedInterval == .week {
+                            Text(stat.amount.formatted(.number.precision(.fractionLength(1))))
+                                .font(.footnote)
+                                .foregroundColor(Color.primary)
+                        }
+                    }
                 }
                 // Dummy PointMark to force SwiftCharts to render a visible domain of 00:00-23:59
                 // i.e. single day from midnight to midnight

@@ -8,13 +8,15 @@ final class OpenAPS {
     private let processQueue = DispatchQueue(label: "OpenAPS.processQueue", qos: .utility)
 
     private let storage: FileStorage
+    private let tddStorage: TDDStorage
 
     let context = CoreDataStack.shared.newTaskContext()
 
     let jsonConverter = JSONConverter()
 
-    init(storage: FileStorage) {
+    init(storage: FileStorage, tddStorage: TDDStorage) {
         self.storage = storage
+        self.tddStorage = tddStorage
     }
 
     static let dateFormatter: ISO8601DateFormatter = {
@@ -302,7 +304,8 @@ final class OpenAPS {
         async let basalAsync = loadFileFromStorageAsync(name: Settings.basalProfile)
         async let autosenseAsync = loadFileFromStorageAsync(name: Settings.autosense)
         async let reservoirAsync = loadFileFromStorageAsync(name: Monitor.reservoir)
-        async let preferencesAsync = loadFileFromStorageAsync(name: Settings.preferences)
+        async let preferencesAsync = storage.retrieveAsync(OpenAPS.Settings.preferences, as: Preferences.self) ?? Preferences()
+        async let hasSufficientTddForDynamic = tddStorage.hasSufficientTDD()
 
         // Await the results of asynchronous tasks
         let (
@@ -314,7 +317,7 @@ final class OpenAPS {
             basalProfile,
             autosens,
             reservoir,
-            preferences
+            hasSufficientTdd
         ) = await (
             try parsePumpHistory(await pumpHistoryObjectIDs, simulatedBolusAmount: simulatedBolusAmount),
             try carbs,
@@ -324,7 +327,7 @@ final class OpenAPS {
             basalAsync,
             autosenseAsync,
             reservoirAsync,
-            preferencesAsync
+            try hasSufficientTddForDynamic
         )
 
         // Meal calculation
@@ -350,6 +353,14 @@ final class OpenAPS {
             storage.save(iob, as: Monitor.iob)
         }
 
+        var preferences = await preferencesAsync
+
+        if !hasSufficientTdd, preferences.useNewFormula || (preferences.useNewFormula && preferences.sigmoid) {
+            debug(.openAPS, "Insufficient TDD for dynamic formula; disabling for determine basal run.")
+            preferences.useNewFormula = false
+            preferences.sigmoid = false
+        }
+
         // Determine basal
         let orefDetermination = try await determineBasal(
             glucose: glucoseAsJSON,
@@ -366,7 +377,7 @@ final class OpenAPS {
             oref2_variables: oref2_variables
         )
 
-        debug(.openAPS, "Determinated: \(orefDetermination)")
+        debug(.openAPS, "OREF DETERMINATION: \(orefDetermination)")
 
         if var determination = Determination(from: orefDetermination), let deliverAt = determination.deliverAt {
             // set both timestamp and deliverAt to the SAME date; this will be updated for timestamp once it is enacted
@@ -380,7 +391,7 @@ final class OpenAPS {
 
             return determination
         } else {
-            throw APSError.apsError(message: "Determination is nil")
+            throw APSError.apsError(message: "No determination data.")
         }
     }
 

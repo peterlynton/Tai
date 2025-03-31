@@ -1,7 +1,5 @@
-Beta update 0.4.3
+8th Beta update 0.4.1
 
-concentration updates
-* basal profile with suitable increments
-* additional warnings to change basal profile after concentration change
-* highlight adjusted basal rates due to larger increment than before
+Trio closed beta release 0.3.0 (15)
+
 

@@ -135,7 +135,8 @@ extension Stat {
                             highLimit: state.highLimit,
                             lowLimit: state.lowLimit,
                             units: state.units,
-                            glucoseRangeStats: state.glucoseRangeStats
+                            glucoseRangeStats: state.glucoseRangeStats,
+                            timeInRangeType: state.timeInRangeType
                         )
                     }
                 }
@@ -149,7 +150,8 @@ extension Stat {
                         highLimit: state.highLimit,
                         lowLimit: state.lowLimit,
                         units: state.units,
-                        glucose: state.glucoseFromPersistence
+                        glucose: state.glucoseFromPersistence,
+                        timeInRangeType: state.timeInRangeType
                     )
 
                     Divider()

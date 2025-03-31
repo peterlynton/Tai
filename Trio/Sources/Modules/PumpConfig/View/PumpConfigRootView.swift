@@ -64,7 +64,8 @@ extension PumpConfig {
                                                 )
                                             }
                                         )
-                                        hintLabel = NSLocalizedString(
+                                        hintLabel = String(
+                                            localized:
                                             "Insulin Concentration",
                                             comment: "Insulin Concentration"
                                         )
@@ -148,13 +149,19 @@ extension PumpConfig {
                                     get: { selectedVerboseHint },
                                     set: {
                                         selectedVerboseHint = $0.map { AnyView($0) }
-                                        hintLabel = "Duration of Insulin Action"
+                                        hintLabel = String(
+                                            localized: "Duration of Insulin Action",
+                                            comment: "Duration of Insulin Action"
+                                        )
                                     }
                                 ),
                                 units: state.units,
                                 type: .decimal("dia"),
-                                label: "Duration of Insulin Action",
-                                miniHint: "Number of hours insulin is active in your body.",
+                                label: String(localized: "Duration of Insulin Action", comment: "Duration of Insulin Action"),
+                                miniHint: String(
+                                    localized: "Number of hours insulin is active in your body.",
+                                    comment: "Mini Hint for Duration of Insulin Action"
+                                ),
                                 verboseHint:
                                 VStack(alignment: .leading, spacing: 10) {
                                     Text("Default: 10 hours").bold()
@@ -178,13 +185,13 @@ extension PumpConfig {
                                     get: { selectedVerboseHint },
                                     set: {
                                         selectedVerboseHint = $0.map { AnyView($0) }
-                                        hintLabel = NSLocalizedString("Use Custom Peak Time", comment: "Use Custom Peak Time")
+                                        hintLabel = String(localized: "Use Custom Peak Time", comment: "Use Custom Peak Time")
                                     }
                                 ),
                                 units: state.units,
                                 type: .conditionalDecimal("insulinPeakTime"),
-                                label: NSLocalizedString("Use Custom Peak Time", comment: "Use Custom Peak Time"),
-                                conditionalLabel: NSLocalizedString("Insulin Peak Time", comment: "Insulin Peak Time"),
+                                label: String(localized: "Use Custom Peak Time", comment: "Use Custom Peak Time"),
+                                conditionalLabel: String(localized: "Insulin Peak Time", comment: "Insulin Peak Time"),
                                 miniHint: "Set a custom time for peak insulin effect.",
                                 verboseHint:
                                 VStack(alignment: .leading, spacing: 10) {

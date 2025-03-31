@@ -36,7 +36,6 @@
   "hideInsulinBadge" : false,
   "allowDilution": Bool = false,
   "insulinConcentration": Decimal = 1,
-  "timeInRangeChartStyle" : "vertical",
   "showCobIobChart" : true,
   "rulerMarks" : true,
   "forecastDisplayType": "cone",
@@ -52,5 +51,6 @@
   "lockScreenView": "simple",
   "useCalendar": false,
   "displayCalendarIOBandCOB": false,
-  "displayCalendarEmojis": false
+  "displayCalendarEmojis": false,
+  "timeInRangeType": "timeInTightRange"
 }

@@ -95,39 +95,6 @@ extension AlgorithmAdvancedSettings {
                 )
 
                 SettingInputSection(
-                    decimalValue: $state.insulinActionCurve,
-                    booleanValue: $booleanPlaceholder,
-                    shouldDisplayHint: $shouldDisplayHint,
-                    selectedVerboseHint: Binding(
-                        get: { selectedVerboseHint },
-                        set: {
-                            selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = String(localized: "Duration of Insulin Action", comment: "Duration of Insulin Action")
-                        }
-                    ),
-                    units: state.units,
-                    type: .decimal("dia"),
-                    label: String(localized: "Duration of Insulin Action", comment: "Duration of Insulin Action"),
-                    miniHint: String(
-                        localized: "Number of hours insulin is active in your body.",
-                        comment: "Mini Hint for Duration of Insulin Action"
-                    ),
-                    verboseHint:
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("Default: 10 hours").bold()
-                        Text(
-                            "The Duration of Insulin Action (DIA) defines how long your insulin continues to lower glucose readings after a dose."
-                        )
-                        Text(
-                            "This helps the system accurately track Insulin on Board (IOB), avoiding over- or under-corrections by considering the tail end of insulin's effect."
-                        )
-                        Text(
-                            "Tip: It is better to use Custom Peak Time rather than adjust your Duration of Insulin Action (DIA)."
-                        )
-                    }
-                )
-
-                SettingInputSection(
                     decimalValue: $decimalPlaceholder,
                     booleanValue: $state.skipNeutralTemps,
                     shouldDisplayHint: $shouldDisplayHint,
@@ -344,12 +311,12 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Hide Insulin Concentration badge", comment: "Hide Badge")
+                            hintLabel = String(localized: "Hide Insulin Concentration badge", comment: "Hide Badge")
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: NSLocalizedString("Hide Insulin Concentration badge", comment: "Hide Badge"),
+                    label: String(localized: "Hide Insulin Concentration badge", comment: "Hide Badge"),
                     miniHint: "Hide the badge that displays the Insulin Concentration near between the Glucose bobble and the pump information.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
@@ -371,12 +338,12 @@ extension AlgorithmAdvancedSettings {
                         get: { selectedVerboseHint },
                         set: {
                             selectedVerboseHint = $0.map { AnyView($0) }
-                            hintLabel = NSLocalizedString("Allow diluted Insulin", comment: "Allow diluted Insulin")
+                            hintLabel = String(localized: "Allow diluted Insulin", comment: "Allow diluted Insulin")
                         }
                     ),
                     units: state.units,
                     type: .boolean,
-                    label: NSLocalizedString("Allow diluted Insulin", comment: "Allow diluted Insulin"),
+                    label: String(localized: "Allow diluted Insulin", comment: "Allow diluted Insulin"),
                     miniHint: "Allow diluted insulin concentration settings.",
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {

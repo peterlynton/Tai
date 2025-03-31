@@ -477,17 +477,17 @@ extension UserInterfaceSettings {
                 Section {
                     VStack(alignment: .leading) {
                         Picker(
-                            selection: $state.timeInRangeChartStyle,
-                            label: Text("Time in Range Chart Style").multilineTextAlignment(.leading)
+                            selection: $state.timeInRangeType,
+                            label: Text("Time in Range Type").multilineTextAlignment(.leading)
                         ) {
-                            ForEach(TimeInRangeChartStyle.allCases) { selection in
+                            ForEach(TimeInRangeType.allCases) { selection in
                                 Text(selection.displayName).tag(selection)
                             }
                         }.padding(.top)
 
                         HStack(alignment: .center) {
                             Text(
-                                "Choose the orientation of the Time in Range Chart."
+                                "Choose type of time in range to be used for Trio's statistics."
                             )
                             .font(.footnote)
                             .foregroundColor(.secondary)
@@ -495,12 +495,41 @@ extension UserInterfaceSettings {
                             Spacer()
                             Button(
                                 action: {
-                                    hintLabel = String(localized: "Time in Range Chart Style")
+                                    hintLabel = String(localized: "Time in Range Type")
                                     selectedVerboseHint =
                                         AnyView(
-                                            Text(
-                                                "Choose which style for the time in range chart you'd prefer: a standing, i.e., vertical, bar chart or a laying, i.e., horizontal, line chart."
-                                            )
+                                            VStack(
+                                                alignment: .leading,
+                                                spacing: 10
+                                            ) {
+                                                Text(
+                                                    "Choose which type of time in range Trio should adopt for all its statistical charts and displays:"
+                                                )
+                                                VStack(
+                                                    alignment: .leading,
+                                                    spacing: 5
+                                                ) {
+                                                    Text(
+                                                        "Time in Tight Range (TITR):"
+                                                    )
+                                                    .bold()
+                                                    Text(
+                                                        "Uses the fairly established Time in Tight Range definition, which is defined as time between \(state.units == .mgdL ? Decimal(70) : 70.asMmolL) and \(state.units == .mgdL ? Decimal(140) : 140.asMmolL) \(state.units.rawValue)."
+                                                    )
+                                                }
+                                                VStack(
+                                                    alignment: .leading,
+                                                    spacing: 5
+                                                ) {
+                                                    Text(
+                                                        "Time in Normoglycemia (TING):"
+                                                    )
+                                                    .bold()
+                                                    Text(
+                                                        "Uses the very new – first discussed at ATTD 2025 in Amsterdam, NL – Time in Normoglycemia definition, which adopts its range as all values between the normoglycemic minimum threshold (\(state.units == .mgdL ? Decimal(63) : 63.asMmolL) \(state.units.rawValue)) and \(state.units == .mgdL ? Decimal(140) : 140.asMmolL) \(state.units.rawValue)."
+                                                    )
+                                                }
+                                            }
                                         )
                                     shouldDisplayHint.toggle()
                                 },

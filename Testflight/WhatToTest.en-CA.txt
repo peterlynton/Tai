@@ -1,7 +1,5 @@
-7th Beta update 0.4.1
+8th Beta update 0.4.1
 
-Trio fixes for closed beta 0.3.0 (14)
-- incl. hotfix for treatmentStateModel crashes for Mateo
-mvg. Avg for TDD stats
-autoISF handles flatCGM values
+Trio closed beta release 0.3.0 (15)
+
 

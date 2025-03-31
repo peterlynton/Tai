@@ -33,7 +33,6 @@
   "glucoseColorScheme" : "staticColor",
   "xGridLines" : true,
   "yGridLines" : true,
-  "timeInRangeChartStyle" : "vertical",
   "showCobIobChart" : true,
   "rulerMarks" : true,
   "forecastDisplayType": "cone",
@@ -49,5 +48,6 @@
   "lockScreenView": "simple",
   "useCalendar": false,
   "displayCalendarIOBandCOB": false,
-  "displayCalendarEmojis": false
+  "displayCalendarEmojis": false,
+  "timeInRangeType": "timeInTightRange"
 }

@@ -63,6 +63,7 @@ extension Home {
         var manualTempBasal = false
         var isSmoothingEnabled = false
         var autoisfEnabled = false
+        var maxIOB: Decimal = 0.0
         var autosensMax: Decimal = 1.2
         var lowGlucose: Decimal = 70
         var highGlucose: Decimal = 180
@@ -403,6 +404,7 @@ extension Home {
             highTTraisesSens = settingsManager.preferences.highTemptargetRaisesSensitivity
             lowTTlowersSens = settingsManager.preferences.lowTemptargetLowersSensitivity
             settingHalfBasalTarget = settingsManager.preferences.halfBasalExerciseTarget
+            maxIOB = settingsManager.preferences.maxIOB
         }
 
         @MainActor private func setupCGMSettings() async {
@@ -681,6 +683,7 @@ extension Home.StateModel:
         highTTraisesSens = settingsManager.preferences.highTemptargetRaisesSensitivity
         isExerciseModeActive = settingsManager.preferences.exerciseMode
         lowTTlowersSens = settingsManager.preferences.lowTemptargetLowersSensitivity
+        maxIOB = settingsManager.preferences.maxIOB
     }
 
     func pumpSettingsDidChange(_: PumpSettings) {

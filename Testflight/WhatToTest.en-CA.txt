@@ -1,5 +1,7 @@
-8th Beta update 0.4.1
+Beta update 0.4.1
 
-Trio closed beta release 0.3.0 (15)
+quickFix for BolusCalculator Trio closed beta release 0.3.0 (15)
+ * minPredBG conversion from rT.reason converted for Tai
+
 
 

@@ -577,7 +577,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
         // unable to do temp basal during manual temp basal 😁
         if isManualTempBasal {
-            processError(APSError.manualBasalTemp(message: "Loop not possible during the manual basal temp"))
+            processError(APSError.manualBasalTemp(message: "Algorithm not enacted during manual TBR"))
             return
         }
 
@@ -646,7 +646,7 @@ final class BaseAPSManager: APSManager, Injectable {
 
         // Unable to do temp basal during manual temp basal 😁
         if isManualTempBasal {
-            throw APSError.manualBasalTemp(message: "Loop not possible during the manual basal temp")
+            throw APSError.manualBasalTemp(message: "Algorithm not enacted during manual TBR")
         }
 
         let (rateDecimal, durationInSeconds, smbToDeliver) = try await setValues(determinationID: determinationID)

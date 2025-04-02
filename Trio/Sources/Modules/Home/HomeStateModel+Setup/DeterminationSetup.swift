@@ -8,13 +8,17 @@ extension Home.StateModel {
                 // Get the NSManagedObjectIDs
                 async let enactedObjectIds = determinationStorage
                     .fetchLastDeterminationObjectID(predicate: NSPredicate.enactedDetermination)
+                async let suggestedObjectIds = determinationStorage
+                    .fetchLastDeterminationObjectID(predicate: NSPredicate.suggestedDetermination)
                 async let enactedAndNonEnactedObjectIds = fetchCobAndIob()
 
                 let enactedIDs = try await enactedObjectIds
+                let suggestedIDs = try await suggestedObjectIds
                 let enactedAndNonEnactedIds = try await enactedAndNonEnactedObjectIds
 
                 // Get the NSManagedObjects and return them on the Main Thread
                 try await updateDeterminationsArray(with: enactedIDs, keyPath: \.determinationsFromPersistence)
+                try await updateDeterminationsArray(with: suggestedIDs, keyPath: \.determinationsFromSuggestion)
                 try await updateDeterminationsArray(with: enactedAndNonEnactedIds, keyPath: \.enactedAndNonEnactedDeterminations)
 
                 await updateForecastData()
@@ -47,7 +51,7 @@ extension Home.StateModel {
             key: "deliverAt",
             ascending: false,
             batchSize: 50,
-            propertiesToFetch: ["cob", "iob", "deliverAt", "objectID"]
+            propertiesToFetch: ["cob", "iob", "autoISFratio", "deliverAt", "objectID"]
         )
 
         return try await determinationFetchContext.perform {

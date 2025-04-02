@@ -44,6 +44,8 @@ extension Home {
             TimePicker(label: String(localized: "12 hours"), number: "12", active: false, hours: 12),
             TimePicker(label: String(localized: "24 hours"), number: "24", active: false, hours: 24)
         ]
+        var onTDDTap: (() -> Void)?
+        var onAISRTap: (() -> Void)?
 
         let buttonFont = Font.custom("TimeButtonFont", size: 14)
 
@@ -183,7 +185,7 @@ extension Home {
                 )
             }
 
-            return rateString + " " + String(localized: " U/hr", comment: "Unit per hour with space") + manualBasalString
+            return rateString + String(localized: " U/hr", comment: "Unit per hour with space") + manualBasalString
         }
 
         var overrideString: String? {
@@ -359,7 +361,11 @@ extension Home {
         var timeIntervalPanel: some View {
             HStack(alignment: .center) {
                 Spacer()
-                Button(action: { state.showModal(for: .statistics) }) {
+                Button(action: {
+                    appState.statSelectedViewType = .glucose
+                    appState.statSelectedInsulinTimeInterval = .day
+                    state.showModal(for: .statistics)
+                }) {
                     Image(systemName: "chart.bar.xaxis.ascending.badge.clock")
                         .symbolRenderingMode(.palette)
                         .scaleEffect(x: -1)
@@ -459,13 +465,10 @@ extension Home {
                     isLooping: state.isLooping,
                     lastLoopDate: state.lastLoopDate,
                     manualTempBasal: state.manualTempBasal,
-                    determination: state.determinationsFromPersistence
+                    determination: getMostRecentDetermination().map { [$0] } ?? []
                 )
                 .onTapGesture {
-                    setStatusTitlePopup()
                     state.isStatusPopupPresented.toggle()
-                    setStatusTitlePopup()
-//                    state.isLoopStatusPresented = true
                 }
                 .onLongPressGesture {
                     let impactHeavy = UIImpactFeedbackGenerator(style: .heavy)
@@ -503,35 +506,39 @@ extension Home {
 
         @ViewBuilder func mealPanel(_: GeometryProxy) -> some View {
             HStack {
-                HStack {
+                HStack(spacing: 3) {
                     Image(systemName: "syringe.fill")
                         .font(.callout)
                         .foregroundColor(Color.insulin)
                     Text(
-                        (
-                            Formatter.decimalFormatterWithTwoFractionDigits
-                                .string(from: (state.enactedAndNonEnactedDeterminations.first?.iob ?? 0) as NSNumber) ?? "0"
-                        ) +
-                            String(localized: " U", comment: "Insulin unit")
+                        Formatter.decimalFormatterWithTwoFractionDigits
+                            .string(from: (state.enactedAndNonEnactedDeterminations.first?.iob ?? 0) as NSNumber) ?? "0"
                     )
                     .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    .layoutPriority(2)
+                    Text(String(localized: "U", comment: "Insulin unit"))
+                        .layoutPriority(1)
+                        .font(.callout).fontWeight(.bold).fontDesign(.rounded)
                 }
 
                 Spacer()
 
-                HStack {
+                HStack(spacing: 3) {
                     Image(systemName: "fork.knife")
                         .font(.callout)
                         .foregroundColor(.loopYellow)
                     Text(
-                        (
-                            Formatter.decimalFormatterWithTwoFractionDigits.string(
-                                from: NSNumber(value: state.enactedAndNonEnactedDeterminations.first?.cob ?? 0)
-                            ) ?? "0"
-                        ) +
-                            String(localized: " g", comment: "gram of carbs")
+                        Formatter.decimalFormatterWithTwoFractionDigits.string(
+                            from: NSNumber(value: state.enactedAndNonEnactedDeterminations.first?.cob ?? 0)
+                        ) ?? "0"
                     )
                     .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    .layoutPriority(2)
+                    Text(
+                        String(localized: "g", comment: "gram of carbs")
+                    )
+                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                    .layoutPriority(1)
                 }
 
                 Spacer()
@@ -544,7 +551,7 @@ extension Home {
                         .foregroundStyle(Color.red)
                         .font(.callout)
                 } else {
-                    HStack {
+                    HStack(spacing: 3) {
                         if state.pumpSuspended {
                             Text("Pump suspended")
                                 .font(.callout).fontWeight(.bold).fontDesign(.rounded)
@@ -553,6 +560,7 @@ extension Home {
                             Image(systemName: "drop.circle")
                                 .font(.callout)
                                 .foregroundColor(.insulinTintColor)
+                                .layoutPriority(2)
                             if tempBasalString.count > 5 {
                                 Text(tempBasalString)
                                     .font(.callout).fontWeight(.bold).fontDesign(.rounded)
@@ -575,34 +583,43 @@ extension Home {
                 }
                 if state.therapyParameterDisplayType == .autoisfSensRatio {
                     Spacer()
-                    HStack {
+                    HStack(spacing: 3) {
                         if state.autoisfEnabled {
-                            Text("aiSR")
-                                .font(.callout)
-                                .fontDesign(.rounded)
-                                .foregroundColor(Color.loopGreen)
-
-                            if let determination = state.determinationsFromPersistence.first,
-                               let autoISFratioValue = determination.autoISFratio as? Decimal
-                            {
-                                Text(
-                                    Formatter.decimalFormatterWithTwoFractionDigits.string(
-                                        from: NSDecimalNumber(decimal: autoISFratioValue)
-                                    ) ?? "0"
-                                )
-                                .font(.callout).fontWeight(.bold)
-                                .fontDesign(.rounded)
-                            } else {
-                                Text("--")
+                            Group {
+                                Text("aiSR")
+                                    .font(.callout)
+                                    .fontDesign(.rounded)
+                                    .foregroundColor(Color.loopGreen)
+                                    .layoutPriority(1)
+                                if let determination = state.determinationsFromPersistence.first,
+                                   let autoISFratioValue = determination.autoISFratio as? Decimal
+                                {
+                                    Text(
+                                        Formatter.decimalFormatterWithTwoFractionDigits.string(
+                                            from: NSDecimalNumber(decimal: autoISFratioValue)
+                                        ) ?? "0"
+                                    )
                                     .font(.callout).fontWeight(.bold)
                                     .fontDesign(.rounded)
+                                    .layoutPriority(2)
+                                } else {
+                                    Text("--")
+                                        .font(.callout).fontWeight(.bold)
+                                        .fontDesign(.rounded)
+                                }
+                            }
+                            .onTapGesture {
+                                onAISRTap: do {
+                                    // Show autoISF history
+                                    state.showModal(for: .autoisfHistory)
+                                }
                             }
                         } else {
                             Text("AS")
                                 .font(.callout)
                                 .fontDesign(.rounded)
                                 .foregroundColor(Color.zt)
-
+                                .layoutPriority(1)
                             if let determination = state.determinationsFromPersistence.first,
                                let autoISFratioValue = determination.autoISFratio as? Decimal
                             {
@@ -613,30 +630,55 @@ extension Home {
                                 )
                                 .font(.callout).fontWeight(.bold)
                                 .fontDesign(.rounded)
+                                .layoutPriority(2)
+
                             } else {
                                 Text("--")
-                                    .font(.callout).fontWeight(.bold)
+                                    .font(.callout)
                                     .fontDesign(.rounded)
+                                    .layoutPriority(1)
                             }
                         }
                     }
                 } else {
                     Spacer()
-
-                    Text("TDD:")
-                        .foregroundColor(Color.insulin)
-                        .font(.callout)
-                        .fontDesign(.rounded)
-                    Text(
-                        (
+                    HStack(spacing: 3) {
+                        Text("TDD:")
+                            .foregroundColor(Color.insulin)
+                            .font(.callout)
+                            .fontDesign(.rounded)
+                        Text(
                             Formatter.insulinFormatterToIncrement(for: 0.1)
                                 .string(from: (state.fetchedTDDs.first?.totalDailyDose ?? 0) as NSNumber) ??
                                 "0"
-                        ) + String(localized: " U", comment: "Insulin unit")
-                    )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                        )
+                        .font(.callout).fontWeight(.bold)
+                        .fontDesign(.rounded)
+                        .layoutPriority(2)
+                        Text(
+                            String(localized: "U", comment: "Insulin unit")
+                        )
+                        .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+                        .layoutPriority(1)
+                    }
+                    .onTapGesture {
+                        onTDDTap: do {
+                            // Set preferences in AppState
+                            appState.statSelectedViewType = .insulin
+                            appState.statSelectedInsulinChartType = .totalDailyDose
+                            appState.statSelectedInsulinTimeInterval = .week
+
+                            // Show statistics modal
+                            state.showModal(for: .statistics)
+                        }
+                    }
                 }
-            }.padding(.horizontal)
+            }
+            .lineLimit(1) // Ensure all text stays on a single line
+            .allowsTightening(true)
+            .minimumScaleFactor(0.5) // Allow the text to scale down if needed
+            .fixedSize(horizontal: false, vertical: true) // Prevent vertical scaling
+            .padding(.horizontal)
         }
 
         @ViewBuilder func adjustmentsOverrideView(_ overrideString: String) -> some View {
@@ -1265,8 +1307,37 @@ extension Home {
         }
 
         private var popup: some View {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(statusTitlePopup).font(.headline).foregroundColor(.primary)
+            // Directly calculate the status title in the view
+            let popupTitle: String = {
+                let determination = getMostRecentDetermination()
+
+                if determination == nil {
+                    return "No Algorithm result"
+                }
+
+                let dateFormatter = DateFormatter()
+                dateFormatter.timeStyle = .short
+
+                // Check if the determination is from suggested or enacted source
+                if state.determinationsFromSuggestion.first?.objectID == determination?.objectID {
+                    var title = String(localized: "Algorithm suggested at", comment: "Headline in suggested popup") +
+                        " " + dateFormatter.string(from: determination?.deliverAt ?? Date())
+
+                    // Add warning if the loop is not closed or if it's a manual temp basal
+                    if state.manualTempBasal || !state.closedLoop {
+                        title += " - not enacted!"
+                    }
+                    return title
+                } else {
+                    return String(localized: "Algorithm enacted at", comment: "Headline in enacted popup") +
+                        " " + dateFormatter.string(from: determination?.deliverAt ?? Date())
+                }
+            }()
+
+            return VStack(alignment: .leading, spacing: 4) {
+                Text(popupTitle)
+                    .font(.headline)
+                    .foregroundColor(.primary)
                     .padding(.bottom, 4)
 
                 if let errorMessage = state.errorMessage, let date = state.errorDate {
@@ -1277,7 +1348,10 @@ extension Home {
                     }.foregroundColor(.loopRed)
                 }
 
-                if let determination = state.determinationsFromPersistence.first {
+                // Determine which data to show based on most recent date
+                let determinationToShow = getMostRecentDetermination()
+
+                if let determination = determinationToShow {
                     if determination.glucose == 400 {
                         Text("Invalid CGM reading (HIGH).")
                             .bold()
@@ -1288,7 +1362,6 @@ extension Home {
                         Text("SMBs and Non-Zero Temp. Basal Rates are disabled.")
                             .font(.subheadline)
                             .fixedSize(horizontal: false, vertical: true)
-
                     } else {
                         let tags = !state.isSmoothingEnabled ? determination.reasonParts : determination
                             .reasonParts + ["Smoothing: On"]
@@ -1299,13 +1372,6 @@ extension Home {
                         .animation(.none, value: false)
                         Text("Algorithm reasoning").font(.headline).foregroundColor(.primary)
                             .padding(.vertical, 4)
-//                        Text(
-//                            self
-//                                .parseReasonConclusion(
-//                                    determination.reasonConclusion,
-//                                    isMmolL: state.units == .mmolL
-//                                )
-//                        ).font(.subheadline).foregroundColor(.white)
                         Text(determination.reasonConclusion)
                             .font(.subheadline).foregroundColor(.primary)
                     }
@@ -1324,18 +1390,50 @@ extension Home {
             }
         }
 
-        private func setStatusTitlePopup() {
-            if let determination = state.determinationsFromPersistence.first {
-                let dateFormatter = DateFormatter()
-                dateFormatter.timeStyle = .short
-                statusTitlePopup = String(localized: "oref enacted at", comment: "Headline in enacted pop up") +
-                    " " +
-                    dateFormatter
-                    .string(from: determination.deliverAt ?? Date())
-            } else {
-                statusTitlePopup = "No oref result"
-                return
+        // Modified setStatusTitlePopup method that now returns the current title string
+        private func setStatusTitlePopup() -> String {
+            let determination = getMostRecentDetermination()
+
+            if determination == nil {
+                statusTitlePopup = "No Algorithm result"
+                return statusTitlePopup
             }
+
+            let dateFormatter = DateFormatter()
+            dateFormatter.timeStyle = .short
+
+            // Check if the determination is from suggested or enacted source
+            if state.determinationsFromSuggestion.first?.objectID == determination?.objectID {
+                statusTitlePopup = String(localized: "Algorithm suggested at", comment: "Headline in suggested popup") +
+                    " " + dateFormatter.string(from: determination?.deliverAt ?? Date())
+
+                // Add warning if the loop is not closed or if it's a manual temp basal
+                if state.manualTempBasal || !state.closedLoop {
+                    statusTitlePopup += " - not enacted!"
+                }
+            } else {
+                statusTitlePopup = String(localized: "Algorithm enacted at", comment: "Headline in enacted popup") +
+                    " " + dateFormatter.string(from: determination?.deliverAt ?? Date())
+            }
+
+            return statusTitlePopup
+        }
+
+        // Helper function to determine the most recent determination
+        private func getMostRecentDetermination() -> OrefDetermination? {
+            let enacted = state.determinationsFromPersistence.first
+            let suggested = state.determinationsFromSuggestion.first
+
+            // If only one is available, return it
+            if enacted == nil { return suggested }
+            if suggested == nil { return enacted }
+
+            // Both are available - compare dates
+            let enactedDate = enacted?.deliverAt ?? Date.distantPast
+            let suggestedDate = suggested?.deliverAt ?? Date.distantPast
+
+            // Return the most recent one
+            return suggestedDate > enactedDate ? suggested : enacted
         }
     }
 }

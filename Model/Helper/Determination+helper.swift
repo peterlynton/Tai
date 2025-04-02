@@ -48,6 +48,14 @@ extension NSPredicate {
         return NSPredicate(format: "enacted == %@ AND timestamp >= %@", true as NSNumber, date as NSDate)
     }
 
+    static var suggestedDetermination: NSPredicate {
+        let date = Date.halfHourAgo
+        return NSPredicate(
+            format: "deliverAt >= %@ AND (enacted == false OR enacted == nil)",
+            date as NSDate
+        )
+    }
+
     static var determinationsForCobIobCharts: NSPredicate {
         let date = Date.oneDayAgo
         return NSPredicate(format: "deliverAt >= %@", date as NSDate)

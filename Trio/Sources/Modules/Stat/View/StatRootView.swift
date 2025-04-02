@@ -45,7 +45,12 @@ extension Stat {
                 }
             }
             .background(appState.trioBackgroundColor(for: colorScheme))
-            .onAppear(perform: configureView)
+            .onAppear {
+                configureView()
+                selectedView = appState.statSelectedViewType
+                state.selectedInsulinChartType = appState.statSelectedInsulinChartType
+                state.selectedIntervalForInsulinStats = appState.statSelectedInsulinTimeInterval
+            }
             .navigationBarTitleDisplayMode(.inline)
             .navigationTitle("Statistics")
             .toolbar {

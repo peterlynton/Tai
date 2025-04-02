@@ -17,4 +17,9 @@ import UIKit
                 endPoint: .bottom
             )
     }
+
+    // For statistics view settings
+    var statSelectedViewType: Stat.StateModel.StatisticViewType = .glucose
+    var statSelectedInsulinChartType: Stat.StateModel.InsulinChartType = .totalDailyDose
+    var statSelectedInsulinTimeInterval: Stat.StateModel.StatsTimeInterval = .day
 }

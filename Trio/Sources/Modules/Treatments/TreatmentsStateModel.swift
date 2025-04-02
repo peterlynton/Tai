@@ -820,7 +820,7 @@ extension Treatments.StateModel {
             // setup vars for bolus calculation
             insulinRequired = (mostRecentDetermination.insulinReq ?? 0) as Decimal
             evBG = (mostRecentDetermination.eventualBG ?? 0) as Decimal
-            minPredBG = (mostRecentDetermination.minPredBGFromReason ?? 0) as Decimal
+            minPredBG = (mostRecentDetermination.minPredBGFromReason(with: units) ?? 0) as Decimal
             lastLoopDate = apsManager.lastLoopDate as Date?
             insulin = (mostRecentDetermination.insulinForManualBolus ?? 0) as Decimal
             target = (mostRecentDetermination.currentTarget ?? currentBGTarget as NSDecimalNumber) as Decimal

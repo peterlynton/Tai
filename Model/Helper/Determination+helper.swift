@@ -20,7 +20,7 @@ extension OrefDetermination {
         reason?.components(separatedBy: "; ").last ?? ""
     }
 
-    var minPredBGFromReason: Decimal? {
+    func minPredBGFromReason(with units: GlucoseUnits) -> Decimal? {
         // Find the part that contains "minPredBG"
         if let minPredBGPart = reasonParts.first(where: { $0.contains("minPredBG") }) {
             // Extract the number after "minPredBG"
@@ -28,7 +28,14 @@ extension OrefDetermination {
             if let valueComponent = components.dropFirst().first {
                 // Get everything after "minPredBG " and convert to Decimal
                 let valueString = valueComponent.trimmingCharacters(in: CharacterSet(charactersIn: "0123456789.-").inverted)
-                return Decimal(string: valueString)
+                var value = Decimal(string: valueString)
+
+                // Check if conversion is needed
+                if units == .mmolL {
+                    value = value?.asMgdL
+                }
+                // debug(.service, "minPredBG is \(value ?? 0)")
+                return value
             }
         }
         return nil

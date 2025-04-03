@@ -1,6 +1,7 @@
-oref0 branch: autoISF3.01 - git version: bba17a9
+oref0 branch: autoISF3.01 - git version: 68e63ea
 
 Last commits:
+68e63ea profile.temptargetset properly solved to avoid undefined
 bba17a9 Remove TDD calc
 6216969 3-digit temp basal rates
 2a0bd4e bolusIncrement for oref
@@ -30,4 +31,3 @@ afede34 profile.iob_threshold_percent 0..1
 f0b0fbb logging sens adjustments
 7408a7f remove delta logging
 1d7dbdb tick in mg/dL
-f37f7ec cp to Open-iAPS

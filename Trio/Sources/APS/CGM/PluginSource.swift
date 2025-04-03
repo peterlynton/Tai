@@ -204,7 +204,7 @@ extension PluginSource: CGMManagerDelegate {
     }
 
     private func readCGMResult(readingResult: CGMReadingResult) -> Result<[BloodGlucose], Error> {
-        debug(.deviceManager, "PLUGIN CGM - Process CGM Reading Result launched with \(readingResult)")
+//        debug(.deviceManager, "PLUGIN CGM - Process CGM Reading Result launched with \(readingResult)")
 
         if glucoseManager?.glucoseSource == nil {
             debug(

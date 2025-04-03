@@ -581,7 +581,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             version: Bundle.main.releaseVersionNumber ?? "Unknown"
         )
 
-        debug(.nightscout, "To be uploaded openapsStatus: \(openapsStatus)")
+//        debug(.nightscout, "To be uploaded openapsStatus: \(openapsStatus)")
 
         // Gather all relevant data for NS Status
         let battery = await fetchedBattery

@@ -295,20 +295,20 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                     watchState.delta = deltaValue < 0 ? "\(formattedDelta)" : "+\(formattedDelta)"
                 }
 
-                debug(
-                    .watchManager,
-                    """
-                    📱 Setup GarminWatchState - \
-                    glucose: \(watchState.glucose ?? "nil"), \
-                    trendRaw: \(watchState.trendRaw ?? "nil"), \
-                    delta: \(watchState.delta ?? "nil"), \
-                    eventualBGRaw: \(watchState.eventualBGRaw ?? "nil"), \
-                    isf: \(watchState.isf ?? "nil"), \
-                    cob: \(watchState.cob ?? "nil"), \
-                    iob: \(watchState.iob ?? "nil"), \
-                    lastLoopDateInterval: \(watchState.lastLoopDateInterval?.description ?? "nil")
-                    """
-                )
+//                debug(
+//                    .watchManager,
+//                    """
+//                    📱 Setup GarminWatchState - \
+//                    glucose: \(watchState.glucose ?? "nil"), \
+//                    trendRaw: \(watchState.trendRaw ?? "nil"), \
+//                    delta: \(watchState.delta ?? "nil"), \
+//                    eventualBGRaw: \(watchState.eventualBGRaw ?? "nil"), \
+//                    isf: \(watchState.isf ?? "nil"), \
+//                    cob: \(watchState.cob ?? "nil"), \
+//                    iob: \(watchState.iob ?? "nil"), \
+//                    lastLoopDateInterval: \(watchState.lastLoopDateInterval?.description ?? "nil")
+//                    """
+//                )
 
                 return watchState
             }

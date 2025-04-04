@@ -41,8 +41,8 @@ extension BasalProfileEditor {
                     ).foregroundStyle(
                         .linearGradient(
                             colors: [
-                                profile.isOverwritten ? Color.purple.opacity(0.5) : Color.insulin.opacity(0.6),
-                                Color.insulin.opacity(0.1)
+                                profile.isOverwritten ? Color.orange.opacity(0.5) : Color.teal.opacity(0.6),
+                                Color.teal.opacity(0.1)
                             ],
                             startPoint: .bottom,
                             endPoint: .top

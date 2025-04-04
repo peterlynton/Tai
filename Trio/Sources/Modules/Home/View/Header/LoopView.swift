@@ -101,18 +101,16 @@ struct CircleProgress: View {
 
     private let rect = CGRect(x: 0, y: 0, width: 16, height: 16) // Same dimensions as in LoopView
     private var backgroundGradient: AngularGradient {
+        // Create a custom angular gradient based on TaiStyle colors but with custom rotation
         AngularGradient(
-            gradient: Gradient(colors: [
-                Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902),
-                Color(red: 0.3411764706, green: 0.6666666667, blue: 0.9254901961),
-                Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765),
-                Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569),
-                Color(red: 0.7215686275, green: 0.3411764706, blue: 1),
-                Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569),
-                Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765),
-                Color(red: 0.3411764706, green: 0.6666666667, blue: 0.9254901961),
-                Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902)
-            ]),
+            stops: [
+                .init(color: Color.orange, location: 0.0),
+                .init(color: Color.teal, location: 0.3),
+                .init(color: Color.cyan, location: 0.5),
+                .init(color: Color.teal, location: 0.8),
+                .init(color: Color.orange, location: 1.0)
+
+            ],
             center: .center,
             startAngle: .degrees(rotationAngle),
             endAngle: .degrees(rotationAngle + 360)

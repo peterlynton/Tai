@@ -1,4 +1,3 @@
 Beta update 0.4.3
 
-make autoISF config searchable
-place ai in bobble for quick distinction from Trio
+taiStyle

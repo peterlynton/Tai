@@ -5,13 +5,12 @@ struct BolusProgressOverlay: View {
     let onCancelBolus: () -> Void
 
     private let progressGradient = LinearGradient(
-        colors: [
-            Color(red: 0.7215686275, green: 0.3411764706, blue: 1), // #B857FF
-            Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569), // #9F6CFA
-            Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765), // #7C8BF3
-            Color(red: 0.3411764706, green: 0.6666666667, blue: 0.9254901961), // #57AAEC
-            Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902) // #43BBE9
-        ],
+        gradient: Gradient(stops: [
+            .init(color: Color.orange, location: 0.0),
+            .init(color: Color.orange, location: 0.1),
+            .init(color: Color.teal, location: 0.75),
+            .init(color: Color.cyan, location: 1.0)
+        ]),
         startPoint: .leading,
         endPoint: .trailing
     )

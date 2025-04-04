@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Ebene_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 768 768">
+  <!-- Generator: Adobe Illustrator 29.4.0, SVG Export Plug-In . SVG Version: 2.1.0 Build 152)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: url(#Unbenannter_Verlauf_2);
+      }
+
+      .st1 {
+        fill: url(#Unbenannter_Verlauf_4);
+      }
+
+      .st2 {
+        fill: url(#Unbenannter_Verlauf_3);
+      }
+
+      .st3 {
+        fill: url(#Unbenannter_Verlauf);
+        fill-rule: evenodd;
+      }
+
+      .st4 {
+        fill: #00a3b9;
+      }
+
+      .st5 {
+        fill: #ff8c42;
+      }
+
+      .st6 {
+        fill: #00ffef;
+      }
+    </style>
+    <linearGradient id="Unbenannter_Verlauf" data-name="Unbenannter Verlauf" x1="854.79" y1="269.54" x2="481.24" y2="-668.84" gradientTransform="translate(-117 234) scale(.75 -.75)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00d9f6"/>
+      <stop offset="1" stop-color="#ff8c42"/>
+    </linearGradient>
+    <linearGradient id="Unbenannter_Verlauf_2" data-name="Unbenannter Verlauf 2" x1="561.54" y1="-236.82" x2="958.27" y2="-427.1" gradientTransform="translate(-117 234) scale(.75 -.75)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff8c42"/>
+      <stop offset=".24" stop-color="#ff7d30"/>
+      <stop offset="1" stop-color="#00d9f6"/>
+    </linearGradient>
+    <linearGradient id="Unbenannter_Verlauf_3" data-name="Unbenannter Verlauf 3" x1="565.93" y1="-4.14" x2="371.39" y2="-402.14" gradientTransform="translate(-117 234) scale(.75 -.75)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00ffef"/>
+      <stop offset="1" stop-color="#00a3b9"/>
+    </linearGradient>
+    <linearGradient id="Unbenannter_Verlauf_4" data-name="Unbenannter Verlauf 4" x1="518.31" y1="43.52" x2="935.34" y2="-122.87" gradientTransform="translate(-117 234) scale(.75 -.75)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00a3b9"/>
+      <stop offset="1" stop-color="#00d9f6"/>
+    </linearGradient>
+  </defs>
+  <path id="ring" class="st3" d="M368.24,764.5C161.04,755.9-1.26,583.24,2.95,375.91,7.16,168.58,176.35,2.65,383.72,2.47c207.37-.18,376.84,165.46,381.41,372.78,4.57,207.32-157.44,380.26-364.63,389.22-10.75.46-21.52.47-32.27.03h0ZM402.74,739.36c-12.74.66-25.5.65-38.23-.05-192.72-10.62-341.92-172.79-336.48-365.73C33.48,180.65,191.59,27.15,384.6,27.42c193.01.26,350.7,154.2,355.62,347.14s-144.73,354.71-337.47,364.81h0Z"/>
+  <g id="triple">
+    <path class="st0" d="M286.5,474c.96-20.53,6.3-40.5,14.65-59.22.82-1.84,5.72-13.15,6.36-13.53.96-.56,15.6,11.72,17.89,13.22,77.37,50.76,181.89,37.23,240.82-35.38,2.25-2.77,11.06-17.19,12.04-17.6,4-1.68,27.94,39.62,30.11,44.5,63.04,141.57-80.72,290.21-224.38,225.5l-3-1.5c-.22-.07-.51.06-.75,0l-.75-.75c-51.64-20.28-89.98-80.5-93-135-.35-6.74-.3-13.51,0-20.25h.01Z"/>
+    <path class="st2" d="M401.22,311.96c-33.8,11.17-63.78,34.04-84.58,62.8-33.67,46.57-48.14,108.04-27.96,162.83l11.32,28.65c-135.38,28.64-248.35-107.9-191.38-236,47.72-107.31,191.44-135.73,272.01-47.51,3.05,3.34,22.19,26.68,20.59,29.22h0Z"/>
+    <path class="st1" d="M468.46,109.81c154.29,43.22,173.82,258.61,22.97,316.75-7.23,2.78-53.4,14.49-57.19,10.7-.68-.68,2.15-16.33,2.28-19.1,4.62-94.5-59.87-178.91-154.26-193.05-2.31-.35-19.66-.98-19.76-1.97-.27-2.78,11.81-28.24,14.12-32.39,36.87-66.42,118.04-101.62,191.84-80.94Z"/>
+  </g>
+  <g id="ai">
+    <g>
+      <path class="st5" d="M286.5,494.25v-20.25c-.29,6.26-.35,14.01,0,20.25Z"/>
+      <path class="st4" d="M384,631.5c-.92-.42-2.33-.17-3-1.5,1.11.37,2.22.29,3,1.5Z"/>
+      <path class="st6" d="M591,439.5c.6,12.79.86,25.79.79,39v5.25c.08,25.61-.18,51.11-.79,76.51h-30.76v-120.76h30.76Z"/>
+      <circle class="st6" cx="575.65" cy="409.26" r="18.28"/>
+      <polygon class="st4" points="560.24 556.5 560.25 439.5 560.24 439.5 560.24 556.5"/>
+      <polygon class="st6" points="591 560.26 591.79 483.75 591.79 560.26 591 560.26"/>
+      <polygon class="st4" points="591.79 478.5 591 439.5 591.79 439.5 591.79 478.5"/>
+      <g>
+        <path class="st6" d="M507.75,531.75c-3.26-42.4-65.51-37.19-60.74,7.11,1.4,13.01,15.67,27.39,28.86,27.39h19.88l-8.33,29.91c-33.45,2.64-63.9-16.13-72.59-49.51-.97-3.74-1.36-7.2-1.36-7.2-.2-1.42-.23-4.81-.23-5.26-.32-50.3,53.75-78.09,97.27-53.57,41.36,23.3,26.77,76.58,29.5,115.63h-31.5c-.55-21.48-.8-42.98-.75-64.5h-.01Z"/>
+        <path class="st4" d="M508.5,596.25c-2.59-21.25.88-43.29-.75-64.5l.75,64.5Z"/>
+      </g>
+    </g>
+  </g>
+</svg>

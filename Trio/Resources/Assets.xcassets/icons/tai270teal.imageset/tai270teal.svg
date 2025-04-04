@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg id="a" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 178.03 204.29">
-  <!-- Define the gradient with strong purple emphasis -->
+  <!-- Define the orange-teal-cyan gradient from 11 to 5 o'clock -->
   <defs>
-    <linearGradient id="trioGradient" x1="0%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#A355FF" /> <!-- Brighter Purple -->
-      <stop offset="50%" stop-color="#9F6CFA" /> <!-- Purple-Blue -->
-      <stop offset="80%" stop-color="#7C8BF3" /> <!-- Blue -->
-      <stop offset="90%" stop-color="#57AAEA" /> <!-- Light Blue -->
-      <stop offset="100%" stop-color="#5BB5F2" /> <!-- Adjusted blue -->
+    <linearGradient id="orangeToCyanGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F26E3A" /> <!-- Orange-red (11 o'clock) -->
+      <stop offset="40%" stop-color="#9B8561" /> <!-- Orange-teal transition -->
+      <stop offset="60%" stop-color="#32B990" /> <!-- Teal green (middle) -->
+      <stop offset="75%" stop-color="#35B9BA" /> <!-- Teal-cyan transition -->
+      <stop offset="100%" stop-color="#43BBE9" /> <!-- Cyan (5 o'clock) -->
     </linearGradient>
   </defs>
   
   <!-- Group all shapes to apply a single gradient across the entire SVG -->
-  <g style="fill:url(#trioGradient);">
+  <g style="fill:url(#orangeToCyanGradient);">
     <!-- The "a" part -->
     <path d="M124.19,203.91h-31.4v-65.41c0-12.91-13.34-25.72-25.87-27.2-38.56-4.56-47.48,47.85-15.23,60.09,1.59.6,8.13,2.63,9.34,2.63h19.81l-8.65,29.94C25.88,208.2-9.43,171.32,2.25,124.95c14.05-55.74,98.97-59.95,118.01-5.69,1.31,3.75,3.93,12.63,3.93,16.25v68.4Z" />
     

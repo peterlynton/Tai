@@ -29,7 +29,7 @@ extension Main {
 
                     Text("Tai v\(versionNumber) (\(buildNumber)) \(copyright)")
                         .fontWeight(.heavy)
-                        .foregroundStyle(Color(red: 148 / 255, green: 102 / 255, blue: 234 / 255))
+                        .foregroundStyle(Color.uam)
                         .padding(.vertical)
 
                     if showError {

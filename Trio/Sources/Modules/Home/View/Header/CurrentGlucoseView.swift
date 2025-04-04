@@ -15,14 +15,6 @@ struct CurrentGlucoseView: View {
     let glucose: [GlucoseStored] // This contains the last two glucose values, no matter if its manual or a cgm reading
 
     @State private var rotationDegrees: Double = 0.0
-    @State private var angularGradient = AngularGradient(colors: [
-        Color(red: 0.7215686275, green: 0.3411764706, blue: 1),
-        Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569),
-        Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765),
-        Color(red: 0.3411764706, green: 0.6666666667, blue: 0.9254901961),
-        Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902),
-        Color(red: 0.7215686275, green: 0.3411764706, blue: 1)
-    ], center: .center, startAngle: .degrees(270), endAngle: .degrees(-90))
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -43,17 +35,11 @@ struct CurrentGlucoseView: View {
 
     var body: some View {
         let triangleColor = Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902)
-        let gradientColors = [
-            Color(red: 0.7215686275, green: 0.3411764706, blue: 1),
-            Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569),
-            Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765),
-            Color(red: 0.3411764706, green: 0.6666666667, blue: 0.9254901961),
-            Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902)
-        ]
+        let gradient = TaiStyle.ringGradient()
 
         if cgmAvailable {
             ZStack {
-                TrendShape(gradient: angularGradient, color: triangleColor)
+                TrendShape(gradient: gradient, color: triangleColor)
                     .rotationEffect(.degrees(rotationDegrees))
                 InsulinConcentrationBadge(concentration: concentration, hide: hideInsulinBadge)
                     .offset(x: -65, y: 65)
@@ -112,11 +98,18 @@ struct CurrentGlucoseView: View {
                     }
                     .frame(alignment: .top)
                 }
-                Image("tai270")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 20, height: 20)
-                    .offset(x: -33, y: -42)
+                ZStack {
+                    TaiStyle.linearGradient()
+                        .mask {
+                            Image("tai270black")
+                                .renderingMode(.template)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                        }
+                }
+                .frame(width: 20, height: 20)
+                .offset(x: -33, y: -42)
             }
             .onChange(of: glucose.last?.directionEnum) {
                 withAnimation {
@@ -210,6 +203,11 @@ struct CircleShape: View {
     @Environment(\.colorScheme) var colorScheme
 
     let gradient: AngularGradient
+
+    // Default to TaiStyle's gradient if none is provided
+    init(gradient: AngularGradient = TaiStyle.ringGradient()) {
+        self.gradient = gradient
+    }
 
     var body: some View {
         ZStack {

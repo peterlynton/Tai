@@ -20,10 +20,16 @@ class BuildDetails {
         dict["com-trio-build-date"] as? String
     }
 
+    var trioBranch: String {
+        dict["com-trio-branch"] as? String ?? String(localized: "Unknown")
+    }
+
+    var trioCommitSHA: String {
+        dict["com-trio-commit-sha"] as? String ?? String(localized: "Unknown")
+    }
+
     var branchAndSha: String {
-        let branch = dict["com-trio-branch"] as? String ?? String(localized: "Unknown")
-        let sha = dict["com-trio-commit-sha"] as? String ?? String(localized: "Unknown")
-        return "\(branch) \(sha)"
+        "\(trioBranch) \(trioCommitSHA)"
     }
 
     /// Returns a dictionary of submodule details.

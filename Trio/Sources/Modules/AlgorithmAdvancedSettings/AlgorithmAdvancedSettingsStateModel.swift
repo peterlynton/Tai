@@ -22,6 +22,8 @@ extension AlgorithmAdvancedSettings {
         @Published var allowDilution: Bool = false
         @Published var hideInsulinBadge: Bool = false
         @Published var insulinActionCurve: Decimal = 10
+        @Published var smbDeliveryRatio: Decimal = 0.5
+        @Published var smbInterval: Decimal = 3
 
         override func subscribe() {
             units = settingsManager.settings.units
@@ -40,6 +42,8 @@ extension AlgorithmAdvancedSettings {
                 noisyCGMTargetMultiplier = $0 }
             subscribeSetting(\.allowDilution, on: $allowDilution) { allowDilution = $0 }
             subscribeSetting(\.hideInsulinBadge, on: $hideInsulinBadge) { hideInsulinBadge = $0 }
+            subscribePreferencesSetting(\.smbDeliveryRatio, on: $smbDeliveryRatio) { smbDeliveryRatio = $0 }
+            subscribePreferencesSetting(\.smbInterval, on: $smbInterval) { smbInterval = $0 }
         }
     }
 }

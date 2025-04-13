@@ -579,7 +579,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 enacted.minGuardBG = enacted.minGuardBG?.asMmolL
                 enacted.minPredBG = enacted.minPredBG?.asMmolL
                 enacted.threshold = enacted.threshold?.asMmolL
-                enacted?.bg = enacted.bg?.asMmolL
+                enacted.bg = enacted.bg?.asMmolL
             }
 
             enacted.reason = injectTDD(into: enacted.reason, tdd: tdd)

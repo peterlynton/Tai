@@ -267,7 +267,7 @@ final class BaseBolusCalculationManager: BolusCalculationManager, Injectable {
         return BolusCalculatorVariables(
             insulinRequired: (mostRecentDetermination.insulinReq ?? 0) as Decimal,
             evBG: (mostRecentDetermination.eventualBG ?? 0) as Decimal,
-            minPredBG: (mostRecentDetermination.minPredBGFromReason ?? 0) as Decimal,
+            minPredBG: (mostRecentDetermination.minPredBGFromReason(with: settingsManager.settings.units) ?? 0) as Decimal,
             lastLoopDate: apsManager.lastLoopDate as Date?,
             insulin: (mostRecentDetermination.insulinForManualBolus ?? 0) as Decimal,
             target: (mostRecentDetermination.currentTarget ?? currentBGTarget as NSDecimalNumber) as Decimal,

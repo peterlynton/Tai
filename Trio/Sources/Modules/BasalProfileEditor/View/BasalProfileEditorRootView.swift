@@ -12,6 +12,7 @@ extension BasalProfileEditor {
 
         let chartScale = Calendar.current
             .date(from: DateComponents(year: 2001, month: 01, day: 01, hour: 0, minute: 0, second: 0))
+        let tzOffset = TimeZone.current.secondsFromGMT()
 
         @Environment(\.colorScheme) var colorScheme
         @Environment(AppState.self) var appState
@@ -30,12 +31,17 @@ extension BasalProfileEditor {
             return formatter
         }
 
+        var now = Date()
         var basalScheduleChart: some View {
             Chart {
                 ForEach(state.chartData!, id: \.self) { profile in
+                    let startDate = Calendar.current.startOfDay(for: now)
+                        .addingTimeInterval(profile.startDate.timeIntervalSinceReferenceDate + Double(tzOffset))
+                    let endDate = Calendar.current.startOfDay(for: now)
+                        .addingTimeInterval(profile.endDate!.timeIntervalSinceReferenceDate + Double(tzOffset))
                     RectangleMark(
-                        xStart: .value("start", profile.startDate),
-                        xEnd: .value("end", profile.endDate!),
+                        xStart: .value("start", startDate),
+                        xEnd: .value("end", endDate),
                         yStart: .value("rate-start", profile.amount),
                         yEnd: .value("rate-end", 0)
                     ).foregroundStyle(
@@ -49,13 +55,11 @@ extension BasalProfileEditor {
                         )
                     ).alignsMarkStylesWithPlotArea()
 
-                    LineMark(x: .value("End Date", profile.endDate!), y: .value("Amount", profile.amount))
-                        .lineStyle(.init(lineWidth: 1))
-                        .foregroundStyle(Color.insulin)
+                    LineMark(x: .value("End Date", endDate), y: .value("Amount", profile.amount))
+                        .lineStyle(.init(lineWidth: 1)).foregroundStyle(Color.insulin)
 
-                    LineMark(x: .value("Start Date", profile.startDate), y: .value("Amount", profile.amount))
-                        .lineStyle(.init(lineWidth: 1))
-                        .foregroundStyle(Color.insulin)
+                    LineMark(x: .value("Start Date", startDate), y: .value("Amount", profile.amount))
+                        .lineStyle(.init(lineWidth: 1)).foregroundStyle(Color.insulin)
                 }
             }
             .chartXAxis {
@@ -71,7 +75,8 @@ extension BasalProfileEditor {
                 }
             }
             .chartXScale(
-                domain: Calendar.current.startOfDay(for: chartScale!) ... Calendar.current.startOfDay(for: chartScale!)
+                domain: Calendar.current.startOfDay(for: now) ... Calendar
+                    .current.startOfDay(for: now)
                     .addingTimeInterval(60 * 60 * 24)
             )
         }

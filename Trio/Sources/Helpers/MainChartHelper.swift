@@ -171,7 +171,7 @@ extension MainChartView {
         AxisMarks(
             position: .trailing,
             values: stride(
-                from: units == .mgdL ? 50 : 4,
+                from: units == .mgdL ? 75 : 4,
                 through: units == .mgdL ? state.maxYAxisValue : state.maxYAxisValue.asMmolL,
                 by: units == .mgdL ? 50 : 3
             ).map { $0 }

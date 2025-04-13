@@ -26,7 +26,7 @@ extension Home.StateModel {
 
                 // Adjust max forecast to be no more than 50 over max glucose
                 let adjustedMaxForecast = min(maxForecast ?? maxGlucose + 50, maxGlucose + 50)
-                let minOverall = min(minGlucose, minForecast ?? minGlucose)
+                let minOverall = min(minGlucose - 25, minForecast ?? minGlucose)
                 let maxOverall = max(maxGlucose, adjustedMaxForecast)
 
                 var maxYValue = Decimal(200)

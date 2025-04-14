@@ -573,7 +573,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
         if var enacted = fetchedEnactedDetermination {
             if settingsManager.settings.units == .mmolL {
-                enacted.reason = parseReasonGlucoseValuesToMmolL(enacted.reason)
+                // enacted.reason = parseReasonGlucoseValuesToMmolL(enacted.reason)
                 // TODO: verify that these parsings are needed for 3rd party apps, e.g., LoopFollow
                 enacted.current_target = enacted.current_target?.asMmolL
                 enacted.minGuardBG = enacted.minGuardBG?.asMmolL

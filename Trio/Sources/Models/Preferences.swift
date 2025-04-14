@@ -48,7 +48,6 @@ struct Preferences: JSON, Equatable {
     var adjustmentFactor: Decimal = 0.8
     var adjustmentFactorSigmoid: Decimal = 0.5
     var sigmoid: Bool = false
-    var enableDynamicCR: Bool = false
     var useNewFormula: Bool = false
     var useWeightedAverage: Bool = false
     var weightPercentage: Decimal = 0.35
@@ -141,7 +140,6 @@ extension Preferences {
         case adjustmentFactor
         case adjustmentFactorSigmoid
         case sigmoid
-        case enableDynamicCR
         case useNewFormula
         case useWeightedAverage
         case weightPercentage
@@ -375,11 +373,6 @@ extension Preferences: Decodable {
 
         if let sigmoid = try? container.decode(Bool.self, forKey: .sigmoid) {
             preferences.sigmoid = sigmoid
-        }
-
-        // FIXME: remove this at a later release; hard code it to false for now
-        if let enableDynamicCR = try? container.decode(Bool.self, forKey: .enableDynamicCR) {
-            preferences.enableDynamicCR = false
         }
 
         if let useNewFormula = try? container.decode(Bool.self, forKey: .useNewFormula) {

@@ -137,7 +137,13 @@ struct DecimalPickerSettings {
     var hours = PickerSetting(value: 6, step: 0.5, min: 2, max: 24, type: PickerSetting.PickerSettingType.hour)
     var dia = PickerSetting(value: 10, step: 0.5, min: 5, max: 10, type: PickerSetting.PickerSettingType.hour)
     var maxBolus = PickerSetting(value: 10, step: 0.5, min: 0.5, max: 30, type: PickerSetting.PickerSettingType.insulinUnit)
-    var maxBasal = PickerSetting(value: 10, step: 0.5, min: 0.5, max: 30, type: PickerSetting.PickerSettingType.insulinUnit)
+    var maxBasal = PickerSetting(
+        value: 10,
+        step: 0.5,
+        min: 0.5,
+        max: 30,
+        type: PickerSetting.PickerSettingType.insulinUnitPerHour
+    )
     // autoISF
     var autoISFmax = PickerSetting(value: 2, step: 0.1, min: 1, max: 4, type: PickerSetting.PickerSettingType.factorRaw)
     var autoISFmin = PickerSetting(value: 0.4, step: 0.1, min: 0.1, max: 1, type: PickerSetting.PickerSettingType.factorRaw)
@@ -270,6 +276,7 @@ struct PickerSetting {
         case factorRaw
         case gram
         case insulinUnit
+        case insulinUnitPerHour
         case minute
         case hour
     }

@@ -13,7 +13,7 @@ struct PulsingLogoAnimation: View {
     @State private var isPulsing = false
 
     var body: some View {
-        Image("trioCircledNoBackground")
+        Image("taiCircledNoBackground")
             .resizable()
             .scaledToFit()
             .frame(height: 100)

@@ -132,13 +132,13 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Equatable {
         case .unitSelection:
             return "numbers.rectangle"
         case .glucoseTarget:
-            return "target"
+            return "arrow.up.circle.badge.clock"
         case .basalRates:
-            return "chart.xyaxis.line"
+            return "chart.bar.xaxis"
         case .carbRatio:
             return "fork.knife"
         case .insulinSensitivity:
-            return "drop.fill"
+            return "arrow.up.arrow.down"
         case .deliveryLimits:
             return "slider.horizontal.3"
         case .completed:
@@ -430,6 +430,19 @@ struct SettingItemView: View {
                     .scaledToFit()
                     .frame(width: 40, height: 24)
                     .colorMultiply(accentColor)
+            } else if step == .carbRatio {
+                Image("premeal")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 40, height: 24)
+                    .colorMultiply(accentColor)
+            } else if step == .basalRates {
+                Image(systemName: icon)
+                    .rotationEffect(.degrees(180))
+                    .font(.system(size: 24))
+                    .foregroundStyle(accentColor)
+                    .frame(width: 40)
             } else {
                 Image(systemName: icon)
                     .font(.system(size: 24))

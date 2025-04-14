@@ -14,7 +14,7 @@ struct WelcomeStepView: View {
                 .multilineTextAlignment(.center)
 
             Text(
-                "Welcome to Trio - an automated insulin delivery system for iOS based on the OpenAPS algorithm with adaptations."
+                "Welcome to Tai - an automated insulin delivery system for iOS based on Trio using the OpenAPS algorithm with autoISF and other adaptations."
             )
             .multilineTextAlignment(.center)
             .foregroundColor(.secondary)

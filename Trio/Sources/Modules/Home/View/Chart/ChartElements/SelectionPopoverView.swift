@@ -77,22 +77,30 @@ struct SelectionPopoverView: ChartContent {
 
             if let selectedIOBValue, let iob = selectedIOBValue.iob {
                 HStack {
-                    Image(systemName: "syringe.fill").frame(width: 15)
+                    Image(systemName: "drop.circle")
+                        .frame(width: 15)
                     Text(Formatter.bolusFormatter.string(from: iob) ?? "")
                         .bold()
                         + Text(String(localized: " U", comment: "Insulin unit"))
                 }
                 .foregroundStyle(Color.insulin).font(.body)
+                .padding(.top, 4)
             }
 
             if let selectedCOBValue {
                 HStack {
-                    Image(systemName: "fork.knife").frame(width: 15)
+                    Image("premeal")
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 15, height: 15)
+                        .foregroundColor(.orange)
                     Text(Formatter.integerFormatter.string(from: selectedCOBValue.cob as NSNumber) ?? "")
                         .bold()
                         + Text(String(localized: " g", comment: "gram of carbs"))
                 }
                 .foregroundStyle(Color.orange).font(.body)
+                .padding(.bottom, 4)
             }
         }
         .padding(.horizontal)

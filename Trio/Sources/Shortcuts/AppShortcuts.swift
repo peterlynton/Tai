@@ -9,8 +9,8 @@ struct AppShortcuts: AppShortcutsProvider {
 //                "\(.applicationName) bolus",
 //                "Enacts a \(.applicationName) Bolus"
 //            ],
-//            shortTitle: "Bolus",
-//            systemImageName: "syringe.fill"
+//            shortTitle: "Enact Bolus",
+//            systemImageName: "drop.circle"
 //        )
         AppShortcut(
             intent: ApplyTempPresetIntent(),
@@ -18,8 +18,8 @@ struct AppShortcuts: AppShortcutsProvider {
                 "Activate \(.applicationName) temporary target ?",
                 "\(.applicationName) apply a temporary target"
             ],
-            shortTitle: "Temporary Target",
-            systemImageName: "target"
+            shortTitle: "Activate TT",
+            systemImageName: "arrow.up.circle.badge.clock"
         )
         AppShortcut(
             intent: ListStateIntent(),
@@ -28,7 +28,7 @@ struct AppShortcuts: AppShortcutsProvider {
                 "\(.applicationName) state"
             ],
             shortTitle: "List State",
-            systemImageName: "list.bullet"
+            systemImageName: "list.bullet.circle"
         )
         AppShortcut(
             intent: AddCarbPresetIntent(),
@@ -37,7 +37,7 @@ struct AppShortcuts: AppShortcutsProvider {
                 "\(.applicationName) allows to add carbs"
             ],
             shortTitle: "Add Carbs",
-            systemImageName: "fork.knife"
+            systemImageName: "fork.knife.circle"
         )
         AppShortcut(
             intent: ApplyOverridePresetIntent(),
@@ -55,16 +55,16 @@ struct AppShortcuts: AppShortcutsProvider {
                 "Cancels an active \(.applicationName) override"
             ],
             shortTitle: "Cancel Override",
-            systemImageName: "xmark.circle.fill"
+            systemImageName: "xmark.square.fill"
         )
         AppShortcut(
             intent: CancelTempPresetIntent(),
             phrases: [
-                "Cancel \(.applicationName) temporary target",
-                "Cancels an active \(.applicationName) temporary target"
+                "Cancel \(.applicationName) Temp Target",
+                "Cancels an active \(.applicationName) Temp Target"
             ],
-            shortTitle: "Cancel Temp Target",
-            systemImageName: "xmark.circle.fill"
+            shortTitle: "Cancel TT",
+            systemImageName: "xmark.square"
         )
         AppShortcut(
             intent: RestartLiveActivityIntent(),

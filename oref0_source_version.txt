@@ -1,6 +1,9 @@
-oref0 branch: autoISF3.01 - git version: 68e63ea
+oref0 branch: autoISF3.01 - git version: b5332a2
 
 Last commits:
+b5332a2 use round_basal for insReq
+12a4aa2 Always add minPredBG to rT object
+b82f5f6 Lower min carb ratio to 1 g/U (down from 3)
 68e63ea profile.temptargetset properly solved to avoid undefined
 bba17a9 Remove TDD calc
 6216969 3-digit temp basal rates
@@ -28,6 +31,3 @@ bdc9ad3 cp source files
 ca59189 profile.keto_protect_basal_percent is 0..1
 afede34 profile.iob_threshold_percent 0..1
 0a0e398 show iobTH adaption in tags
-f0b0fbb logging sens adjustments
-7408a7f remove delta logging
-1d7dbdb tick in mg/dL

@@ -1699,8 +1699,11 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         if (minPredBG < min_bg && eventualBG > min_bg) {
             rT.manualBolusErrorString = 6;
             rT.insulinForManualBolus = round((eventualBG - target_bg) / sens, 2);
-            rT.minPredBG = minPredBG;
         }
+
+        // Moving this out of the if condition in L1698, so that minPredBG becomes always available in rT object
+        rT.minPredBG = minPredBG;
+
         // if in SMB mode, don't cancel SMB zero temp
         if (! (microBolusAllowed && enableSMB )) {
             rT.reason += convert_bg(eventualBG, profile)+"-"+convert_bg(minPredBG, profile)+" in range: no temp required";
@@ -1749,7 +1752,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         // rate required to deliver insulinReq more insulin over 30m:
         rate = basal + (2 * insulinReq);
         rate = round_basal(rate, profile);
-        insulinReq = round(insulinReq,3);
+        insulinReq = round_basal(insulinReq, profile);
         rT.insulinReq = insulinReq;
         rT.insulinForManualBolus = round(insulinForManualBolus,2);
         rT.manualBolusErrorString = manualBolusErrorString;
@@ -1758,7 +1761,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         rT.minGuardBG = minGuardBG;
         rT.minPredBG = minPredBG;
         rT.threshold = threshold;
-        rT.reason = "Ins.Req:, " + round(insulinReq,2) + ", " + maxIOBreason + rT.reason;
+        rT.reason = "Ins.Req:, " + insulinReq + ", " + maxIOBreason + rT.reason;
         //console.error(iob_data.lastBolusTime);
         // minutes since last bolus
         var lastBolusAge = round(( new Date(systemTime).getTime() - iob_data.lastBolusTime ) / 60000,1);

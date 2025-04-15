@@ -403,9 +403,9 @@ extension Home {
                         .symbolRenderingMode(.palette)
                         .scaleEffect(x: -1)
                         .foregroundStyle(
-                            Color.primary,
+                            Color.secondary,
                             TaiStyle.linearGradient(
-                                startPoint: .leading, endPoint: .trailing
+                                startPoint: .trailing, endPoint: .leading
                             )
                         )
                         .frame(width: 24, height: 24)

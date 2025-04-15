@@ -52,7 +52,12 @@ struct ForecastChart: View {
     private var forecastChartLabels: some View {
         HStack {
             HStack {
-                Image(systemName: "fork.knife")
+                Image("premeal")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 12, height: 12)
+                    .foregroundColor(.orange)
                 Text("\(state.carbs.description) g")
             }
             .font(.footnote)
@@ -66,7 +71,7 @@ struct ForecastChart: View {
             Spacer()
 
             HStack {
-                Image(systemName: "syringe.fill")
+                Image(systemName: "drop.circle")
                 Text("\(state.amount.description) U")
             }
             .font(.footnote)
@@ -80,8 +85,9 @@ struct ForecastChart: View {
             Spacer()
 
             HStack {
-                Image(systemName: "arrow.right.circle")
-
+                Text("⇢")
+                    .foregroundStyle(.secondary)
+                    .bold()
                 if let simulatedDetermination = state.simulatedDetermination, let eventualBG = simulatedDetermination.eventualBG {
                     eventualGlucoseBadge(for: eventualBG)
                 } else if let lastDetermination = state.determination.first, let eventualBG = lastDetermination.eventualBG {

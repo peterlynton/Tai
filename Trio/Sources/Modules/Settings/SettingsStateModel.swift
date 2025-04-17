@@ -43,13 +43,16 @@ extension Settings {
 
         func logItems() -> [URL] {
             var items: [URL] = []
-
-            if fileManager.fileExists(atPath: SimpleLogReporter.logFile) {
-                items.append(URL(fileURLWithPath: SimpleLogReporter.logFile))
+            let now = Date()
+            let logName = Formatter.logdateFormatter.string(from: now)
+            let twoDaysPrior = Calendar.current.date(byAdding: .day, value: -2, to: now)!
+            let prevLogName = Formatter.logdateFormatter.string(from: twoDaysPrior)
+            if fileManager.fileExists(atPath: SimpleLogReporter.logFile(name: logName)) {
+                items.append(URL(fileURLWithPath: SimpleLogReporter.logFile(name: logName)))
             }
 
-            if fileManager.fileExists(atPath: SimpleLogReporter.logFilePrev) {
-                items.append(URL(fileURLWithPath: SimpleLogReporter.logFilePrev))
+            if fileManager.fileExists(atPath: SimpleLogReporter.logFilePrev(name: prevLogName)) {
+                items.append(URL(fileURLWithPath: SimpleLogReporter.logFilePrev(name: prevLogName)))
             }
 
             return items

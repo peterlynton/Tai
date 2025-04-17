@@ -209,6 +209,62 @@ extension PumpConfig {
                             )
                         }
                     )
+
+                    Section(
+                        header: Text("Concentration Settings"),
+                        content: {
+                            SettingInputSection(
+                                decimalValue: $decimalPlaceholder,
+                                booleanValue: $state.hideInsulinBadge,
+                                shouldDisplayHint: $shouldDisplayHint,
+                                selectedVerboseHint: Binding(
+                                    get: { selectedVerboseHint },
+                                    set: {
+                                        selectedVerboseHint = $0.map { AnyView($0) }
+                                        hintLabel = String(localized: "Hide Insulin Concentration badge", comment: "Hide Badge")
+                                    }
+                                ),
+                                units: state.units,
+                                type: .boolean,
+                                label: String(localized: "Hide Insulin Concentration badge", comment: "Hide Badge"),
+                                miniHint: "Hide the badge that displays the Insulin Concentration near between the Glucose bobble and the pump information.",
+                                verboseHint:
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("Default: Badge displayed").bold()
+                                    Text(
+                                        "U50 or other diluted insulins will lead to more insulin volume being pumped. So it is essential to be aware of the setting that concentrated or especially diluted insulin is used."
+                                    )
+                                    Text(
+                                        "Having the U50 active but with U100 in the pump will be very dangerous. Don't hide the badge unless you do not change anything in the longterm - diluted insulins are shown in red, concentrated in yellow."
+                                    )
+                                }
+                            )
+
+                            SettingInputSection(
+                                decimalValue: $decimalPlaceholder,
+                                booleanValue: $state.allowDilution,
+                                shouldDisplayHint: $shouldDisplayHint,
+                                selectedVerboseHint: Binding(
+                                    get: { selectedVerboseHint },
+                                    set: {
+                                        selectedVerboseHint = $0.map { AnyView($0) }
+                                        hintLabel = String(localized: "Allow diluted Insulin", comment: "Allow diluted Insulin")
+                                    }
+                                ),
+                                units: state.units,
+                                type: .boolean,
+                                label: String(localized: "Allow diluted Insulin", comment: "Allow diluted Insulin"),
+                                miniHint: "Allow diluted insulin concentration settings.",
+                                verboseHint:
+                                VStack(alignment: .leading, spacing: 10) {
+                                    Text("Default: OFF").bold()
+                                    Text(
+                                        "U50 or other diluted insulins will lead to more insulin volume being pumped. Using a diluted Insulin concentration will inject larger volumes. If not set correctly potential errors can lead to severe overdosing of insulin."
+                                    )
+                                }
+                            )
+                        }
+                    )
                 }
                 .listSectionSpacing(sectionSpacing)
                 .tint(Color.tabBar)
@@ -220,7 +276,7 @@ extension PumpConfig {
                 .onDisappear {
                     state.saveIfChanged()
                 }
-                .navigationTitle("Insulin Pump")
+                .navigationTitle("Pump & Concentration")
                 .navigationBarTitleDisplayMode(.automatic)
                 .navigationBarItems(leading: displayClose ? Button("Close", action: state.hideModal) : nil)
                 .sheet(isPresented: $shouldDisplayHint) {

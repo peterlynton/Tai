@@ -16,8 +16,9 @@ extension PumpConfig {
         @Published var useCustomPeakTime: Bool = false
         @Published var insulinPeakTime: Decimal = 75
         @Published var insulinActionCurve: Decimal = 10
-        @Published var allowDilution: Bool = false
         @Published var insulinConcentration: Decimal = 1
+        @Published var allowDilution: Bool = false
+        @Published var hideInsulinBadge: Bool = false
 
         var pumpSettings: PumpSettings {
             provider.settings()
@@ -32,6 +33,8 @@ extension PumpConfig {
                 insulinConcentration = $0 }
             subscribePreferencesSetting(\.useCustomPeakTime, on: $useCustomPeakTime) { useCustomPeakTime = $0 }
             subscribePreferencesSetting(\.insulinPeakTime, on: $insulinPeakTime) { insulinPeakTime = $0 }
+            subscribeSetting(\.allowDilution, on: $allowDilution) { allowDilution = $0 }
+            subscribeSetting(\.hideInsulinBadge, on: $hideInsulinBadge) { hideInsulinBadge = $0 }
 
             provider.pumpDisplayState
                 .receive(on: DispatchQueue.main)

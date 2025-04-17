@@ -21,7 +21,7 @@ struct DevicesView: BaseView {
             Section(
                 header: Text("Setup & Configuraton"),
                 content: {
-                    Text("Insulin Pump").navigationLink(to: .pumpConfig, from: self)
+                    Text("Insulin Pump & Concentration").navigationLink(to: .pumpConfig, from: self)
                     Text("Continuous Glucose Monitor").navigationLink(to: .cgm, from: self)
                     Text("Smart Watch").navigationLink(to: .watch, from: self)
                 }

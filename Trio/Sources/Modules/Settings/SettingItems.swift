@@ -40,9 +40,18 @@ enum SettingItems {
 
     static let devicesItems = [
         SettingItem(
-            title: "Insulin Pump",
+            title: "Insulin Pump & Concentration",
             view: .pumpConfig,
-            searchContents: ["Insulin Peak Time", "Custom Peak Time", "Duration Insulin Action", "DIA"],
+            searchContents: [
+                "Custom Peak Time",
+                "Duration Insulin Action",
+                "DIA",
+                "Badge",
+                "UU100100",
+                "U200",
+                "U50",
+                "hide"
+            ],
             path: ["Devices"]
         ),
         SettingItem(

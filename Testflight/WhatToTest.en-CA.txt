@@ -1,4 +1,6 @@
 Beta update 0.4.3
 
-onboarding still not fixed
-moved crashlytics away from trio account
+onboarding still not fixed, but I disabled it altogether
+AppleWatch fixes
+Analytics for some ananymized app usage data
+Dexcom G7 fix

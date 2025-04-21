@@ -227,11 +227,11 @@ extension Notification.Name {
                     .onReceive(Foundation.NotificationCenter.default.publisher(for: .initializationError)) { _ in
                         self.showLoadingError = true
                     }
-            } else if onboardingManager.shouldShowOnboarding {
-                // Show onboarding if needed
-                Onboarding.RootView(resolver: resolver, onboardingManager: onboardingManager)
-                    .preferredColorScheme(colorScheme(for: .dark) ?? nil)
-                    .transition(.opacity)
+//            } else if onboardingManager.shouldShowOnboarding {
+//                // Show onboarding if needed
+//                Onboarding.RootView(resolver: resolver, onboardingManager: onboardingManager)
+//                    .preferredColorScheme(colorScheme(for: .dark) ?? nil)
+//                    .transition(.opacity)
             } else {
                 Main.RootView(resolver: resolver)
                     .preferredColorScheme(colorScheme(for: colorSchemePreference) ?? nil)

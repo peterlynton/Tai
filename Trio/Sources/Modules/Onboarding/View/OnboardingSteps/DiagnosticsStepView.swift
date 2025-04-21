@@ -32,21 +32,23 @@ struct DiagnosticsStepView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Why does Trio collect this data?").bold()
+                Text("Why does Tai collect this data?").bold()
                 VStack(alignment: .leading, spacing: 4) {
                     Text(
                         "•  App diagnostic insights help us enhance app stability, ensure safety for all users, and enable us to quickly identify and resolve critical issues."
                     )
-                    Text("•  Trio collects the app's state on crash, device, iOS and general system info, and a stack trace.")
                     Text(
-                        "•  Trio does not collect any health related data, e.g. glucose readings, insulin rates or doses, meal data, setting values, or similar."
+                        "•  Tai collects the app's state on crash, device, iOS and general system info, and a stack trace."
                     )
                     Text(
-                        "•  Trio does not track any usage metrics or any other personal data about users other than the used iPhone model and iOS version."
+                        "•  Tai does not collect any health related data, e.g. glucose readings, insulin rates or doses, meal data, setting values, or similar."
+                    )
+                    Text(
+                        "•  Tai does track some anonymized usage metrics and the used iPhone model and iOS version, but no personal data of the user!"
                     )
                 }
                 Text(
-                    "Diagnostics are sent to a Google Firebase Crashlytics project, which is securely maintained and accessed only by the Trio team."
+                    "Diagnostics are sent to a Google Firebase Crashlytics project, which is securely maintained and accessed only by the Tai author."
                 )
             }
             .multilineTextAlignment(.leading)

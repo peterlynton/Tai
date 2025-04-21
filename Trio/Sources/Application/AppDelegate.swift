@@ -1,3 +1,4 @@
+import FirebaseAnalytics
 import FirebaseCore
 import FirebaseCrashlytics
 import SwiftUI

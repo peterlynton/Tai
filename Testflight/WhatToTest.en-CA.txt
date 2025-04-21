@@ -1,4 +1,4 @@
 Beta update 0.4.3
 
-Trio Closed Beta 0.3.0(16)
-onboarding
+onboarding still not fixed
+moved crashlytics away from trio account

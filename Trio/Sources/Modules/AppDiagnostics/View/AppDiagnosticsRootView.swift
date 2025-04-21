@@ -60,7 +60,7 @@ extension AppDiagnostics {
                                 "•  Tai does not collect any health related data, e.g. glucose readings, insulin rates or doses, meal data, setting values, or similar."
                             )
                             Text(
-                                "•  Tai does track some usage metrics like the used iPhone model and iOS version, but no personal data of the user!"
+                                "•  Tai does track some anonymized usage metrics and the used iPhone model and iOS version, but no personal data of the user!"
                             )
                         }
                         Text(

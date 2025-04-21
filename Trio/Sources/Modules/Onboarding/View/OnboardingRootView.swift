@@ -87,38 +87,6 @@ extension Onboarding {
                                                     .scaledToFit()
                                                     .frame(width: 60, height: 60)
 
-                                            } else if currentStep == .glucoseTarget {
-                                                Image(systemName: "arrow.up.circle.badge.clock")
-                                                    .rotationEffect(.degrees(90))
-                                                    .font(.system(size: 40))
-                                                    .foregroundStyle(Color.primary, Color.loopGreen)
-                                                    .frame(width: 60, height: 60)
-                                                    .background(
-                                                        Circle()
-                                                            .fill(currentStep.accentColor.opacity(0.2))
-                                                    )
-                                            } else if currentStep == .carbRatio {
-                                                Image("premeal")
-                                                    .renderingMode(.template)
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .foregroundColor(currentStep.accentColor)
-                                                    .frame(width: 40, height: 40)
-                                                    .frame(width: 60, height: 60)
-                                                    .background(
-                                                        Circle()
-                                                            .fill(currentStep.accentColor.opacity(0.2))
-                                                    )
-                                            } else if currentStep == .basalRates {
-                                                Image(systemName: currentStep.iconName)
-                                                    .rotationEffect(.degrees(180))
-                                                    .font(.system(size: 40))
-                                                    .foregroundColor(currentStep.accentColor)
-                                                    .frame(width: 60, height: 60)
-                                                    .background(
-                                                        Circle()
-                                                            .fill(currentStep.accentColor.opacity(0.2))
-                                                    )
                                             } else {
                                                 Image(systemName: currentStep.iconName)
                                                     .font(.system(size: 40))

@@ -87,7 +87,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Equatable {
             )
         case .unitSelection:
             return String(
-                localized: "Before you can begin with configuring your therapy settigns, Trio needs to know which units you use for your glucose and insulin measurements (based on your pump model)."
+                localized: "Before you can begin with configuring your therapy settings, Trio needs to know which units you use for your glucose and insulin measurements (based on your pump model)."
             )
         case .glucoseTarget:
             return String(
@@ -132,13 +132,13 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Equatable {
         case .unitSelection:
             return "numbers.rectangle"
         case .glucoseTarget:
-            return "arrow.up.circle.badge.clock"
+            return "target"
         case .basalRates:
-            return "chart.bar.xaxis"
+            return "chart.xyaxis.line"
         case .carbRatio:
             return "fork.knife"
         case .insulinSensitivity:
-            return "arrow.up.arrow.down"
+            return "drop.fill"
         case .deliveryLimits:
             return "slider.horizontal.3"
         case .completed:
@@ -430,19 +430,6 @@ struct SettingItemView: View {
                     .scaledToFit()
                     .frame(width: 40, height: 24)
                     .colorMultiply(accentColor)
-            } else if step == .carbRatio {
-                Image("premeal")
-                    .renderingMode(.template)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 40, height: 24)
-                    .colorMultiply(accentColor)
-            } else if step == .basalRates {
-                Image(systemName: icon)
-                    .rotationEffect(.degrees(180))
-                    .font(.system(size: 24))
-                    .foregroundStyle(accentColor)
-                    .frame(width: 40)
             } else {
                 Image(systemName: icon)
                     .font(.system(size: 24))

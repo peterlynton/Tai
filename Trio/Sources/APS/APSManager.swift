@@ -564,7 +564,10 @@ final class BaseAPSManager: APSManager, Injectable {
             return
         }
 
-        guard let pump = pumpManager else { return }
+        guard let pump = pumpManager else {
+            callback?(false, String(localized: "Error! Failed to enact bolus.", comment: "Error message for enacting a bolus"))
+            return
+        }
 
         let roundedAmount = pump.roundToSupportedBolusVolume(units: adjustPumpedVolumeToConcentration(amount))
 
@@ -592,7 +595,7 @@ final class BaseAPSManager: APSManager, Injectable {
             }
             callback?(
                 false,
-                String(localized: "Error! Failed to enact bolus.", comment: "Error message for failing to enact a bolus")
+                String(localized: "Error! Bolus failed with error: \(error.localizedDescription)")
             )
         }
     }
@@ -609,7 +612,10 @@ final class BaseAPSManager: APSManager, Injectable {
             processError(APSError.pumpError(error))
             callback?(
                 false,
-                String(localized: "Error! Bolus cancellation failed.", comment: "Error message for canceling a bolus")
+                String(
+                    localized: "Error! Bolus cancellation failed with error: \(error.localizedDescription)",
+                    comment: "Error message for canceling a bolus"
+                )
             )
         }
         bolusReporter?.removeObserver(self)

@@ -1,81 +1,94 @@
-//
-//  WatchLogger.swift
-//  Trio
-//
-//  Created by Cengiz Deniz on 18.04.25.
-//
 import Foundation
 import WatchConnectivity
 
-final class WatchLogger {
+actor WatchLogger {
     static let shared = WatchLogger()
 
     private var logs: [String] = []
-    private let maxEntries = 300
-    private let flushInterval: TimeInterval = 7.5 * 60
-    private let flushSizeThreshold = 75
-
+    private let maxEntries = 500
+    private let flushInterval: TimeInterval = 3 * 60
+    private let flushSizeThreshold = 100
     private var lastFlush = Date()
+
     private let session = WCSession.default
+    private var timerTask: Task<Void, Never>?
 
     private init() {
-        Timer.scheduledTimer(withTimeInterval: flushInterval, repeats: true) { _ in
-            self.flushIfNeeded(force: false)
+        Task {
+            await startFlushTimer()
         }
     }
 
     private var dateFormatter: DateFormatter {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
-        return dateFormatter
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
+        return formatter
     }
 
-    func log(_ message: String, force: Bool = false, function: String = #function, file: String = #fileID, line: Int = #line) {
+    private func startFlushTimer() async {
+        timerTask = Task {
+            while true {
+                try? await Task.sleep(nanoseconds: UInt64(flushInterval * 1_000_000_000))
+                await flushIfNeeded(force: false)
+            }
+        }
+    }
+
+    func log(
+        _ message: String,
+        force: Bool = false,
+        function: String = #function,
+        file: String = #fileID,
+        line: Int = #line
+    ) async {
         let shortFile = (file as NSString).lastPathComponent
         let timestamp = dateFormatter.string(from: Date())
         let entry = "[\(timestamp)] [\(shortFile):\(line)] \(function) → \(message)"
-        logs.append(entry)
 
+        logs.append(entry)
         if logs.count > maxEntries {
-            logs.removeFirst()
+            logs.removeFirst(logs.count - maxEntries)
         }
 
         print(entry)
-        flushIfNeeded(force: force)
+        await flushIfNeeded(force: force)
     }
 
-    func flushIfNeeded(force: Bool = false) {
+    func flushIfNeeded(force: Bool = false) async {
         let now = Date()
         let shouldFlush = force || now.timeIntervalSince(lastFlush) >= flushInterval || logs.count >= flushSizeThreshold
 
         if shouldFlush {
-            flushToPhone()
+            await flushToPhone()
         }
     }
 
-    private func flushToPhone() {
-        guard !logs.isEmpty else { return }
+    private func flushToPhone() async {
+        guard !logs.isEmpty else {
+            return
+        }
 
-        let payload: [String: Any] = [
-            "watchLogs": logs.joined(separator: "\n")
-        ]
+        let payload: [String: Any] = ["watchLogs": logs.joined(separator: "\n")]
 
         if session.activationState != .activated {
             session.activate()
         }
 
         if session.isReachable {
-            session.sendMessage(payload, replyHandler: nil) { error in
-                print("⌚️ Failed to flush logs to phone via sendMessage: \(error.localizedDescription)")
-                self.persistLogsLocally()
+            session.sendMessage(payload, replyHandler: nil) { _ in
+                Task {
+                    await self.persistLogsLocally()
+                }
             }
+        } else {
+            await persistLogsLocally()
         }
 
         lastFlush = Date()
         logs.removeAll()
     }
 
-    func persistLogsLocally() {
+    func persistLogsLocally() async {
         let logDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             .appendingPathComponent("logs", isDirectory: true)
 
@@ -85,7 +98,6 @@ final class WatchLogger {
         let previousLogFile = logDir.appendingPathComponent("watch_log_prev.txt")
         let startOfDay = Calendar.current.startOfDay(for: Date())
 
-        // Rotate if necessary
         if let attributes = try? FileManager.default.attributesOfItem(atPath: logFile.path),
            let creationDate = attributes[.creationDate] as? Date,
            creationDate < startOfDay
@@ -98,7 +110,7 @@ final class WatchLogger {
         let fullLog = logs.joined(separator: "\n") + "\n"
         if let data = fullLog.data(using: .utf8) {
             if let handle = try? FileHandle(forWritingTo: logFile) {
-                _ = try? handle.seekToEnd()
+                try? handle.seekToEnd()
                 handle.write(data)
                 try? handle.close()
             } else {
@@ -107,9 +119,7 @@ final class WatchLogger {
         }
     }
 
-    /// Optional recovery mechanism:
-    /// Use this on startup to attempt flushing local file logs to phone
-    func flushPersistedLogs() {
+    func flushPersistedLogs() async {
         let logDir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
             .appendingPathComponent("logs", isDirectory: true)
         let logFile = logDir.appendingPathComponent("watch_log.txt")
@@ -119,17 +129,17 @@ final class WatchLogger {
               !logString.isEmpty
         else { return }
 
-        let payload: [String: Any] = [
-            "watchLogs": logString
-        ]
+        let payload: [String: Any] = ["watchLogs": logString]
 
         if session.activationState != .activated {
             session.activate()
         }
 
         if session.isReachable {
-            session.sendMessage(payload, replyHandler: nil) { error in
-                print("⌚️ Failed to resend persisted logs: \(error.localizedDescription)")
+            session.sendMessage(payload, replyHandler: nil) { _ in
+                Task {
+                    await self.persistLogsLocally()
+                }
             }
             try? FileManager.default.removeItem(at: logFile)
         } else {

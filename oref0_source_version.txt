@@ -1,6 +1,7 @@
-oref0 branch: autoISF3.01 - git version: b5332a2
+oref0 branch: autoISF3.01 - git version: 5976f60
 
 Last commits:
+5976f60 round bg_isf to 2 decimals
 b5332a2 use round_basal for insReq
 12a4aa2 Always add minPredBG to rT object
 b82f5f6 Lower min carb ratio to 1 g/U (down from 3)
@@ -30,4 +31,3 @@ f2a8012 iobTH reporting and logging fixed
 bdc9ad3 cp source files
 ca59189 profile.keto_protect_basal_percent is 0..1
 afede34 profile.iob_threshold_percent 0..1
-0a0e398 show iobTH adaption in tags

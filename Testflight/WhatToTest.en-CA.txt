@@ -1,3 +1,6 @@
 Beta update 0.4.3
 
-autoISF history
+autoISF history rewrite
+fix bg_isf rounding issue  (yurique)
+AIMI B30 ignores daily/current basal multipliers
+fastlane fixes

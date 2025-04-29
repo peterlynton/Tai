@@ -23,10 +23,6 @@ extension Onboarding {
         var diagnosticsSharingOption: DiagnosticsSharingOption = .enabled
         var hasAcceptedPrivacyPolicy: Bool = false
 
-        // MARK: - Important Startup Notes
-
-        var hasReadImportantStartupNotes: Bool = false
-
         // MARK: - Nightscout Setup
 
         var nightscoutSetupOption: NightscoutSetupOption = .noSelection
@@ -102,9 +98,7 @@ extension Onboarding {
         var maxCOB: Decimal = 120
         var minimumSafetyThreshold: Decimal = 60
 
-        // MARK: - Algorithm Settings Defaults & State
-
-        var hasReadAlgorithmSetupInformation: Bool = false
+        // MARK: - Algorithm Settings Defaults
 
         // Autosens Settings
         var autosensMin: Decimal = 0.7
@@ -142,6 +136,7 @@ extension Onboarding {
         // MARK: - Permission Requests
 
         var hasNotificationsGranted = false
+        var shouldDisplayCustomNotificationAlert: Bool = false
 
         var shouldDisplayBluetoothRequestAlert: Bool = false
         var hasBluetoothGranted = false

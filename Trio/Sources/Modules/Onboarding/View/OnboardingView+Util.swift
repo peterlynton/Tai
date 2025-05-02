@@ -178,7 +178,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable, Equatable {
             )
         case .diagnostics:
             return String(
-                localized: "By default, Tai collects crash reports and other anonymized data related to errors, exceptions, and overall app performance as well as some anonymized usage data to improve the application."
+                localized: "By default, Trio collects crash reports and other anonymized data related to errors, exceptions, and overall app performance."
             )
         case .nightscout:
             return String(

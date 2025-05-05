@@ -381,6 +381,7 @@ extension Treatments {
                 carbs: carbs,
                 useFattyMealCorrection: useFattyMealCorrectionFactor,
                 useSuperBolus: useSuperBolus,
+                lastLoopDate: apsManager.lastLoopDate,
                 minPredBG: localMinPredBG
             )
 

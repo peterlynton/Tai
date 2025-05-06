@@ -19,6 +19,7 @@ extension PumpConfig {
         @Published var insulinConcentration: Decimal = 1
         @Published var allowDilution: Bool = false
         @Published var hideInsulinBadge: Bool = false
+        @Injected() var bluetoothManager: BluetoothStateManager!
 
         var pumpSettings: PumpSettings {
             provider.settings()

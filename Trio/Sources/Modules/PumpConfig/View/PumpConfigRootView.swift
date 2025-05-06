@@ -5,6 +5,7 @@ extension PumpConfig {
     struct RootView: BaseView {
         let resolver: Resolver
         let displayClose: Bool
+        let bluetoothManager: BluetoothStateManager
         @StateObject var state = StateModel()
         @State private var showConcentrationEditor = false
         @State private var showEditConcentrationWarning = false
@@ -88,7 +89,13 @@ extension PumpConfig {
                     Section(
                         header: Text("Pump Integration to Trio"),
                         content: {
-                            if let pumpState = state.pumpState {
+                            if bluetoothManager.bluetoothAuthorization != .authorized {
+                                HStack {
+                                    Spacer()
+                                    BluetoothRequiredView()
+                                    Spacer()
+                                }
+                            } else if let pumpState = state.pumpState {
                                 Button {
                                     state.setupPump = true
                                 } label: {

@@ -13,7 +13,6 @@ struct CurrentGlucoseView: View {
     var currentGlucoseTarget: Decimal
     let glucoseColorScheme: GlucoseColorScheme
     let glucose: [GlucoseStored] // This contains the last two glucose values, no matter if its manual or a cgm reading
-
     @State private var rotationDegrees: Double = 0.0
 
     @Environment(\.colorScheme) var colorScheme

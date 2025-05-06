@@ -53,7 +53,7 @@ extension InsulinConcentration {
                     }
                 } message: {
                     Text(
-                        "Switching insulin concentration changes the basal increments that can be delivered by pump. For diluted insulins smaller increments can be used. For high concentrations the increment will be larger than your regular U100 increment - this compulsory needs adjustment!"
+                        "Switching insulin concentration changes the basal increments that can be delivered by pump. For diluted insulins smaller increments can be used. For high concentrations the increment will be larger than your regular U100 increment - this compulsory needs adjustment!\n\nBe aware that the pump managers will always show U100 as concentration setting, as they on their own currently only deal with U100. The seeting here in Tai will prevail nonetheless!"
                     )
                 }
             }

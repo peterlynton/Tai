@@ -2,6 +2,7 @@ Beta update 0.5.0
 
 autoISF adaption, iobTH works without even/odd toggle on
 use minPredBG from rT.variable instead of reasion
-onboarding fixed & activated again
+increase boundaries for BasalMultipliers to 10x
+onboarding fixed but de-activated for Tai
 fixes from Trio CoreData
 

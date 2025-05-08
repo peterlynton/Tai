@@ -56,14 +56,14 @@ struct DecimalPickerSettings {
         value: 3,
         step: 0.1,
         min: 1,
-        max: 5,
+        max: 10,
         type: PickerSetting.PickerSettingType.factor
     )
     var currentBasalSafetyMultiplier = PickerSetting(
         value: 4,
         step: 0.1,
         min: 1,
-        max: 5,
+        max: 10,
         type: PickerSetting.PickerSettingType.factor
     )
     var autosensMax = PickerSetting(value: 1.2, step: 0.1, min: 0.5, max: 3, type: PickerSetting.PickerSettingType.factor)

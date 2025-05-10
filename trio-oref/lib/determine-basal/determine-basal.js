@@ -166,68 +166,74 @@ function loop_smb(microBolusAllowed, profile, iob_data, aimismb, useIobTh, iobTh
 
     // disable SMB when a B30 basal is running
     if (!aimismb) {
-        smbreason = ", autoISF-SMB disabled:, B30 running";
+        smbreason = ", SMB disabled:, B30 running";
         return "AIMI B30";
     }
 
-    if (profile.use_autoisf && profile.enableSMB_EvenOn_OddOff_always)  {
-        var target = convert_bg(profile.min_bg, profile);
-        console.error("User units for Glucose (devTest) target profile: " + profile.target_units + ", Target: " + target);
-
-        if (profile.target_units == "mmol/L") {
-            evenTarget = ( round(target*10, 0) %2 == 0 );
-            msgUnits   = " has ";
-            msgTail    = " decimal";
-        } else {
-            evenTarget = ( target %2 == 0 );
-            msgUnits   = " is ";
-            msgTail    = " number";
-        }
-        if ( evenTarget ) {
-            msgEven    = "even";
-        } else {
-            msgEven    = "odd";
-        }
+    if (profile.use_autoisf) {
+        
         var iobThUser = profile.iob_threshold_percent * 100;
         var iobThPercent = 100;
         if ( useIobTh ) {
             iobThEffective = Math.min(profile.max_iob, iobThEffective)
             iobThPercent = round(iobThEffective/profile.max_iob*100.0, 0);
             if ( iobThPercent == iobThUser ) {
-                console.error("User setting iobTHpercent="+iobThUser+"% not modulated");
+                // console.error("User setting iobTHpercent = " + iobThUser + "%, not modulated");
             } else {
-                console.error("User setting iobTHpercent="+iobThUser+"% modulated to "+round(iobThPercent,1)+"% or "+round(iobThEffective,1)+"U") ;
+                console.error("User setting iobTHpercent = " + iobThUser + "% modulated to "+round(iobThPercent,1)+"% or "+round(iobThEffective,1)+"U") ;
                 console.error("  due to profile %, exercise mode or similar");
             }
         } else {
-            console.error("User setting iobTH=100% disables iobTH method")
+            console.error("User setting iobTH = 100% disables iobTH method")
         }
-        if ( !evenTarget ){
-            console.error("SMB disabled; current target " + target + msgUnits + msgEven + msgTail);
-            console.error("Loop allows minimal power");
-            smbreason = ", autoISF-SMB disabled:, odd Target";
-            return "blocked";
-        } else if ( profile.max_iob==0 ) {
-            console.error("SMB disabled because of maxIOB=0")
-            return "blocked";
-        } else if (useIobTh && iobThEffective < iob_data.iob) {
-            console.error("SMB disabled by Full Loop logic: IOB " + iob_data.iob + " is more than " + iobThEffective + "% of maxIOB " + profile.max_iob);
+
+        if (useIobTh && iobThEffective < iob_data.iob) {
+            console.error("SMB disabled by iobTH logic: IOB " + iob_data.iob + " is more than " + iobThPercent + "% of maxIOB " + profile.max_iob);
             console.error("Loop power level temporarily capped");
             smbreason = ", autoISF-SMB disabled:, iobTH exceeded";
             console.error("Full Loop capped");
             return "iobTH";
-        } else {
-            console.error("SMB enabled - current target " +target +msgUnits +msgEven +msgTail);
-            if (profile.min_bg < 100) {     // indirect asessment; later set it in GUI
-                console.error("eff.iobTH: " + round(iobThEffective,1) + "IU, IOB% of iobTH at " + round(iob_data.iob/(profile.max_iob*iobThPercent)*10000,0) + "%")
-                console.error("Loop allows maximum power");
-                smbreason = ", autoISF-SMB enabled:, even TT, eff.iobTH:, " + iobThEffective;
-                return "fullLoop";                                      // even number
+        }
+
+        if (profile.enableSMB_EvenOn_OddOff_always)  {
+            var target = convert_bg(profile.min_bg, profile);
+            console.error("User units for Glucose (devTest) target profile: " + profile.target_units + ", Target: " + target);
+
+            if (profile.target_units == "mmol/L") {
+                evenTarget = ( round(target*10, 0) %2 == 0 );
+                msgUnits   = " has ";
+                msgTail    = " decimal";
             } else {
-                console.error("eff.iobTH: " + round(iobThEffective,1) + "IU, IOB% of iobTH at " + round(iob_data.iob/(profile.max_iob*iobThPercent)*10000,0) + "%")
-                smbreason = ", autoISF-SMB enabled:, even Target, eff.iobTH:, " + iobThEffective;
-                console.error("Loop at medium power");
-                return "enforced";                                      // even number
+                evenTarget = ( target %2 == 0 );
+                msgUnits   = " is ";
+                msgTail    = " number";
+            }
+            if ( evenTarget ) {
+                msgEven    = "even";
+            } else {
+                msgEven    = "odd";
+            }
+            if ( !evenTarget ){
+                console.error("SMB disabled; current target " + target + msgUnits + msgEven + msgTail);
+                console.error("Loop allows minimal power");
+                smbreason = ", autoISF-SMB disabled:, odd Target";
+                return "blocked";
+            } else if ( profile.max_iob==0 ) {
+                console.error("SMB disabled because of maxIOB=0")
+                return "blocked";
+            } else {
+                console.error("SMB enabled - current target " +target +msgUnits +msgEven +msgTail);
+                if (profile.min_bg < 100) {     // indirect asessment; later set it in GUI
+                    console.error("eff.iobTH: " + round(iobThEffective,1) + "IU, IOB% of iobTH at " + round(iob_data.iob/(profile.max_iob*iobThPercent)*10000,0) + "%")
+                    console.error("Loop allows maximum power");
+                    smbreason = ", autoISF-SMB enabled:, even TT, eff.iobTH:, " + iobThEffective;
+                    return "fullLoop";                                      // even number
+                } else {
+                    console.error("eff.iobTH: " + round(iobThEffective,1) + "IU, IOB% of iobTH at " + round(iob_data.iob/(profile.max_iob*iobThPercent)*10000,0) + "%")
+                    smbreason = ", autoISF-SMB enabled:, even Target, eff.iobTH:, " + iobThEffective;
+                    console.error("Loop at medium power");
+                    return "enforced";                                      // even number
+                }
             }
         }
     }
@@ -446,11 +452,11 @@ function autoISF(sens, origin_sens, target_bg, profile, glucose_status, sensitiv
     }
     isfreason += smbreason + calcreason + ", autoISF";
 
-    bg_ISF = 1 + interpolate(100-bg_off, profile, "bg");
-    console.error("bg_ISF adaptation is " + round(bg_ISF,2));
+    bg_ISF = round(1 + interpolate(100-bg_off, profile, "bg"),2);
+    console.error("bg_ISF adaptation is " + bg_ISF);
     var liftISF = 1;
     var final_ISF = 1;
-    if (bg_ISF<1) {
+    if (bg_ISF < 1) {
         liftISF = Math.min(bg_ISF, acce_ISF);
         if ( acce_ISF>1 ) {
             liftISF = bg_ISF * acce_ISF;    // bg_ISF could become > 1 now
@@ -465,7 +471,7 @@ function autoISF(sens, origin_sens, target_bg, profile, glucose_status, sensitiv
         return autoISFsens;
     } else if ( bg_ISF > 1 ) {
         sens_modified = true;
-        isfreason +=  ", bg-ISF Ratio: " + round(bg_ISF,2);
+        isfreason +=  ", bg-ISF Ratio: " + bg_ISF;
     }
 
     var bg_delta = glucose_status.delta;
@@ -562,6 +568,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     const tempHBTset = oref2_variables.isEnabled;
     const avgDelta = glucose_status.avgdelta;
 // Set variables required for evaluating error conditions
+    var aimiRateActivated = false;
     var rT = {}; //short for requestedTemp
     var insulinForManualBolus = 0;
     var manualBolusErrorString = 0;
@@ -820,21 +827,23 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         if (B30lastbolusAge == 0) {B30lastbolusAge = 1};
         var LastManualBolus = PHlastBolus;
         console.error("B30 last bolus above limit of " + iTime_Start_Bolus + "U was " + LastManualBolus + "U, " + B30lastbolusAge + "m ago");
-        // I would suggest to have a 3rd constraint to activate B30, which is a TempTarget of eg. 90mg/dl --not in code yet
         if (LastManualBolus >= iTime_Start_Bolus && B30lastbolusAge <= b30duration && B30TTset && target_bg == b30targetLevel) {
             iTime = B30lastbolusAge;
-            iTimeActivation = true;
-            console.error("B30 iTime is running : " + iTime  +"m because manual bolus ("+LastManualBolus+") >= Minimum Start Bolus size ("+iTime_Start_Bolus+") and EatingSoon TT set at " + convert_bg(b30targetLevel, profile));
+            if (glucose_status.delta <= b30upperdelta && bg < b30upperLimit) {
+                iTimeActivation = true;
+                aimismb = false;
+                console.error("B30 iTime is running : " + iTime  +"m because manual bolus ("+LastManualBolus+") >= Minimum Start Bolus size ("+iTime_Start_Bolus+") and EatingSoon TT set at " + convert_bg(b30targetLevel, profile));
+            } else {
+                B30reason = "AIMI B30, cancelled, BG or Delta too high, ";
+                console.error(B30reason);
+            }
         }
         console.error("B30 Activation: " + iTimeActivation);
         console.error("B30 TTset: " + B30TTset + ", at " + target_bg + ", last Bolus of " + LastManualBolus + "U, " + B30lastbolusAge + "m ago. iTime remaining: " + (b30duration-iTime) + "m.");
         if (iTimeActivation) {
-            if (glucose_status.delta <= b30upperdelta || bg < b30upperLimit) {
-                aimismb = false;
-            }
             if (iTime <= b30duration) {
                 AIMIrate = round_basal(basal * b30factor,profile);
-                B30reason = "AIMI B30, Temp " + AIMIrate + "U/hr for " + (b30duration-iTime) + "m, ";
+                B30reason = " for " + (b30duration-iTime) + "m, "; // the AIMI B30 rate comes aimiB30Reason in from basal_set_temp
             }
         }
     }
@@ -847,7 +856,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     // mod autoISF3.0-dev: if that would put us over iobTH, then reduce accordingly; allow 30% overrun
     var iobTHtolerance = 130.0;
     var iobTHvirtual = profile.iob_threshold_percent*iobTHtolerance/100.0 * profile.max_iob * iobTH_reduction_ratio;
-    console.error(" iobTH from profile: " + profile.iob_threshold_percent + ", maxIOB: " + profile.max_iob + ", iobTH_ReductionRatio: " + iobTH_reduction_ratio);
+    console.error(" iobTH from profile: " + profile.iob_threshold_percent * 100 + "%, maxIOB: " + profile.max_iob + ", iobTH_ReductionRatio: " + iobTH_reduction_ratio);
 
     var iob_ThEffective = round(iobTHvirtual / iobTHtolerance * 100.0,1)
     var loop_wanted_smb = loop_smb(microBolusAllowed, profile, iob_data, aimismb, use_iobTH, iob_ThEffective);
@@ -889,7 +898,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     rT.deliverAt = deliverAt;
     if ( microBolusAllowed && currenttemp && iob_data.lastTemp && currenttemp.rate !== iob_data.lastTemp.rate && lastTempAge > 10 && currenttemp.duration ) {
         rT.reason = "Warning: currenttemp rate "+currenttemp.rate+" != lastTemp rate "+iob_data.lastTemp.rate+" from pumphistory; canceling temp"; // reason.conclusion started
-        return tempBasalFunctions.setTempBasal(0, 0, profile, rT, currenttemp);
+        return tempBasalFunctions.setTempBasal(0, 0, profile, rT, currenttemp, aimiRateActivated);
     }
     if ( currenttemp && iob_data.lastTemp && currenttemp.duration > 0 ) {
         // TODO: fix this (lastTemp.duration is how long it has run; currenttemp.duration is time left
@@ -902,7 +911,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         if ( lastTempEnded > 5 && lastTempAge > 10 ) {
             rT.reason = "Warning: currenttemp running but lastTemp from pumphistory ended "+lastTempEnded+"m ago; canceling temp"; // reason.conclusion started
             //console.error(currenttemp, round(iob_data.lastTemp,1), round(lastTempAge,1));
-            return tempBasalFunctions.setTempBasal(0, 0, profile, rT, currenttemp);
+            return tempBasalFunctions.setTempBasal(0, 0, profile, rT, currenttemp, aimiRateActivated);
         }
         // TODO: figure out a way to do this check that doesn't fail across basal schedule boundaries
         //if ( tempModulus < 25 && tempModulus > 5 ) {
@@ -1533,12 +1542,13 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
 
     //AIMI B30 Temptarget
     if (iTimeActivation && iTime <= b30duration) {
-        rT.reason += "setting AIMI B30 Temp " + round_basal(AIMIrate, profile) + "U/hr for " + (b30duration-iTime) + "m ";
+        aimiRateActivated = true;
+        rT.reason += "calculated AIMI B30 Temp " + round_basal(AIMIrate, profile) + "U/hr for " + (b30duration-iTime) + "m ";
         rT.temp = 'absolute';
         rT.deliverAt = deliverAt;
         rT.duration = Math.min(30,(b30duration-iTime));
-        console.error("Forcing AIMI temp " + AIMIrate + "U/hr");
-        return tempBasalFunctions.setTempBasal(AIMIrate, 30, profile, rT, currenttemp);
+        console.error("calculating AIMI temp " + AIMIrate + "U/hr");
+        return tempBasalFunctions.setTempBasal(AIMIrate, 30, profile, rT, currenttemp, aimiRateActivated);
     }
 
     // don't low glucose suspend if IOB is already super negative and BG is rising faster than predicted
@@ -1563,7 +1573,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         durationReq = round(durationReq/30)*30;
         // always set a 30-120m zero temp (oref0-pump-loop will let any longer SMB zero temp run)
         durationReq = Math.min(120,Math.max(30,durationReq));
-        return tempBasalFunctions.setTempBasal(0, durationReq, profile, rT, currenttemp);
+        return tempBasalFunctions.setTempBasal(0, durationReq, profile, rT, currenttemp, aimiRateActivated);
     }
 
     // if not in LGS mode, cancel temps before the top of the hour to reduce beeping/vibration
@@ -1571,7 +1581,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
     if ( profile.skip_neutral_temps && rT.deliverAt.getMinutes() >= 55 ) {
         if (!enableSMB) {
             rT.reason += "; Canceling temp at " + (60 - rT.deliverAt.getMinutes()) + "min before turn of the hour to avoid beeping of MDT. SMB disabled anyways.";
-            return tempBasalFunctions.setTempBasal(0, 0, profile, rT, currenttemp);
+            return tempBasalFunctions.setTempBasal(0, 0, profile, rT, currenttemp, aimiRateActivated);
         } else {
              console.error((60 - rT.deliverAt.getMinutes()) + "min before turn of the hour, but SMB's are enabled - no skipping neutral temps")
         }
@@ -1587,7 +1597,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
             // if naive_eventualBG < 40, set a 30m zero temp (oref0-pump-loop will let any longer SMB zero temp run)
             if (naive_eventualBG < 40) {
                 rT.reason += ", naive_eventualBG < 40. ";
-                return tempBasalFunctions.setTempBasal(0, 30, profile, rT, currenttemp);
+                return tempBasalFunctions.setTempBasal(0, 30, profile, rT, currenttemp, aimiRateActivated);
             }
             if (glucose_status.delta > minDelta) {
                 rT.reason += ", but Delta " + convert_bg(tick, profile) + " > expectedDelta " + convert_bg(expectedDelta, profile);
@@ -1599,7 +1609,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
                 return rT;
             } else {
                 rT.reason += ", setting current basal of " + round(basal, 2) + " as temp. ";
-                return tempBasalFunctions.setTempBasal(basal, 30, profile, rT, currenttemp);
+                return tempBasalFunctions.setTempBasal(basal, 30, profile, rT, currenttemp, aimiRateActivated);
             }
         }
 
@@ -1627,7 +1637,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         var minInsulinReq = Math.min(insulinReq,naiveInsulinReq);
         if (insulinScheduled < minInsulinReq - basal*0.3) {
             rT.reason += ", "+currenttemp.duration + "m@" + (currenttemp.rate).toFixed(2) + " is a lot less than needed. ";
-            return tempBasalFunctions.setTempBasal(rate, 30, profile, rT, currenttemp);
+            return tempBasalFunctions.setTempBasal(rate, 30, profile, rT, currenttemp, aimiRateActivated);
         }
         if (typeof currenttemp.rate !== 'undefined' && (currenttemp.duration > 5 && rate >= currenttemp.rate * 0.8)) {
             rT.reason += ", temp " + currenttemp.rate + " ~< req " + round(rate,2) + "U/hr. ";
@@ -1648,7 +1658,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
                 //console.error(durationReq);
                 if (durationReq > 0) {
                     rT.reason += ", setting " + durationReq + "m zero temp. ";
-                    return tempBasalFunctions.setTempBasal(rate, durationReq, profile, rT, currenttemp);
+                    return tempBasalFunctions.setTempBasal(rate, durationReq, profile, rT, currenttemp, aimiRateActivated);
                 }
             } else {
                 rT.reason += ", setting " + round(rate, 2) + "U/hr. ";
@@ -1690,7 +1700,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
                 return rT;
             } else {
                 rT.reason += ", setting current basal of " + basal + " as temp. ";
-                return tempBasalFunctions.setTempBasal(basal, 30, profile, rT, currenttemp);
+                return tempBasalFunctions.setTempBasal(basal, 30, profile, rT, currenttemp, aimiRateActivated);
             }
         }
     }
@@ -1712,7 +1722,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
                 return rT;
             } else {
                 rT.reason += ", setting current basal of " + basal + " as temp. ";
-                return tempBasalFunctions.setTempBasal(basal, 30, profile, rT, currenttemp);
+                return tempBasalFunctions.setTempBasal(basal, 30, profile, rT, currenttemp, aimiRateActivated);
             }
         }
     }
@@ -1729,7 +1739,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
             return rT;
         } else {
             rT.reason += ", setting current basal of " + basal + " as temp. ";
-            return tempBasalFunctions.setTempBasal(basal, 30, profile, rT, currenttemp);
+            return tempBasalFunctions.setTempBasal(basal, 30, profile, rT, currenttemp, aimiRateActivated);
         }
     } else { // otherwise, calculate 30m high-temp required to get projected BG down to target
 
@@ -1882,7 +1892,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
                 // rT.rate = smbLowTempReq;
                 // rT.duration = durationReq;
                 //return rT;
-                return tempBasalFunctions.setTempBasal(smbLowTempReq, durationReq, profile, rT, currenttemp);
+                return tempBasalFunctions.setTempBasal(smbLowTempReq, durationReq, profile, rT, currenttemp, aimiRateActivated);
             }
 
         }
@@ -1902,7 +1912,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
 
         if (typeof currenttemp.duration === 'undefined' || currenttemp.duration === 0) { // no temp is set
             rT.reason += "no temp, setting " + rate + "U/hr. ";
-            return tempBasalFunctions.setTempBasal(rate, 30, profile, rT, currenttemp);
+            return tempBasalFunctions.setTempBasal(rate, 30, profile, rT, currenttemp, aimiRateActivated);
         }
 
         if (currenttemp.duration > 5 && (round_basal(rate, profile) <= round_basal(currenttemp.rate, profile))) { // if required temp <~ existing temp basal
@@ -1912,7 +1922,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
 
         // required temp > existing temp basal
         rT.reason += "temp " + currenttemp.rate + "<" + rate + "U/hr. ";
-        return tempBasalFunctions.setTempBasal(rate, 30, profile, rT, currenttemp);
+        return tempBasalFunctions.setTempBasal(rate, 30, profile, rT, currenttemp, aimiRateActivated);
     }
 };
 module.exports = determine_basal

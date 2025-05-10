@@ -196,14 +196,14 @@ extension B30Settings {
                             label: String(localized: "Upper BG Limit for B30", comment: "B30 Upper BG Limit"),
                             miniHint: String(
                                 localized:
-                                "B30 will only supress SMB as long as BG stays underneath that level. Default is \(state.units == .mgdL ? "130" : 130.formattedAsMmolL) \(state.units.rawValue).",
+                                "B30 will only run & supress SMB as long as BG stays underneath that level. Default is \(state.units == .mgdL ? "130" : 130.formattedAsMmolL) \(state.units.rawValue).",
                                 comment: "B30 Upper BG Limit miniHint"
                             ),
                             verboseHint: AnyView(
                                 Text(
                                     String(
                                         localized:
-                                        "Set the maximum BG level for suppressed SMB to remain active. Default is \(state.units == .mgdL ? "130" : 130.formattedAsMmolL) \(state.units.rawValue).",
+                                        "Set the maximum BG level for B30 & suppressed SMB to remain active. Default is \(state.units == .mgdL ? "130" : 130.formattedAsMmolL) \(state.units.rawValue).",
                                         comment: "B30 Upper BG Limit VerboseHint"
                                     )
                                 )
@@ -225,14 +225,14 @@ extension B30Settings {
                             label: String(localized: "Upper Delta Limit for B30", comment: "B30 Upper Delta"),
                             miniHint: String(
                                 localized:
-                                "B30 will only supress SMB as long as BG delta stays below that level. Default is \(state.units == .mgdL ? "8" : 8.formattedAsMmolL) \(state.units.rawValue).",
+                                "B30 will only run & supress SMB's as long as BG delta stays below that level. Default is \(state.units == .mgdL ? "8" : 8.formattedAsMmolL) \(state.units.rawValue).",
                                 comment: "B30 Upper Delta miniHint"
                             ),
                             verboseHint: AnyView(
                                 Text(
                                     String(
                                         localized:
-                                        "Set the maximum BG delta limit for suppressed SMB to remain active. Default is \(state.units == .mgdL ? "8" : 8.formattedAsMmolL) \(state.units.rawValue).",
+                                        "Set the maximum BG delta limit for B30 & suppressed SMB to remain active. Default is \(state.units == .mgdL ? "8" : 8.formattedAsMmolL) \(state.units.rawValue).",
                                         comment: "B30 Upper Delta VerboseHint"
                                     )
                                 )

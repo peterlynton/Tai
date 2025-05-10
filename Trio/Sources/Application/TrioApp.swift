@@ -379,8 +379,12 @@ extension Notification.Name {
             async let cleanupTokens: () = coreDataStack.cleanupPersistentHistoryTokens(before: Date.oneWeekAgo)
             async let purgeData: () = purgeOldNSManagedObjects()
 
+            // Use the async version of log cleanup
+            async let cleanupLogs: () = SimpleLogReporter.cleanupAllLogsAsync()
+
             await cleanupTokens
             try await purgeData
+            await cleanupLogs
 
             // Update the last cleanup date
             PropertyPersistentFlags.shared.lastCleanupDate = Date()

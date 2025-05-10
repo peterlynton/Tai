@@ -116,7 +116,7 @@ extension Settings {
                     ).listRowBackground(Color.chart)
 
                     let miniHintText = closedLoopDisabled ?
-                        String(localized: "Add a CGM and pump to enable automated insuin delivery") :
+                        String(localized: "Add a CGM and pump to enable automated insulin delivery") :
                         String(localized: "Enable automated insulin delivery.")
                     let miniHintTextColorForDisabled: Color = colorScheme == .dark ? .orange : .accentColor
                     let miniHintTextColor: Color = closedLoopDisabled ? miniHintTextColorForDisabled : .secondary

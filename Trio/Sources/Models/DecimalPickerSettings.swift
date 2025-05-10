@@ -270,6 +270,7 @@ struct PickerSetting {
         case factorRaw
         case gram
         case insulinUnit
+        case insulinUnitPerHour
         case minute
         case hour
     }

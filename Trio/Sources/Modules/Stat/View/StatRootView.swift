@@ -148,7 +148,6 @@ extension Stat {
                 VStack(spacing: Constants.spacing) {
                     GlucoseSectorChart(
                         highLimit: state.highLimit,
-                        lowLimit: state.lowLimit,
                         units: state.units,
                         glucose: state.glucoseFromPersistence,
                         timeInRangeType: state.timeInRangeType
@@ -157,8 +156,6 @@ extension Stat {
                     Divider()
 
                     GlucoseMetricsView(
-                        highLimit: state.highLimit,
-                        lowLimit: state.lowLimit,
                         units: state.units,
                         eA1cDisplayUnit: state.eA1cDisplayUnit,
                         glucose: state.glucoseFromPersistence

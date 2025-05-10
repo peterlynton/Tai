@@ -270,6 +270,8 @@ struct SettingInputSection<VerboseHint: View>: View {
             return Text("\(decimalValue)")
         case .insulinUnit:
             return Text("\(decimalValue) \(String(localized: "U", comment: "Insulin unit abbreviation"))")
+        case .insulinUnitPerHour:
+            return Text("\(decimalValue) \(String(localized: "U/hr", comment: "Insulin unit per hour abbreviation"))")
         case .gram:
             return Text("\(decimalValue) \(String(localized: "g", comment: "Gram abbreviation"))")
         case .minute:

@@ -98,7 +98,7 @@ extension DataTable {
                     )
                 } catch {
                     debugPrint(
-                        "\(#file) \(#function) \(DebuggingIdentifiers.failed) error while deleting glucose remote service(s) (Nightscout, Apple Health, Tidepool) with error: \(error.localizedDescription)"
+                        "\(#file) \(#function) \(DebuggingIdentifiers.failed) error while deleting glucose remote service(s) (Nightscout, Apple Health, Tidepool) with error: \(error)"
                     )
                 }
             }
@@ -127,7 +127,7 @@ extension DataTable {
                     try await deleteCarbs(treatmentObjectID, isFpuOrComplexMeal: isFpuOrComplexMeal)
 
                 } catch {
-                    debug(.default, "\(DebuggingIdentifiers.failed) Failed to delete carbs: \(error.localizedDescription)")
+                    debug(.default, "\(DebuggingIdentifiers.failed) Failed to delete carbs: \(error)")
                     await MainActor.run {
                         carbEntryDeleted = false
                         waitForSuggestion = false
@@ -221,7 +221,7 @@ extension DataTable {
                         )
                     }
                 } catch {
-                    debugPrint("\(DebuggingIdentifiers.failed) Error deleting entries: \(error.localizedDescription)")
+                    debugPrint("\(DebuggingIdentifiers.failed) Error deleting entries: \(error)")
                 }
             }
         }
@@ -267,7 +267,7 @@ extension DataTable {
                 try await apsManager.determineBasalSync()
             } catch {
                 debugPrint(
-                    "\(DebuggingIdentifiers.failed) \(#file) \(#function) Error while Insulin Deletion Task: \(error.localizedDescription)"
+                    "\(DebuggingIdentifiers.failed) \(#file) \(#function) Error while Insulin Deletion Task: \(error)"
                 )
                 await MainActor.run {
                     insulinEntryDeleted = false
@@ -302,7 +302,7 @@ extension DataTable {
 
                     debug(.default, "Successfully deleted the treatment object.")
                 } catch {
-                    debug(.default, "Failed to delete the treatment object: \(error.localizedDescription)")
+                    debug(.default, "Failed to delete the treatment object: \(error)")
                 }
             }
         }
@@ -354,7 +354,7 @@ extension DataTable {
                     try await apsManager.determineBasalSync()
 
                 } catch {
-                    debug(.default, "\(DebuggingIdentifiers.failed) failed to update entry: \(error.localizedDescription)")
+                    debug(.default, "\(DebuggingIdentifiers.failed) failed to update entry: \(error)")
                 }
             }
         }
@@ -481,7 +481,7 @@ extension DataTable {
                         date: entryDate
                     )
                 } catch {
-                    debugPrint("\(DebuggingIdentifiers.failed) Failed to load entry: \(error.localizedDescription)")
+                    debugPrint("\(DebuggingIdentifiers.failed) Failed to load entry: \(error)")
                     return nil
                 }
             }

@@ -115,7 +115,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             } catch {
                 debug(
                     .default,
-                    "\(DebuggingIdentifiers.failed) failed to fetch last enacted determination: \(error.localizedDescription)"
+                    "\(DebuggingIdentifiers.failed) failed to fetch last enacted determination: \(error)"
                 )
             }
         }
@@ -133,19 +133,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         /// 2. To not spam the user's NS site with a high number of uploads in a very short amount of time (less than 1sec)
         coreDataPublisher?
             .filteredByEntityName("OrefDetermination")
-            .handleEvents(receiveOutput: { _ in
-                debug(
-                    .nightscout,
-                    "OrefDetermination update"
-                )
-            })
             .debounce(for: .seconds(2), scheduler: debouncedQueue)
-            .handleEvents(receiveOutput: { _ in
-                debug(
-                    .nightscout,
-                    "OrefDetermination update debounceed"
-                )
-            })
             .sink { [weak self] objectIDs in
                 guard let self = self else { return }
 
@@ -398,7 +386,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             let carbs = try await nightscout.fetchCarbs(sinceDate: since)
             return carbs
         } catch {
-            debug(.nightscout, "Error fetching carbs: \(error.localizedDescription)")
+            debug(.nightscout, "Error fetching carbs: \(error)")
             return []
         }
     }
@@ -413,7 +401,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
             let tempTargets = try await nightscout.fetchTempTargets(sinceDate: since)
             return tempTargets
         } catch {
-            debug(.nightscout, "Error fetching temp targets: \(error.localizedDescription)")
+            debug(.nightscout, "Error fetching temp targets: \(error)")
             return []
         }
     }
@@ -427,7 +415,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         } catch {
             debug(
                 .nightscout,
-                "\(DebuggingIdentifiers.failed) Failed to delete Carbs from Nightscout with error: \(error.localizedDescription)"
+                "\(DebuggingIdentifiers.failed) Failed to delete Carbs from Nightscout with error: \(error)"
             )
         }
     }
@@ -441,7 +429,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         } catch {
             debug(
                 .nightscout,
-                "\(DebuggingIdentifiers.failed) Failed to delete Insulin from Nightscout with error: \(error.localizedDescription)"
+                "\(DebuggingIdentifiers.failed) Failed to delete Insulin from Nightscout with error: \(error)"
             )
         }
     }
@@ -454,7 +442,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         } catch {
             debug(
                 .nightscout,
-                "\(DebuggingIdentifiers.failed) Failed to delete Manual Glucose from Nightscout with error: \(error.localizedDescription)"
+                "\(DebuggingIdentifiers.failed) Failed to delete Manual Glucose from Nightscout with error: \(error)"
             )
         }
     }
@@ -664,7 +652,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
                 self.lastSuggestedDetermination = lastSuggestedDetermination
             }
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
         }
 
         Task.detached {
@@ -853,7 +841,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
                 debug(.nightscout, "Profile uploaded")
             } catch {
-                debug(.nightscout, "NightscoutManager uploadProfile: \(error.localizedDescription)")
+                debug(.nightscout, "NightscoutManager uploadProfile: \(error)")
                 throw error
             }
         } else {
@@ -870,7 +858,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         do {
             return try await nightscout.importSettings()
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
             return nil
         }
     }
@@ -882,7 +870,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         } catch {
             debug(
                 .nightscout,
-                "\(DebuggingIdentifiers.failed) failed to upload glucose with error: \(error.localizedDescription)"
+                "\(DebuggingIdentifiers.failed) failed to upload glucose with error: \(error)"
             )
         }
     }
@@ -893,7 +881,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         } catch {
             debug(
                 .nightscout,
-                "\(DebuggingIdentifiers.failed) failed to upload manual glucose with error: \(error.localizedDescription)"
+                "\(DebuggingIdentifiers.failed) failed to upload manual glucose with error: \(error)"
             )
         }
     }
@@ -904,7 +892,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         } catch {
             debug(
                 .nightscout,
-                "\(DebuggingIdentifiers.failed) failed to upload pump history with error: \(error.localizedDescription)"
+                "\(DebuggingIdentifiers.failed) failed to upload pump history with error: \(error)"
             )
         }
     }
@@ -916,7 +904,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         } catch {
             debug(
                 .nightscout,
-                "\(DebuggingIdentifiers.failed) failed to upload carbs with error: \(error.localizedDescription)"
+                "\(DebuggingIdentifiers.failed) failed to upload carbs with error: \(error)"
             )
         }
     }
@@ -928,7 +916,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         } catch {
             debug(
                 .nightscout,
-                "\(DebuggingIdentifiers.failed) failed to upload overrides with error: \(error.localizedDescription)"
+                "\(DebuggingIdentifiers.failed) failed to upload overrides with error: \(error)"
             )
         }
     }
@@ -940,7 +928,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         } catch {
             debug(
                 .nightscout,
-                "\(DebuggingIdentifiers.failed) failed to upload temp targets with error: \(error.localizedDescription)"
+                "\(DebuggingIdentifiers.failed) failed to upload temp targets with error: \(error)"
             )
         }
     }
@@ -961,7 +949,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             debug(.nightscout, "Glucose uploaded")
         } catch {
-            debug(.nightscout, "Upload of glucose failed: \(error.localizedDescription)")
+            debug(.nightscout, "Upload of glucose failed: \(error)")
         }
     }
 
@@ -999,7 +987,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             debug(.nightscout, "Treatments uploaded")
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
         }
     }
 
@@ -1017,7 +1005,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             debug(.nightscout, "Treatments uploaded")
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
         }
     }
 
@@ -1058,7 +1046,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             debug(.nightscout, "Treatments uploaded")
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
         }
     }
 
@@ -1099,7 +1087,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             debug(.nightscout, "Treatments uploaded")
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
         }
     }
 
@@ -1158,7 +1146,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             debug(.nightscout, "Overrides uploaded")
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
         }
     }
 
@@ -1216,7 +1204,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             debug(.nightscout, "Overrides uploaded")
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
         }
     }
 
@@ -1257,7 +1245,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             debug(.nightscout, "Temp Targets uploaded")
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
         }
     }
 
@@ -1298,7 +1286,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
 
             debug(.nightscout, "Temp Target Runs uploaded")
         } catch {
-            debug(.nightscout, error.localizedDescription)
+            debug(.nightscout, String(describing: error))
         }
     }
 

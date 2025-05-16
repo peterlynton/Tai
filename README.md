@@ -137,4 +137,4 @@ Do you speak JS or Swift? Do you have UI/UX skills? Do you know how to optimize 
 Trio is a collaborative project. We always welcome fellow enthusiasts who can contribute with new code, UI/UX improvements, code reviews, testing and release management.
 If you want to contribute to the development of Trio, please reach out on Discord or Facebook.
 
-For questions or contributions, please join our [Discord server](https://discord.gg/KepAG6RdYZ).
+For questions or contributions, please join our [Discord server](https://discord.triodocs.org).

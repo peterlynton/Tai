@@ -1,13 +1,5 @@
-Beta update 0.4.1 - Closed Beta
+Beta update 0.5.0 - Private Beta Relase
 
-Trio closed beta 0.4.0 & 0.4.1 - onboarding ...
-autoISF History refactor
-rename logfiles <date>.log and share zipped
-don't show setting maxDeltaBGThreshold - autoISF automates that
-autoISF iobTH works without even/odd toggle on
-AIMI B30 respects maxBasal but ignore basal safety multipliers
-AIMI B30 will switch off on surpassing delta or upper BG
-increase boundaries for Basal multipliers to 10
-editable NS URL
+updates up 0.5.0.9
 
 

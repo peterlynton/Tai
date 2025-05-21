@@ -40,9 +40,9 @@ final class AppVersionChecker {
         var url: String {
             switch self {
             case .versionConfig:
-                return "https://raw.githubusercontent.com/mountrcg/Trio/refs/heads/dev-Tai/Config.xcconfig"
+                return "https://raw.githubusercontent.com/mountrcg/Trio/refs/heads/Tai-dev/Config.xcconfig"
             case .blacklistedVersions:
-                return "https://raw.githubusercontent.com/mountrcg/Trio/refs/heads/dev-Tai/blacklisted-versions.json"
+                return "https://raw.githubusercontent.com/mountrcg/Trio/refs/heads/Tai-dev/blacklisted-versions.json"
             }
         }
     }

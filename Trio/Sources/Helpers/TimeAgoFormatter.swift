@@ -24,7 +24,7 @@ enum TimeAgoFormatter {
             let minuteString = Formatter.timaAgoFormatter.string(for: Double(minutesAgo)) ?? "\(minutesAgo)"
             return minuteString + "\u{00A0}" + String(localized: "m", comment: "Abbreviation for Minutes")
         } else {
-            return "<" + "1" + "\u{00A0}" + String(localized: "m", comment: "Abbreviation for Minutes")
+            return "<" + "\u{00A0}" + "1" + "\u{00A0}" + String(localized: "m", comment: "Abbreviation for Minutes")
         }
     }
 

@@ -208,7 +208,7 @@ extension AutoISFSettings {
                             ),
                             verboseHint: VStack(alignment: .leading, spacing: 10) {
                                 Text(
-                                    "If enabled this function will switch off autoISF adaptions completely if you are exercising. Exeecising means you have a high TempTarget enabled and  HighTTraisesSens, so that this high TT will already increase your sensitivity (will be displayed in active TempTarget)."
+                                    "If enabled this function will switch off autoISF adaptions completely if you are exercising. Exercising means you have a high TempTarget enabled and  HighTTraisesSens, so that this high TT will already increase your sensitivity (will be displayed in active TempTarget)."
                                 )
                             }
                         )

@@ -1,4 +1,4 @@
-<img src="https://github.com/mountrcg/tai/blob/Tai-master/Trio/Resources/Assets.xcassets/app_icons/taiCircledNoBackgound.imageset/ComplicationIcon.png" width="120">
+<img src="https://github.com/mountrcg/Trio/blob/Tai-dev/Trio/Resources/Assets.xcassets/app_icons/taiCircledNoBackground.imageset/taiCircledNoBackground.png" width="120">
 
 # **T**rio **a**uto**I**SF fork aka *Tai*
 
@@ -83,10 +83,10 @@ xed .
 **Instructions**:
 
 For main branch:
-* https://github.com/nightscout/Trio/blob/tai/fastlane/testflight.md
+* https://github.com/mountrcg/Trio/blob/Tai-main/fastlane/testflight.md
 
 For dev branch:
-* https://github.com/nightscout/Trio/blob/dev-tai/fastlane/testflight.md
+* https://github.com/mountrcg/Trio/blob/Tai-dev/fastlane/testflight.md
 
 Instructions in greater detail, but not Trio-specific:
 * https://loopkit.github.io/loopdocs/gh-actions/gh-overview/

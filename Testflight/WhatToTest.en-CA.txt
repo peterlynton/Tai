@@ -1,5 +1,4 @@
 Open Beta update 0.5.1
 
 updates up trio Dev 0.5.0.15
-some graph adjustments
-maxIOB steps scale with bolusIncrement of diluted insulins
+pump icons

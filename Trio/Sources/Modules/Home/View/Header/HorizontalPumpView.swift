@@ -64,9 +64,9 @@ struct HorizontalPumpView: View {
                         }
                         if let reservoir = reservoir {
                             HStack(spacing: 4) {
-                                Image(systemName: "cross.vial.fill")
-                                    .font(.callout)
-                                    .foregroundColor(reservoirColor)
+                                Image(systemName: reservoirGaugeIcon)
+                                    .font(.body)
+                                    .foregroundStyle(reservoirPrimaryColor, reservoirSecondaryColor)
                                 if reservoir == 0xDEAD_BEEF {
                                     Text("\(50 * concentration)+ " + String(localized: "U", comment: "Insulin unit"))
                                         .font(.callout)
@@ -87,7 +87,7 @@ struct HorizontalPumpView: View {
                         if (battery.first?.display) != nil, let shouldBatteryDisplay = battery.first?.display,
                            shouldBatteryDisplay
                         {
-                            HStack {
+                            HStack(spacing: 4) {
                                 Image(systemName: "battery.100")
                                     .font(.callout)
                                     .foregroundStyle(batteryColor)
@@ -96,7 +96,7 @@ struct HorizontalPumpView: View {
                             }
                         }
                         if let date = expiresAtDate {
-                            HStack {
+                            HStack(spacing: 4) {
                                 Image(systemName: hourglassIcon)
                                     .font(.callout)
                                     .foregroundStyle(timerColor, Color.yellow)
@@ -224,19 +224,50 @@ struct HorizontalPumpView: View {
         }
     }
 
-    private var reservoirColor: Color {
+    private var reservoirGaugeIcon: String {
+        guard let reservoir = reservoir else {
+            return "gauge.with.dots.needle.bottom.0percent"
+        }
+
+        if reservoir == 0xDEAD_BEEF {
+            return "gauge.with.dots.needle.bottom.100percent"
+        }
+
+        let insulinAmount = reservoir * concentration
+
+        switch insulinAmount {
+        case ...10:
+            return "gauge.with.dots.needle.bottom.0percent"
+        case ...40:
+            return "gauge.with.dots.needle.bottom.50percent"
+        default:
+            return "gauge.with.dots.needle.bottom.100percent"
+        }
+    }
+
+    private var reservoirPrimaryColor: Color {
         guard let reservoir = reservoir else {
             return .gray
         }
 
-        switch reservoir {
+        if reservoir == 0xDEAD_BEEF {
+            return Color.loopGreen
+        }
+
+        let insulinAmount = reservoir * concentration
+
+        switch insulinAmount {
         case ...10:
             return Color.loopRed
-        case ...30:
+        case ...40:
             return Color.orange
         default:
-            return Color.insulin
+            return Color.loopGreen
         }
+    }
+
+    private var reservoirSecondaryColor: Color {
+        Color.insulin
     }
 
     private var timerColor: Color {

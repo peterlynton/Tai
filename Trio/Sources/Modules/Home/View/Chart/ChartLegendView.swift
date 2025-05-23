@@ -83,6 +83,15 @@ struct ChartLegendView: View {
                         .padding(.vertical, 5)
 
                         DefinitionRow(
+                            term: String(localized: "Reservoir"),
+                            definition: Text(
+                                "Shows current Pump Reservoir level, goes yellow at 40 insulin units and red at 10 insulin units"
+                            ),
+                            color: Color.insulin,
+                            iconString: "gauge.with.dots.needle.bottom.100percent"
+                        )
+
+                        DefinitionRow(
                             term: String(localized: "ISF value"),
                             definition: Text(
                                 "Currently used Insulin Sensitivity Factor (ISF) in mg/dL or mmol/L per IU."

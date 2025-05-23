@@ -503,27 +503,22 @@ extension Home {
 
                 /// eventualBG string
                 if let eventualBG = state.enactedAndNonEnactedDeterminations.first?.eventualBG {
-                    let bg = eventualBG as Decimal
+                    let eventualGlucose = eventualBG as Decimal
                     HStack {
                         Text(
                             "⇢"
                         ).font(.system(size: 18, weight: .bold))
                             .foregroundColor(.secondary)
-                        Text(
-                            Formatter.decimalFormatterWithTwoFractionDigits.string(
-                                from: (
-                                    state.units == .mmolL ? bg
-                                        .asMmolL : bg
-                                ) as NSNumber
-                            )!
-                        )
-                        .font(.system(size: 16, weight: .bold)) }
+                        Text(state.units == .mgdL ? eventualGlucose.description : eventualGlucose.formattedAsMmolL)
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                    }
                 } else {
                     HStack {
                         Text("⇢")
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.system(size: 18, weight: .bold))
                             .foregroundColor(.secondary)
                         Text("--")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
                     }
                 }
                 /// Loop view at bottomLeading

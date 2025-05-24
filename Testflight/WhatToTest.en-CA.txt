@@ -1,5 +1,4 @@
 Beta update 0.5.0 - Private Beta Relase
 
-updates up 0.5.0.15
-fixes fastlane builds
+test fastlane build & xdrip with new Bundle and Group ID scheme
 

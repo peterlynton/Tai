@@ -99,51 +99,14 @@ Instructions in greater detail, but not Trio-specific:
 	 /> only
 - and not CE or FDA approved for therapy.
 
-## Documentation
-
-- [Discord Trio - Server ](https://discord.triodocs.org/)
-- [Trio documentation](https://triodocs.org/)
-- [OpenAPS documentation](https://openaps.readthedocs.io/en/latest/)
-- [Crowdin](https://crowdin.triodocs.org/) is the collaborative platform we are using to manage the **translation** and localization of the Trio App.
-<!--   TODO: Add status graphic for the Crowdin Project -->
-
-Most of the changes for autoISF are made in oref code of OpenAPS, which is minimized in Tai. So it is not really readable in Xcode, therefore refer to my [oref0-repository](https://github.com/mountrcg/oref0/tree).
-[Discord Trio - Server ](http://discord.triodocs.org)
-
-* Please visit ga-zelle’s repository [GitHub - ga-zelle/autoISF](https://github.com/ga-zelle/autoISF/tree/A3.2.0.4_ai3.0.1).
-
-## Where to find documentation about autoISF
+## autoISF Support & Documentation
 * Please visit ga-zelle’s repository [GitHub - ga-zelle/autoISF](https://github.com/ga-zelle/autoISF/tree/A3.2.0.4_ai3.0.1).
   The [**Quick Guide (bzw. Kurzanleitung)**](https://github.com/ga-zelle/autoISF/blob/A3.2.0.4_ai3.0.1/autoISF3.0.1_Quick_Guide.pdf) provides an overview of autoISF and its features. All of this is applicable for Tai as the core Algorithm is 100% identical.
 
-[Trio documentation](https://triodocs.org/)
-[Discord Trio - Server ](http://discord.triodocs.org)
+Most of the changes for *autoISF* are made in oref code of OpenAPS, which is minimized in Tai. So it is not really readable in Xcode, therefore refer to my [oref0-repository](https://github.com/mountrcg/oref0).
 
+Not a lot of support on top of Trio. Tai is for enthusiast willing also to go the extra technical mile, visit [FCL & autoISF Discord](https://discord.gg/KUa8Nf2eeU)
 
-## Contribute
+## Trio Documentation
 
-If you would like to give something back to the Trio community, there are several ways to contribute:
-
-# Support
-
-[Trio Facebook Group](https://facebook.triodocs.org)
-
-# Contribute
-
-If you would like to give something back to the Trio community, there are several ways to contribute:
-
-## Pay it forward
-When you have successfully built Trio and managed to get it working well for your diabetes management, it's time to pay it forward.
-You can start by responding to questions in the Facebook or Discord support groups, helping others make the best out of Trio.
-
-## Translate
-Trio is translated into several languages to make sure it's easy to understand and use all over the world.
-Translation is done using [Crowdin](https://crowdin.com/project/trio), and does not require any programming skills.
-If your preferred language is missing or you'd like to improve the translation, please sign up as a translator on [Crowdin](https://crowdin.com/project/trio).
-
-## Develop
-Do you speak JS or Swift? Do you have UI/UX skills? Do you know how to optimize API calls or improve data storage? Do you have experience with testing and release management?
-Trio is a collaborative project. We always welcome fellow enthusiasts who can contribute with new code, UI/UX improvements, code reviews, testing and release management.
-If you want to contribute to the development of Trio, please reach out on Discord or Facebook.
-
-For questions or contributions, please join our [Discord server](https://discord.triodocs.org).
+... can be found in the original [READ.me for Trio](https://github.com/nightscout/Trio/blob/main/README.md)

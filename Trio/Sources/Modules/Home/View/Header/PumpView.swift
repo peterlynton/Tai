@@ -98,8 +98,9 @@ struct PumpView: View {
                 if let date = expiresAtDate {
                     HStack {
                         Image(systemName: hourglassIcon)
-                            .font(.callout)
-                            .foregroundStyle(timerColor)
+                            .font(.body)
+                            .foregroundStyle(timerColor, Color.yellow)
+                            .symbolRenderingMode(.palette)
 
                         let remainingTimeString = remainingTimeString(time: date.timeIntervalSince(timerDate))
 

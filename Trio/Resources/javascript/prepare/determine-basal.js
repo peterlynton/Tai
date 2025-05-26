@@ -1,19 +1,21 @@
 //для enact/smb-suggested.json параметры: monitor/iob.json monitor/temp_basal.json monitor/glucose.json settings/profile.json settings/autosens.json --meal monitor/meal.json --microbolus --reservoir monitor/reservoir.json
 
 function generate(iob, currenttemp, glucose, profile, autosens = null, meal = null, microbolusAllowed = false, reservoir = null, clock = new Date(), pump_history, preferences, basalProfile, oref2_variables) {
-
     var clock = new Date();
+    
+    // Process glucose data FIRST to ensure consistency
+    var glucose_status = freeaps_glucoseGetLast(glucose);
     
     var middleware_was_used = "";
     try {
-        var middlewareReason = middleware(iob, currenttemp, glucose, profile, autosens, meal, reservoir, clock, pump_history, preferences, basalProfile, oref2_variables);
+        // Pass the processed glucose_status to middleware instead of raw glucose array
+        var middlewareReason = middleware(iob, currenttemp, glucose_status, profile, autosens, meal, reservoir, clock, pump_history, preferences, basalProfile, oref2_variables);
         middleware_was_used = (middlewareReason || "Nothing changed");
         console.log("Middleware reason: " + middleware_was_used);
     } catch (error) {
         console.log("Invalid middleware: " + error);
     };
 
-    var glucose_status = freeaps_glucoseGetLast(glucose);
     var autosens_data = null;
 
     if (autosens) {

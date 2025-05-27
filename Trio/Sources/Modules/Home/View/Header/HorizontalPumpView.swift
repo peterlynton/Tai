@@ -65,6 +65,7 @@ struct HorizontalPumpView: View {
                         if let reservoir = reservoir {
                             HStack(spacing: 4) {
                                 Image(systemName: reservoirGaugeIcon)
+                                    .rotationEffect(.degrees(-45))
                                     .font(.body)
                                     .foregroundStyle(reservoirPrimaryColor, reservoirSecondaryColor)
                                 if reservoir == 0xDEAD_BEEF {
@@ -230,18 +231,22 @@ struct HorizontalPumpView: View {
         }
 
         if reservoir == 0xDEAD_BEEF {
-            return "gauge.with.dots.needle.bottom.100percent"
+            return "gauge.with.dots.needle.100percent"
         }
 
         let insulinAmount = reservoir * concentration
 
         switch insulinAmount {
         case ...10:
-            return "gauge.with.dots.needle.bottom.0percent"
-        case ...40:
-            return "gauge.with.dots.needle.bottom.50percent"
+            return "gauge.with.dots.needle.0percent"
+        case ...20:
+            return "gauge.with.dots.needle.33percent"
+        case ...30:
+            return "gauge.with.dots.needle.50percent"
+        case ...45:
+            return "gauge.with.dots.needle.67percent"
         default:
-            return "gauge.with.dots.needle.bottom.100percent"
+            return "gauge.with.dots.needle.100percent"
         }
     }
 
@@ -257,17 +262,34 @@ struct HorizontalPumpView: View {
         let insulinAmount = reservoir * concentration
 
         switch insulinAmount {
-        case ...10:
+        case ...15:
             return Color.loopRed
-        case ...40:
+        case ...25:
             return Color.orange
+        case ...35:
+            return Color.yellow
         default:
             return Color.loopGreen
         }
     }
 
     private var reservoirSecondaryColor: Color {
-        Color.insulin
+        guard let reservoir = reservoir else {
+            return .gray
+        }
+
+        if reservoir == 0xDEAD_BEEF {
+            return Color.insulin
+        }
+
+        let insulinAmount = reservoir * concentration
+
+        switch insulinAmount {
+        case ...10:
+            return Color.loopRed
+        default:
+            return Color.insulin
+        }
     }
 
     private var timerColor: Color {

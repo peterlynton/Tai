@@ -85,10 +85,10 @@ struct ChartLegendView: View {
                         DefinitionRow(
                             term: String(localized: "Reservoir"),
                             definition: Text(
-                                "Shows current Pump Reservoir level, goes yellow at 40 insulin units and red at 10 insulin units"
+                                "Shows decreasing Pump Reservoir levels, progressively colorized from green to red."
                             ),
                             color: Color.insulin,
-                            iconString: "gauge.with.dots.needle.bottom.100percent"
+                            iconString: "gauge.with.dots.needle.67percent"
                         )
 
                         DefinitionRow(

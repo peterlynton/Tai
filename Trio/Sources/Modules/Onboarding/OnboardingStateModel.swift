@@ -729,6 +729,7 @@ extension Onboarding {
         /// Applies the selected delivery preferences to the app's settings.
         func applyToPreferences() {
             var preferences = Preferences()
+            preferences.targetUnits = units
 
             // delivery limits (those that are preference-bound, not pump-settings-bound
             preferences.maxIOB = maxIOB

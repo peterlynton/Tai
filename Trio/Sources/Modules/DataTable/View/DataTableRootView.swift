@@ -7,8 +7,8 @@ extension DataTable {
         let resolver: Resolver
 
         @State var state = StateModel()
-
         @State private var isRemoveHistoryItemAlertPresented: Bool = false
+        @State private var isRemoveMealAlertPresented: Bool = false // Add this new one
         @State private var alertTitle: String = ""
         @State private var alertMessage: String = ""
         @State private var alertTreatmentToDelete: PumpEventStored?
@@ -808,7 +808,8 @@ extension DataTable {
                             )
                         }
 
-                        isRemoveHistoryItemAlertPresented = true
+                        // Use separate alert for meals
+                        isRemoveMealAlertPresented = true
                     }
                 ).tint(.red)
 
@@ -824,9 +825,10 @@ extension DataTable {
                 .tint(!state.useFPUconversion && isFPU ? Color(.systemGray4) : Color.blue)
                 .disabled(!state.useFPUconversion && isFPU)
             }
+            // Use separate alert for meals
             .alert(
                 Text(alertTitle),
-                isPresented: $isRemoveHistoryItemAlertPresented
+                isPresented: $isRemoveMealAlertPresented
             ) {
                 Button("Cancel", role: .cancel) {}
                 Button("Delete", role: .destructive) {
@@ -838,7 +840,8 @@ extension DataTable {
 
                     state.invokeCarbDeletionTask(
                         treatmentObjectID,
-                        isFpuOrComplexMeal: carbEntryToDelete.isFPU || carbEntryToDelete.fat > 0 || carbEntryToDelete.protein > 0
+                        isFpuOrComplexMeal: carbEntryToDelete.isFPU || carbEntryToDelete.fat > 0 || carbEntryToDelete
+                            .protein > 0
                     )
                 }
             } message: {

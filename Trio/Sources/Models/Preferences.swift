@@ -167,8 +167,6 @@ extension Preferences {
         case lowerISFrangeWeight = "lower_ISFrange_weight"
         // case deltaISFrangeWeight = "delta_ISFrange_weight"
         case postMealISFweight = "pp_ISF_weight"
-        // case postMealISFduration = "pp_ISF_hours"
-        // case postMealISFalways = "enable_pp_ISF_always"
         case bgAccelISFweight = "bgAccel_ISF_weight"
         case bgBrakeISFweight = "bgBrake_ISF_weight"
         case enableBGacceleration = "enable_BG_acceleration"
@@ -455,18 +453,9 @@ extension Preferences: Decodable {
         if let lowerISFrangeWeight = try? container.decode(Decimal.self, forKey: .lowerISFrangeWeight) {
             preferences.lowerISFrangeWeight = lowerISFrangeWeight
         }
-//        if let deltaISFrangeWeight = try? container.decode(Decimal.self, forKey: .deltaISFrangeWeight) {
-//            preferences.deltaISFrangeWeight = deltaISFrangeWeight
-//        }
-//        if let postMealISFalways = try? container.decode(Bool.self, forKey: .postMealISFalways) {
-//            preferences.postMealISFalways = postMealISFalways
-//        }
         if let postMealISFweight = try? container.decode(Decimal.self, forKey: .postMealISFweight) {
             preferences.postMealISFweight = postMealISFweight
         }
-//        if let postMealISFduration = try? container.decode(Decimal.self, forKey: .postMealISFduration) {
-//            preferences.postMealISFduration = postMealISFduration
-//        }
         if let enableBGacceleration = try? container.decode(Bool.self, forKey: .enableBGacceleration) {
             preferences.enableBGacceleration = enableBGacceleration
         }

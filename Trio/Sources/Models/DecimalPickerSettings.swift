@@ -51,7 +51,7 @@ struct DecimalPickerSettings {
     var overrideFactor = PickerSetting(value: 0.8, step: 0.05, min: 0.05, max: 1.5, type: PickerSetting.PickerSettingType.factor)
     var fattyMealFactor = PickerSetting(value: 0.7, step: 0.05, min: 0.05, max: 1, type: PickerSetting.PickerSettingType.factor)
     var sweetMealFactor = PickerSetting(value: 1, step: 0.05, min: 0.05, max: 2, type: PickerSetting.PickerSettingType.factor)
-    var maxIOB = PickerSetting(value: 0, step: 1, min: 0, max: 20, type: PickerSetting.PickerSettingType.insulinUnit)
+    var maxIOB = PickerSetting(value: 0, step: 1, min: 0, max: 30, type: PickerSetting.PickerSettingType.insulinUnit)
     var maxDailySafetyMultiplier = PickerSetting(
         value: 3,
         step: 0.1,
@@ -68,7 +68,7 @@ struct DecimalPickerSettings {
     )
     var autosensMax = PickerSetting(value: 1.2, step: 0.1, min: 0.5, max: 3, type: PickerSetting.PickerSettingType.factor)
     var autosensMin = PickerSetting(value: 0.7, step: 0.1, min: 0.5, max: 1, type: PickerSetting.PickerSettingType.factor)
-    var smbDeliveryRatio = PickerSetting(value: 0.5, step: 0.05, min: 0.1, max: 0.9, type: PickerSetting.PickerSettingType.factor)
+    var smbDeliveryRatio = PickerSetting(value: 0.5, step: 0.05, min: 0.1, max: 1, type: PickerSetting.PickerSettingType.factor)
     var halfBasalExerciseTarget = PickerSetting(
         value: 160,
         step: 5,
@@ -201,10 +201,9 @@ struct DecimalPickerSettings {
         value: 0.02,
         step: 0.005,
         min: 0,
-        max: 0.1,
+        max: 0.15,
         type: PickerSetting.PickerSettingType.factorRaw
     )
-    var postMealISFduration = PickerSetting(value: 3, step: 1, min: 2, max: 6, type: PickerSetting.PickerSettingType.hour)
     var bgAccelISFweight = PickerSetting(
         value: 0.15,
         step: 0.01,

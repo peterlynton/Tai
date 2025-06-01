@@ -201,8 +201,6 @@ struct SettingInputSection<VerboseHint: View>: View {
             return pickerSettingsProvider.settings.deltaISFrangeWeight
         case "postMealISFweight":
             return pickerSettingsProvider.settings.postMealISFweight
-        case "postMealISFduration":
-            return pickerSettingsProvider.settings.postMealISFduration
         case "bgAccelISFweight":
             return pickerSettingsProvider.settings.bgAccelISFweight
         case "bgBrakeISFweight":

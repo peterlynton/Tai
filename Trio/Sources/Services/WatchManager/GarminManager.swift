@@ -251,6 +251,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                     let cobNumber = NSNumber(value: latestDetermination.cob)
                     watchState.cob = Formatter.integerFormatter.string(from: cobNumber)
 
+                    let aiSR = latestDetermination.autoISFratio ?? 1
+                    watchState.aiSR = aiSR.description
+
                     let insulinSensitivity = latestDetermination.insulinSensitivity ?? 0
                     let eventualBG = latestDetermination.eventualBG ?? 0
 
@@ -295,20 +298,21 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                     watchState.delta = deltaValue < 0 ? "\(formattedDelta)" : "+\(formattedDelta)"
                 }
 
-                debug(
-                    .watchManager,
-                    """
-                    📱 Setup GarminWatchState - \
-                    glucose: \(watchState.glucose ?? "nil"), \
-                    trendRaw: \(watchState.trendRaw ?? "nil"), \
-                    delta: \(watchState.delta ?? "nil"), \
-                    eventualBGRaw: \(watchState.eventualBGRaw ?? "nil"), \
-                    isf: \(watchState.isf ?? "nil"), \
-                    cob: \(watchState.cob ?? "nil"), \
-                    iob: \(watchState.iob ?? "nil"), \
-                    lastLoopDateInterval: \(watchState.lastLoopDateInterval?.description ?? "nil")
-                    """
-                )
+//                debug(
+//                    .watchManager,
+//                    """
+//                    📱 Setup GarminWatchState - \
+//                    glucose: \(watchState.glucose ?? "nil"), \
+//                    trendRaw: \(watchState.trendRaw ?? "nil"), \
+//                    delta: \(watchState.delta ?? "nil"), \
+//                    eventualBGRaw: \(watchState.eventualBGRaw ?? "nil"), \
+//                    isf: \(watchState.isf ?? "nil"), \
+//                    aiSR: \(watchState.aiSR ?? "nil"), \
+//                    cob: \(watchState.cob ?? "nil"), \
+//                    iob: \(watchState.iob ?? "nil"), \
+//                    lastLoopDateInterval: \(watchState.lastLoopDateInterval?.description ?? "nil")
+//                    """
+//                )
 
                 return watchState
             }

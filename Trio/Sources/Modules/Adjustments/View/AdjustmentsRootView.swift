@@ -209,20 +209,32 @@ extension Adjustments {
         }
 
         var defaultText: some View {
-            switch state.selectedTab {
-            case .overrides:
-                Section {} header: {
-                    Text("Add Preset or Override by tapping 'Add Override +' in the top right-hand corner of the screen.")
+            Group {
+                switch state.selectedTab {
+                case .overrides:
+                    Section(
+                        header: Text(
+                            "Add Preset or Override by tapping 'Add Override +' in the top right-hand corner of the screen."
+                        )
+                        .textCase(nil)
+                        .foregroundStyle(.secondary),
+                        content: {
+                            VStack(alignment: .leading) {
+                                Text(
+                                    "Overrides DO NOT have ANY functionality in Tai. The UI is up to date and can be tested, including shortcuts, NS remotes and all displayed information. However NONE of the overriden parameters have any effect.\n\nOnce oref is ported to Swift, this feature will be added to Tai."
+                                ).bold()
+                            }
+                        }
+                    )
+                    .listRowBackground(Color.tabBar)
+                case .tempTargets:
+                    Section {} header: {
+                        Text(
+                            "Add Preset or Temp Target by tapping 'Add Temp Target +' in the top right-hand corner of the screen."
+                        )
                         .textCase(nil)
                         .foregroundStyle(.secondary)
-                }
-            case .tempTargets:
-                Section {} header: {
-                    Text(
-                        "Add Preset or Temp Target by tapping 'Add Temp Target +' in the top right-hand corner of the screen."
-                    )
-                    .textCase(nil)
-                    .foregroundStyle(.secondary)
+                    }
                 }
             }
         }

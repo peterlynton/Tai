@@ -64,7 +64,7 @@ struct ForecastChart: View {
                     .scaledToFit()
                     .frame(width: 12, height: 12)
                     .foregroundColor(.orange)
-                Text("\(state.carbs.description) g")
+                Text("\(displayedCarbs.description) g")
             }
             .font(.footnote)
             .foregroundStyle(.orange)

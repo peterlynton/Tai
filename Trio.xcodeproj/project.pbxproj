@@ -28,7 +28,7 @@
 		190EBCC829FF13AA00BA767D /* UserInterfaceSettingsStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 190EBCC729FF13AA00BA767D /* UserInterfaceSettingsStateModel.swift */; };
 		190EBCCB29FF13CB00BA767D /* UserInterfaceSettingsRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 190EBCCA29FF13CB00BA767D /* UserInterfaceSettingsRootView.swift */; };
 		191F62682AD6B05A004D7911 /* NightscoutSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 191F62672AD6B05A004D7911 /* NightscoutSettings.swift */; };
-		1935364028496F7D001E0B16 /* Oref2_variables.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1935363F28496F7D001E0B16 /* Oref2_variables.swift */; };
+		1935364028496F7D001E0B16 /* TrioCustomOrefVariables.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1935363F28496F7D001E0B16 /* TrioCustomOrefVariables.swift */; };
 		193F6CDD2A512C8F001240FD /* Loops.swift in Sources */ = {isa = PBXBuildFile; fileRef = 193F6CDC2A512C8F001240FD /* Loops.swift */; };
 		195D80B42AF6973A00D25097 /* DynamicSettingsRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 195D80B32AF6973A00D25097 /* DynamicSettingsRootView.swift */; };
 		195D80B72AF697B800D25097 /* DynamicSettingsDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 195D80B62AF697B800D25097 /* DynamicSettingsDataFlow.swift */; };
@@ -909,7 +909,7 @@
 		190EBCC729FF13AA00BA767D /* UserInterfaceSettingsStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInterfaceSettingsStateModel.swift; sourceTree = "<group>"; };
 		190EBCCA29FF13CB00BA767D /* UserInterfaceSettingsRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserInterfaceSettingsRootView.swift; sourceTree = "<group>"; };
 		191F62672AD6B05A004D7911 /* NightscoutSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightscoutSettings.swift; sourceTree = "<group>"; };
-		1935363F28496F7D001E0B16 /* Oref2_variables.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Oref2_variables.swift; sourceTree = "<group>"; };
+		1935363F28496F7D001E0B16 /* TrioCustomOrefVariables.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrioCustomOrefVariables.swift; sourceTree = "<group>"; };
 		193F6CDC2A512C8F001240FD /* Loops.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Loops.swift; sourceTree = "<group>"; };
 		195D80B32AF6973A00D25097 /* DynamicSettingsRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicSettingsRootView.swift; sourceTree = "<group>"; };
 		195D80B62AF697B800D25097 /* DynamicSettingsDataFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicSettingsDataFlow.swift; sourceTree = "<group>"; };
@@ -2510,6 +2510,25 @@
 				DD3078672D42F5CE00DE0490 /* WatchGlucoseObject.swift */,
 				BD432CA02D2F4E3300D1EB79 /* WatchMessageKeys.swift */,
 				BDA25EFC2D261BF200035F34 /* WatchState.swift */,
+				E0D4F80427513ECF00BDF1FE /* HealthKitSample.swift */,
+				1935363F28496F7D001E0B16 /* TrioCustomOrefVariables.swift */,
+				CE82E02628E869DF00473A9C /* AlertEntry.swift */,
+				19B0EF2028F6D66200069496 /* Statistics.swift */,
+				19012CDB291D2CB900FB8210 /* LoopStats.swift */,
+				FE41E4D529463EE20047FD55 /* NightscoutPreferences.swift */,
+				191F62672AD6B05A004D7911 /* NightscoutSettings.swift */,
+				1967DFBD29D052C200759F30 /* Icons.swift */,
+				19D4E4EA29FC6A9F00351451 /* Charts.swift */,
+				19A910352A24D6D700C8951B /* DateFilter.swift */,
+				193F6CDC2A512C8F001240FD /* Loops.swift */,
+				CC6C406D2ACDD69E009B8058 /* RawFetchedProfile.swift */,
+				BDF530D72B40F8AC002CAF43 /* LockScreenView.swift */,
+				583684072BD195A700070A60 /* Determination.swift */,
+				BDC2EA462C3045AD00E5BBD0 /* Override.swift */,
+				DD21FCB42C6952AD00AF2C25 /* DecimalPickerSettings.swift */,
+				DD6B7CB32C7B71F700B75029 /* ForecastDisplayType.swift */,
+				DD9ECB692CA99F6C00AA7C45 /* PushMessage.swift */,
+				DDD6D4D22CDE90720029439A /* EstimatedA1cDisplayUnit.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -4574,7 +4593,7 @@
 				110AEDEB2C51A0AE00615CC9 /* ShortcutsConfigView.swift in Sources */,
 				38DF179027733EAD00B3528F /* SnowScene.swift in Sources */,
 				DD1DB7CC2BECCA1F0048B367 /* BuildDetails.swift in Sources */,
-				1935364028496F7D001E0B16 /* Oref2_variables.swift in Sources */,
+				1935364028496F7D001E0B16 /* TrioCustomOrefVariables.swift in Sources */,
 				CE2FAD3A297D93F0001A872C /* BloodGlucoseExtensions.swift in Sources */,
 				38E4453A274E411700EC9A94 /* Disk+[UIImage].swift in Sources */,
 				DD73FA0F2D74F58E00D19D1E /* BackgroundTask+Helper.swift in Sources */,

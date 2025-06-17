@@ -1,7 +1,8 @@
-oref0 branch: autoISF3.01 - git version: 04b1fe3
+oref0 branch: autoISF3.01 - git version: 2c5e153
 
 Last commits:
-04b1fe3 Rename output library to trio_[name]
+2c5e153 fix shouldProtectDueToHIGH
+a38f052 Rename output library to trio_[name]
 1236511 introduce shouldProtectDueToHIGH
 fe902c1 use iobTH without even/off
 78c308c AIMI deactivates with upperDelta or BG surpassed
@@ -30,44 +31,3 @@ a7c8e7c allow setting SMB_ratio without autoISF
 7295b27 apply flatCgmMinutes only outside 80-180 range
 c3e7643 fix pp_isf
 d0ff8d8 rT.reason improvement
-345fe35 target_units for unit switching
-f2a8012 iobTH reporting and logging fixed
-2ffd93b update to autoISF 3.01
-bdc9ad3 cp source files
-ca59189 profile.keto_protect_basal_percent is 0..1
-afede34 profile.iob_threshold_percent 0..1
-0a0e398 show iobTH adaption in tags
-f0b0fbb logging sens adjustments
-7408a7f remove delta logging
-1d7dbdb tick in mg/dL
-f37f7ec cp to Open-iAPS
-78f9298 delete TDD ytd and avg
-459d91f Merge branch 'dev-TaiAutoISF' of https://github.com/mountrcg/trio-oref into dev-TaiAutoISF
-c17dc5c stats for boluscalc
-9d7bff6 fix insulinForManualBolus
-9875931 rT.variables in mg/dL
-683fb98 typo in rT.reason
-7343cc4 rT.variables in mg/dL
-ad80f5a Trio cp webpack
-d21f87e use created_at for meal history
-d041dae introduce absolute keto safety TBR
-260b0c2 more rT's into check  setTempBasal
-f8419a4 KetoProtect
-24dada3 fix avgDelta data mgmt.
-98c4aff fix errors
-8962bf3 populate avgDelta towards suggestion OiAPS
-ec10989 separate InsReq. tags
-9ede939 autosens result in popup
-3e601be fix errors date and glucose
-9981d97 disable maxDelta_bg_threshold setting completely
-27de11b middleware popup a la Jon
-0440fa3 fullLoop condition
-128f4a1 cp script
-4d65354 fix pp-isf within the specified hours
-7946b0b fix minAgo and single glucose value -> dont loop
-4c7e048 limitation of B30 notification
-c0be150 typo
-b04ac3b Merge branch 'dev-autoISF_newUI' into dev-autoISF
-ea262e8 TDD popup
-7103fc9 fix iobTH and log messages
-5e6970e follow Gerhards logic

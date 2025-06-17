@@ -474,6 +474,10 @@ final class OpenAPS {
                 uamMinutes: activeOverrides.first?.uamMinutes?.decimalValue ?? maxUAMBasalMinutes,
                 shouldProtectDueToHIGH: GlucoseStored.glucoseIsHIGH(glucose)
             )
+            debug(
+                .openAPS,
+                "Trio custom oref variables data shouldProtectDueToHIGH: \(trioCustomOrefVariablesData.shouldProtectDueToHIGH)"
+            )
 
             // Save and return contents of Trio's custom oref variables
             self.storage.save(trioCustomOrefVariablesData, as: OpenAPS.Monitor.trio_custom_oref_variables)

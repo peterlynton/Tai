@@ -73,7 +73,7 @@ struct Preferences: JSON, Equatable {
     var bgAccelISFweight: Decimal = 0.15
     var bgBrakeISFweight: Decimal = 0.15
     var iobThresholdPercent: Decimal = 1
-    var enableSMBEvenOnOddOffalways: Bool = true
+    var enableSMBEvenOnOddOffAlways: Bool = true
     var autoISFoffSport: Bool = false
     var targetUnits: GlucoseUnits = .mgdL
     // start B30 config
@@ -157,15 +157,12 @@ extension Preferences {
         case smbMaxRangeExtension = "smb_max_range_extension"
         case floatingcarbs = "floating_carbs"
         case iobThresholdPercent = "iob_threshold_percent"
-        // case enableSMBEvenOnOddOff = "enableSMB_EvenOn_OddOff"
-        case enableSMBEvenOnOddOffalways = "enableSMB_EvenOn_OddOff_always"
+        case enableSMBEvenOnOddOffAlways = "enableSMB_EvenOn_OddOff_always"
         case smbDeliveryRatioMin = "smb_delivery_ratio_min"
         case smbDeliveryRatioMax = "smb_delivery_ratio_max"
         case smbThresholdRatio = "smb_threshold_ratio"
-        // case enableautoISFwithCOB = "enableautoisf_with_COB"
         case higherISFrangeWeight = "higher_ISFrange_weight"
         case lowerISFrangeWeight = "lower_ISFrange_weight"
-        // case deltaISFrangeWeight = "delta_ISFrange_weight"
         case postMealISFweight = "pp_ISF_weight"
         case bgAccelISFweight = "bgAccel_ISF_weight"
         case bgBrakeISFweight = "bgBrake_ISF_weight"
@@ -441,9 +438,6 @@ extension Preferences: Decodable {
         if let smbDeliveryRatioMax = try? container.decode(Decimal.self, forKey: .smbDeliveryRatioMax) {
             preferences.smbDeliveryRatioMax = smbDeliveryRatioMax
         }
-//        if let enableautoISFwithCOB = try? container.decode(Bool.self, forKey: .enableautoISFwithCOB) {
-//            preferences.enableautoISFwithCOB = enableautoISFwithCOB
-//        }
         if let autoISFhourlyChange = try? container.decode(Decimal.self, forKey: .autoISFhourlyChange) {
             preferences.autoISFhourlyChange = autoISFhourlyChange
         }
@@ -468,11 +462,8 @@ extension Preferences: Decodable {
         if let iobThresholdPercent = try? container.decode(Decimal.self, forKey: .iobThresholdPercent) {
             preferences.iobThresholdPercent = iobThresholdPercent
         }
-//        if let enableSMBEvenOnOddOff = try? container.decode(Bool.self, forKey: .enableSMBEvenOnOddOff) {
-//            preferences.enableSMBEvenOnOddOff = enableSMBEvenOnOddOff
-//        }
-        if let enableSMBEvenOnOddOffalways = try? container.decode(Bool.self, forKey: .enableSMBEvenOnOddOffalways) {
-            preferences.enableSMBEvenOnOddOffalways = enableSMBEvenOnOddOffalways
+        if let enableSMBEvenOnOddOffAlways = try? container.decode(Bool.self, forKey: .enableSMBEvenOnOddOffAlways) {
+            preferences.enableSMBEvenOnOddOffAlways = enableSMBEvenOnOddOffAlways
         }
         if let autoISFoffSport = try? container.decode(Bool.self, forKey: .autoISFoffSport) {
             preferences.autoISFoffSport = autoISFoffSport

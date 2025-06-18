@@ -739,7 +739,7 @@ extension Export {
                     category: autoISFCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "Enable SMB Even On Odd Off Always"),
-                    value: preferences.enableSMBEvenOnOddOffalways ? String(localized: "Enabled") : String(localized: "Disabled")
+                    value: preferences.enableSMBEvenOnOddOffAlways ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
                     category: autoISFCategory,

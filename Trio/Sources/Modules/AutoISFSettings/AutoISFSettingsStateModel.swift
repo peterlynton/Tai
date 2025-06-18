@@ -49,7 +49,7 @@ extension AutoISFSettings {
             // Ensure all preferences map to state properties correctly
             subscribePreferencesSetting(\.autoisf, on: $autoisf) { autoisf = $0 }
             subscribePreferencesSetting(\.enableAutosens, on: $enableAutosens) { enableAutosens = $0 }
-            subscribePreferencesSetting(\.enableSMBEvenOnOddOffalways, on: $enableSMBEvenOnOddOffAlways) {
+            subscribePreferencesSetting(\.enableSMBEvenOnOddOffAlways, on: $enableSMBEvenOnOddOffAlways) {
                 enableSMBEvenOnOddOffAlways = $0 }
             subscribePreferencesSetting(\.autoISFoffSport, on: $autoISFoffSport) { autoISFoffSport = $0 }
             subscribePreferencesSetting(\.iobThresholdPercent, on: $iobThresholdPercent) { iobThresholdPercent = $0 }

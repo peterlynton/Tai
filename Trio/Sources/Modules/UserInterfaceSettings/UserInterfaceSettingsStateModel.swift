@@ -9,7 +9,6 @@ extension UserInterfaceSettings {
         @Published var showCobIobChart: Bool = true
         @Published var rulerMarks: Bool = true
         @Published var forecastDisplayType: ForecastDisplayType = .cone
-        @Published var therapyParameterDisplayType: TherapyParameterDisplayType = .autoisfSensRatio
         @Published var showCarbsRequiredBadge: Bool = true
         @Published var carbsRequiredThreshold: Decimal = 0
         @Published var glucoseColorScheme: GlucoseColorScheme = .staticColor
@@ -28,8 +27,6 @@ extension UserInterfaceSettings {
             subscribeSetting(\.rulerMarks, on: $rulerMarks) { rulerMarks = $0 }
 
             subscribeSetting(\.forecastDisplayType, on: $forecastDisplayType) { forecastDisplayType = $0 }
-
-            subscribeSetting(\.therapyParameterDisplayType, on: $therapyParameterDisplayType) { therapyParameterDisplayType = $0 }
 
             subscribeSetting(\.low, on: $low) { low = $0 }
 

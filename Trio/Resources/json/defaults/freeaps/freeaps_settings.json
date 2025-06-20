@@ -19,7 +19,6 @@
   "highGlucose" : 220,
   "carbsRequiredThreshold" : 50,
   "useFPUconversion" : true,
-  "therapyParameterDisplayType": "autoisfSensRatio",
   "individualAdjustmentFactor" : 0.5,
   "timeCap" : 8,
   "minuteInterval" : 30,

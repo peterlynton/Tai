@@ -85,7 +85,6 @@ extension Home {
         var statusTitle = ""
         var isLoopStatusPresented: Bool = false
         var isLegendPresented: Bool = false
-        var therapyParameterDisplayType: TherapyParameterDisplayType = .totalDailyDose
         var roundedTotalBolus: String = ""
         var selectedTab: Int = 0
         var waitForSuggestion: Bool = false
@@ -408,7 +407,6 @@ extension Home {
             displayXgridLines = settingsManager.settings.xGridLines
             displayYgridLines = settingsManager.settings.yGridLines
             thresholdLines = settingsManager.settings.rulerMarks
-            therapyParameterDisplayType = settingsManager.settings.therapyParameterDisplayType
             showCarbsRequiredBadge = settingsManager.settings.showCarbsRequiredBadge
             forecastDisplayType = settingsManager.settings.forecastDisplayType
             isExerciseModeActive = settingsManager.preferences.exerciseMode
@@ -667,7 +665,6 @@ extension Home.StateModel:
         displayXgridLines = settingsManager.settings.xGridLines
         displayYgridLines = settingsManager.settings.yGridLines
         thresholdLines = settingsManager.settings.rulerMarks
-        therapyParameterDisplayType = settingsManager.settings.therapyParameterDisplayType
         showCarbsRequiredBadge = settingsManager.settings.showCarbsRequiredBadge
         forecastDisplayType = settingsManager.settings.forecastDisplayType
         cgmAvailable = (fetchGlucoseManager.cgmGlucoseSourceType != CGMType.none)

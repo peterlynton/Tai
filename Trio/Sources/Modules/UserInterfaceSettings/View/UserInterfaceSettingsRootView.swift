@@ -377,60 +377,6 @@ extension UserInterfaceSettings {
                     }.padding(.bottom)
                 }.listRowBackground(Color.chart)
 
-                Section {
-                    VStack(alignment: .leading) {
-                        Picker(
-                            selection: $state.therapyParameterDisplayType,
-                            label: Text("Parameter Display").multilineTextAlignment(.leading)
-                        ) {
-                            ForEach(TherapyParameterDisplayType.allCases) { selection in
-                                Text(selection.displayName).tag(selection)
-                            }
-                        }.padding(.top)
-
-                        HStack(alignment: .center) {
-                            Text(
-                                "Choose which total therapy parameter is displayed on the home screen. See hint for more details."
-                            )
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .lineLimit(nil)
-                            Spacer()
-                            Button(
-                                action: {
-                                    hintLabel = String(localized: "Parameter Display")
-                                    selectedVerboseHint =
-                                        AnyView(
-                                            VStack(alignment: .leading, spacing: 10) {
-                                                Text(
-                                                    "Choose between Total Daily Dose (TDD) or autoISF final sens ratio (aiSR) to be displayed above the main glucose graph. Descriptions for each option found below."
-                                                )
-                                                VStack(alignment: .leading, spacing: 5) {
-                                                    Text("Total Daily Dose:").bold()
-                                                    Text(
-                                                        "Displays the last 24 hours of total insulin administered, both basal and bolus."
-                                                    )
-                                                }
-                                                VStack(alignment: .leading, spacing: 5) {
-                                                    Text("autoISF Sens Ratio:").bold()
-                                                    Text(
-                                                        "Displays the final autoISF result as ratio to adjust sensitivity. If > 1 Sensitivity is adjusted down and ISF will decrease, basal and all insulin given is increased."
-                                                    )
-                                                }
-                                            }
-                                        )
-                                    shouldDisplayHint.toggle()
-                                },
-                                label: {
-                                    HStack {
-                                        Image(systemName: "questionmark.circle")
-                                    }
-                                }
-                            ).buttonStyle(BorderlessButtonStyle())
-                        }.padding(.top)
-                    }.padding(.bottom)
-                }.listRowBackground(Color.chart)
-
                 Section(
                     header: Text("Trio Statistics"),
                     content: {

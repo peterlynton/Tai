@@ -611,160 +611,6 @@ extension Home {
             }
         }
 
-        @ViewBuilder func mealPanel(_: GeometryProxy) -> some View {
-            HStack {
-                HStack {
-                    Image(systemName: "drop.circle")
-                        .font(.callout)
-                        .foregroundColor(Color.insulin)
-                    Text(
-                        (
-                            Formatter.decimalFormatterWithTwoFractionDigits
-                                .string(from: (state.enactedAndNonEnactedDeterminations.first?.iob ?? 0) as NSNumber) ?? "0"
-                        ) +
-                            String(localized: " U", comment: "Insulin unit")
-                    )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                }
-
-                Spacer()
-
-                HStack {
-                    Image("premeal")
-                        .renderingMode(.template)
-                        .resizable()
-                        .frame(width: 16, height: 16)
-                        .foregroundColor(.loopYellow)
-                    Text(
-                        (
-                            Formatter.decimalFormatterWithTwoFractionDigits.string(
-                                from: NSNumber(value: state.enactedAndNonEnactedDeterminations.first?.cob ?? 0)
-                            ) ?? "0"
-                        ) +
-                            String(localized: " g", comment: "gram of carbs")
-                    )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                }
-
-                Spacer()
-
-                if state.maxIOB == 0.0 {
-                    HStack {
-                        Image(systemName: "exclamationmark.circle.fill")
-                        Text("MaxIOB: 0 U")
-                    }.bold()
-                        .foregroundStyle(Color.red)
-                        .font(.callout)
-                } else {
-                    HStack {
-                        if state.pumpSuspended {
-                            Text("Pump suspended")
-                                .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                                .foregroundColor(.loopGray)
-                        } else if let tempBasalString = tempBasalString {
-                            Image(systemName: "chart.bar.xaxis")
-                                .font(.system(size: 16))
-                                .rotationEffect(Angle(degrees: 180))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [.insulinTintColor.opacity(1), .insulinTintColor.opacity(0.4)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                            if tempBasalString.count > 5 {
-                                Text(tempBasalString)
-                                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                                    .foregroundColor(.loopGray)
-                            } else {
-                                Image(systemName: "drop.circle")
-                                    .font(.callout)
-                                    .foregroundColor(.insulinTintColor)
-                                Text("No Data")
-                                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                            }
-                        } else {
-                            Image(systemName: "chart.bar.xaxis")
-                                .font(.system(size: 16))
-                                .rotationEffect(Angle(degrees: 180))
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [.insulinTintColor.opacity(1), .insulinTintColor.opacity(0.4)],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                            Text("No Data")
-                                .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                        }
-                    }
-                }
-                if state.therapyParameterDisplayType == .autoisfSensRatio {
-                    Spacer()
-                    HStack {
-                        if state.autoisfEnabled {
-                            Text("aiSR")
-                                .font(.callout)
-                                .fontDesign(.rounded)
-                                .foregroundColor(Color.loopGreen)
-
-                            if let determination = state.determinationsFromPersistence.first,
-                               let autoISFratioValue = determination.autoISFratio as? Decimal
-                            {
-                                Text(
-                                    Formatter.decimalFormatterWithTwoFractionDigits.string(
-                                        from: NSDecimalNumber(decimal: autoISFratioValue)
-                                    ) ?? "0"
-                                )
-                                .font(.callout).fontWeight(.bold)
-                                .fontDesign(.rounded)
-                            } else {
-                                Text("--")
-                                    .font(.callout).fontWeight(.bold)
-                                    .fontDesign(.rounded)
-                            }
-                        } else {
-                            Text("AS")
-                                .font(.callout)
-                                .fontDesign(.rounded)
-                                .foregroundColor(Color.zt)
-
-                            if let determination = state.determinationsFromPersistence.first,
-                               let autoISFratioValue = determination.autoISFratio as? Decimal
-                            {
-                                Text(
-                                    Formatter.decimalFormatterWithTwoFractionDigits.string(
-                                        from: NSDecimalNumber(decimal: autoISFratioValue)
-                                    ) ?? "0"
-                                )
-                                .font(.callout).fontWeight(.bold)
-                                .fontDesign(.rounded)
-                            } else {
-                                Text("--")
-                                    .font(.callout).fontWeight(.bold)
-                                    .fontDesign(.rounded)
-                            }
-                        }
-                    }
-                } else {
-                    Spacer()
-
-                    Text("TDD:")
-                        .foregroundColor(Color.insulin)
-                        .font(.callout)
-                        .fontDesign(.rounded)
-                    Text(
-                        (
-                            Formatter.insulinFormatterToIncrement(for: 0.1)
-                                .string(from: (state.fetchedTDDs.first?.totalDailyDose ?? 0) as NSNumber) ??
-                                "0"
-                        ) + String(localized: " U", comment: "Insulin unit")
-                    )
-                    .font(.callout).fontWeight(.bold).fontDesign(.rounded)
-                }
-            }.padding(.horizontal)
-        }
-
         @ViewBuilder func adjustmentsOverrideView(_ overrideString: String) -> some View {
             Group {
                 Image(systemName: "clock.arrow.2.circlepath")
@@ -1154,9 +1000,6 @@ extension Home {
                     }
                 }
 
-//                mealPanel(geo).padding(.top, UIDevice.adjustPadding(min: nil, max: 30))
-//                    .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 20))
-
                 horizontalPumpView
                     .padding(.top, UIDevice.adjustPadding(min: nil, max: 10))
                     .padding(.bottom, UIDevice.adjustPadding(min: nil, max: 10))
@@ -1165,31 +1008,6 @@ extension Home {
 
                 timeIntervalPanel
                     .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 6))
-
-//                HStack {
-//                    tappableButton(
-//                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
-//                        label: String(localized: "Stats", comment: "Stats icon in main view"),
-//                        iconString: statsIconString,
-//                        action: { state.showModal(for: .statistics) }
-//                    )
-//
-//                    Spacer()
-//
-//                    timeIntervalButtons.padding(.top, UIDevice.adjustPadding(min: 0, max: 10))
-//                        .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 10))
-//
-//                    Spacer()
-//
-//                    tappableButton(
-//                        buttonColor: (colorScheme == .dark ? Color.white : Color.black).opacity(0.8),
-//                        label: String(localized: "Info", comment: "Info icon in main view"),
-//                        iconString: "info",
-//                        action: { state.isLegendPresented.toggle() }
-//                    )
-//                }
-//                .padding(.horizontal)
-//                .padding(.bottom, UIDevice.adjustPadding(min: 0, max: 10))
 
                 if let progress = state.bolusProgress {
                     bolusProgressView(geo: geo, progress)

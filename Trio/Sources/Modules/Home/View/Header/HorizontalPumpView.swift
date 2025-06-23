@@ -107,8 +107,14 @@ struct HorizontalPumpView: View {
                                     .font(date.timeIntervalSince(timerDate) > 0 ? .callout : .subheadline)
                                     .fontWeight(.bold)
                                     .fontDesign(.rounded)
-                                    .lineLimit(2)
-                                    .multilineTextAlignment(.leading)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.5)
+                                    .frame(
+                                        // If the string is > 6 chars, i.e., exceeds "xd yh", limit width to 80 pts
+                                        // This forces the "Replace pod" string to wrap to 2 lines.
+                                        maxWidth: remainingTimeString.count > 6 ? 80 : .infinity,
+                                        alignment: .leading
+                                    )
                             }
                         }
                     }
@@ -178,7 +184,7 @@ struct HorizontalPumpView: View {
 
     private func remainingTimeString(time: TimeInterval) -> String {
         guard time > 0 else {
-            return String(localized: "Change pod", comment: "View/Header when pod expired")
+            return String(localized: "Replace", comment: "View/Header when pod expired")
         }
 
         var time = time

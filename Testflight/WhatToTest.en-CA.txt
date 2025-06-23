@@ -1,3 +1,4 @@
 Open Beta update 0.5.1
 
-fix UI settings
+share logs
+Trio dev 0.5.0.48

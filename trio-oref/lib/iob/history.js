@@ -105,11 +105,13 @@ function splitAroundSuspends (currentEvent, pumpSuspends, firstResumeTime, suspe
         }
     }
 
+    // FIXME: This check compares a number to a string and always evaluates to false
     if (currentlySuspended && ((currentEvent.date+currentEvent.duration*60*1000) > lastSuspendTime)) {
         if (currentEvent.date > lastSuspendTime) {
             currentEvent.duration = 0;
         } else {
-            currentEvent.duration = (lastSuspendDate - currentEvent.date)/60/1000;
+	    // FIXME: I think that this is a bug -- it should be lastSuspendDate not firstResumeDate
+            currentEvent.duration = (firstResumeDate - currentEvent.date)/60/1000;
         }
     }
 
@@ -573,7 +575,11 @@ function calcTempTreatments (inputs, zeroTempDuration) {
     return all_data;
 }
 
-exports.splitTimespanWithOneSplitter = splitTimespanWithOneSplitter;
-exports.splitTimespan = splitTimespan;
-exports.splitAroundSuspends = splitAroundSuspends;
-exports.calcTempTreatments = calcTempTreatments;
+module.exports = {
+  splitTimespanWithOneSplitter: splitTimespanWithOneSplitter,
+  splitTimespan: splitTimespan,
+  splitAroundSuspends: splitAroundSuspends,
+  calcTempTreatments: calcTempTreatments
+};
+
+

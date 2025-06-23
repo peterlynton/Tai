@@ -570,7 +570,7 @@ function determine_varSMBratio(profile, bg, target_bg, loop_wanted_smb)
 }
 //end autoISF
 
-var determine_basal = function determine_basal(glucose_status, currenttemp, iob_data, profile, autosens_data, meal_data, tempBasalFunctions, microBolusAllowed, reservoir_data, currentTime, pumphistory, preferences, basalprofile, trio_custom_variables, middleWare) {
+var determine_basal = function determine_basal(glucose_status, currenttemp, iob_data, profile, autosens_data, meal_data, tempBasalFunctions, microBolusAllowed, reservoir_data, currentTime, pumphistory, preferences, basalprofile, trio_custom_variables , middleWare) {
     const tempHBT = trio_custom_variables.hbt;
     const tempHBTset = trio_custom_variables.isEnabled;
     const avgDelta = glucose_status.avgdelta;
@@ -866,6 +866,7 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
 
     var iob_ThEffective = round(iobTHvirtual / iobTHtolerance * 100.0,1)
     var loop_wanted_smb = loop_smb(microBolusAllowed, profile, iob_data, aimismb, use_iobTH, iob_ThEffective);
+    console.error("Loop wanted result: " + loop_wanted_smb)
     var enableSMB = false;
     if (microBolusAllowed && loop_wanted_smb != "oref") {
         // if ( loop_wanted_smb == "blocked" || loop_wanted_smb == "AIMI B30") {              //  FL switched SMB off

@@ -29,6 +29,12 @@ extension Formatter {
         return formatter
     }()
 
+    static var logDateFormatter: DateFormatter {
+        let logdateFormatter = DateFormatter()
+        logdateFormatter.dateFormat = "yyyy-MM-dd"
+        return logdateFormatter
+    }
+
     static let decimalFormatterWithTwoFractionDigits: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

@@ -1,6 +1,8 @@
-oref0 branch: autoISF3.01 - git version: 303c27f
+oref0 branch: autoISF3.01 - git version: 7776552
 
 Last commits:
+7776552 webpack config for renaming
+b14f956 logging
 303c27f determine basal call typo
 0b685a8 webpack plugin use
 c3034b7 dynISF
@@ -29,5 +31,3 @@ c31d48c insert enable SMB with high BG option
 7986c4d expand rT.variables for autoISF glucose stats
 6bd4590 pass tested effIOBthreshold
 8bf0c06 fix rT.reason duplicate semicolon
-32e405a Merge pull request #38 from kingst/profile-carbs-fix
-a7c8e7c allow setting SMB_ratio without autoISF

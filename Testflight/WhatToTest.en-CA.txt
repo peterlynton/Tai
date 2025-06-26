@@ -1,4 +1,4 @@
-Open Beta update 0.5.1
+Open Beta update 0.5.2
 
-share logs
-Trio dev 0.5.0.48
+fix fastlane
+Trio dev 0.5.1.1

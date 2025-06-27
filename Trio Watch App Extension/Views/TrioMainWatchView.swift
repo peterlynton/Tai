@@ -111,26 +111,31 @@ struct TrioMainWatchView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    HStack {
+                    HStack(alignment: .center, spacing: 4) {
                         Image(systemName: "drop.circle")
                             .foregroundStyle(Color.insulin)
+                            .font(.caption2)
 
                         Text(isWatchStateDated || isSessionUnreachable ? "--" : state.iob ?? "--")
                             .foregroundStyle(isWatchStateDated ? Color.secondary : Color.white)
-                    }.font(.caption2)
+                            .font(.caption2)
+                    }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack {
+                    HStack(alignment: .center, spacing: 4) {
                         Text(isWatchStateDated || isSessionUnreachable ? "--" : state.cob ?? "--")
                             .foregroundStyle(isWatchStateDated || isSessionUnreachable ? Color.secondary : Color.white)
+                            .font(.caption2)
 
                         Image("premeal")
                             .renderingMode(.template)
                             .resizable()
-                            .frame(width: 13, height: 13)
+                            .scaledToFit()
+                            .frame(width: 14, height: 14)
+                            .offset(x: 1, y: -1)
                             .foregroundStyle(Color.orange)
-                    }.font(.caption2)
+                    }
                 }
 
                 ToolbarItemGroup(placement: .bottomBar) {

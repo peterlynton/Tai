@@ -105,7 +105,8 @@ struct CarbsInputView: View {
         .background(trioBackgroundColor)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Image(systemName: "fork.knife")
+                Image("premeal")
+                    .renderingMode(.template)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 14, height: 14)

@@ -132,7 +132,7 @@ struct BolusInputView: View {
         .background(trioBackgroundColor)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Image(systemName: "syringe.fill")
+                Image(systemName: "drop.circle")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 14, height: 14)

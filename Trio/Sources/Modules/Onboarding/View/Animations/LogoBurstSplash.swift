@@ -121,13 +121,21 @@ private struct BurstShape: Identifiable {
     var yOffset: CGFloat { sin(angle) * distance }
 
     static func createBurst(count: Int, in rect: CGRect) -> [BurstShape] {
+        // Use TaiStyle gradient colors
         let gradientColors: [Color] = [
-            Color(red: 0.7216, green: 0.3412, blue: 1),
-            Color(red: 0.6235, green: 0.4235, blue: 0.9804),
-            Color(red: 0.4863, green: 0.5451, blue: 0.9529),
-            Color(red: 0.3412, green: 0.6667, blue: 0.9255),
-            Color(red: 0.2627, green: 0.7333, blue: 0.9137)
+            TaiStyle.orangeColor, // Orange
+            TaiStyle.tealColor, // Teal
+            TaiStyle.cyanColor, // Cyan
+            // Add some variations by mixing the colors
+            Color.orange.opacity(0.8),
+            Color.teal.opacity(0.8),
+            Color.cyan.opacity(0.8),
+            // Additional orange-teal-cyan variations
+            Color(red: 1.0, green: 0.5, blue: 0.0), // Orange variant
+            Color(red: 0.0, green: 0.8, blue: 0.8), // Teal variant
+            Color(red: 0.0, green: 1.0, blue: 1.0) // Cyan variant
         ]
+
         return (0 ..< count).map { i in
             let angle = Double.random(in: 0 ..< 360) * .pi / 180
             let distance = CGFloat.random(

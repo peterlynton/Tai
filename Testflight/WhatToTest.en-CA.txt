@@ -1,4 +1,4 @@
 Open Beta update 0.5.2
 
 fix fastlane
-Trio dev 0.5.1.1
+Trio dev 0.5.1.4

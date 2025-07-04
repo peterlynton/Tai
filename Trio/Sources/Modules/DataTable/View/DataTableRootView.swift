@@ -383,22 +383,18 @@ extension DataTable {
                         }
                     }
                 } label: {
-                    Label(
-                        selectedTreatmentTypes.isEmpty ? "Filter" : "Filter (\(selectedTreatmentTypes.count))",
-                        systemImage: selectedTreatmentTypes
-                            .isEmpty ? "line.3.horizontal.decrease" : "line.3.horizontal.decrease"
-                    )
+                    Label("Filter", systemImage: "line.3.horizontal.decrease")
                 }
-                .menuActionDismissBehavior(.disabled) // Requires Swift 17.xx
                 if !selectedTreatmentTypes.isEmpty {
                     Button {
                         selectedTreatmentTypes.removeAll()
                     } label: {
                         Image(systemName: "xmark.circle")
                             .foregroundColor(.uam)
-                            .accessibilityLabel("Clear Filter")
+                            .accessibilityLabel("Clear Filters")
                     }
                     .buttonStyle(.plain)
+                    .padding(.leading, 4)
                 }
                 Spacer()
                 filterEntriesButton
@@ -440,13 +436,7 @@ extension DataTable {
         private var treatmentsList: some View {
             List {
                 treatmentsHeader
-                    .listRowSeparator(.hidden)
-                    .overlay(alignment: .bottom) {
-                        Rectangle()
-                            .frame(height: 1.5)
-                            .foregroundColor(Color.secondary.opacity(0.3))
-                            .offset(y: 6)
-                    }
+
                 // Use filteredCombinedTreatments instead of filteredEvents
                 ForEach(filteredCombinedTreatments) { item in
                     if item.isMeal, let meal = item.carbEntry {

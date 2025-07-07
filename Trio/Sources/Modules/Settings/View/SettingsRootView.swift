@@ -286,7 +286,6 @@ extension Settings {
                     ).listRowBackground(Color.chart)
                 }
 
-                // TODO: remove this more or less entirely; add build-time flag to enable Middleware; add settings export feature
 //                Section {
 //                    Toggle("Developer Options", isOn: $state.debugOptions)
 //                    if state.debugOptions {

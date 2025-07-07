@@ -1,7 +1,11 @@
-oref0 branch: autoISF3.01 - git version: 1df14d5
+oref0 branch: autoISF3.01 - git version: bda74d0
 
 Last commits:
-1df14d5 introduce minimumSafetyThreshold
+bda74d0 typos
+755cd5b introduce minimumSafetyThreshold
+303c27f determine basal call typo
+0b685a8 webpack plugin use
+c3034b7 dynISF
 988e002 fix console_error
 65fa448 variables
 2c5e153 fix shouldProtectDueToHIGH
@@ -27,7 +31,3 @@ c31d48c insert enable SMB with high BG option
 7986c4d expand rT.variables for autoISF glucose stats
 6bd4590 pass tested effIOBthreshold
 8bf0c06 fix rT.reason duplicate semicolon
-32e405a Merge pull request #38 from kingst/profile-carbs-fix
-a7c8e7c allow setting SMB_ratio without autoISF
-5d8e90d maxAbsorptionTime in oref
-99edd78 align with AAPS

@@ -1,7 +1,3 @@
 Open Beta update 0.5.2
 
-filter treatments
-Trio dev 0.5.1.4
-fix timezone stat issue
-export preferences
-introduce minimumSafetyThreshold
+test edge cases TempTargets

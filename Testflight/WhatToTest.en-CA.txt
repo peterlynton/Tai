@@ -1,4 +1,4 @@
 Open Beta update 0.5.2
 
-test edge cases TempTargets
-test CGM backfill
+Trio dev 0.5.1.5
+Localization updates

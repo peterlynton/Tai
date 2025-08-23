@@ -3,6 +3,7 @@ import Combine
 import CoreData
 import Foundation
 import LoopKitUI
+import MockKit
 import Observation
 import SwiftDate
 import SwiftUI
@@ -20,6 +21,7 @@ extension Home {
         @ObservationIgnored @Injected() var tempTargetStorage: TempTargetsStorage!
         @ObservationIgnored @Injected() var overrideStorage: OverrideStorage!
         @ObservationIgnored @Injected() var bluetoothManager: BluetoothStateManager!
+        @ObservationIgnored @Injected() var iobService: IOBService!
 
         var cgmStateModel: CGMSettings.StateModel {
             CGMSettings.StateModel.shared
@@ -69,6 +71,7 @@ extension Home {
         var isSmoothingEnabled = false
         var autoisfEnabled = false
         var maxIOB: Decimal = 0.0
+        var currentIOB: Decimal = 0.0
         var autosensMax: Decimal = 1.2
         var lowGlucose: Decimal = 70
         var highGlucose: Decimal = 180
@@ -167,6 +170,10 @@ extension Home {
 
             // Parallelize Setup functions
             setupHomeViewConcurrently()
+
+            // Check if simulators are selected and should be hidden
+            checkAndResetPumpSimulatorIfNeeded()
+            checkAndResetCGMSimulatorIfNeeded()
         }
 
         private func setupHomeViewConcurrently() {
@@ -224,12 +231,23 @@ extension Home {
                     group.addTask {
                         self.setupTempTargetsRunStored()
                     }
+                    group.addTask {
+                        self.iobService.updateIOB()
+                    }
                 }
             }
         }
 
         // These combine subscribers are only necessary due to the batch inserts of glucose/FPUs which do not trigger a ManagedObjectContext change notification
         private func registerSubscribers() {
+            iobService.iobPublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    guard let self = self else { return }
+                    self.currentIOB = self.iobService.currentIOB ?? 0
+                }
+                .store(in: &subscriptions)
+
             glucoseStorage.updatePublisher
                 .receive(on: queue)
                 .sink { [weak self] _ in
@@ -577,6 +595,16 @@ extension Home {
 
         private func setupReservoir() {
             Task {
+                // Only proceed if we have a pump manager
+                /// fixes UI bug where reservoir is at 200 U although there is no pump
+                if apsManager.pumpManager == nil {
+                    debug(.service, "Skipping reservoir setup because pump manager is nil")
+                    await MainActor.run {
+                        self.reservoir = nil
+                    }
+                    return
+                }
+
                 let reservoir = await provider.pumpReservoir()
                 await MainActor.run {
                     self.reservoir = reservoir
@@ -625,6 +653,45 @@ extension Home {
                     }
                     return
                 }
+            }
+        }
+
+        /// Checks if the pump simulator is selected and resets it if Bundle.main.simulatorVisibility.isHidden is true
+        private func checkAndResetPumpSimulatorIfNeeded() {
+            // Only proceed if simulators should be hidden
+            guard Bundle.main.simulatorVisibility.isHidden else { return }
+
+            // Check if the current pump is a simulator
+            if apsManager.pumpManager is MockPumpManager {
+                // Reset the pump manager to nil to allow selecting a new pump
+                apsManager.pumpManager = nil
+
+                // Update UI state
+                DispatchQueue.main.async { [weak self] in
+                    guard let self = self else { return }
+                    self.pumpDisplayState = nil
+                    self.reservoir = nil
+                    self.pumpName = ""
+                }
+
+                debug(.service, "Pump simulator was reset because simulators are hidden")
+            }
+        }
+
+        /// Checks if the CGM simulator is selected and resets it if Bundle.main.simulatorVisibility.isHidden is true
+        private func checkAndResetCGMSimulatorIfNeeded() {
+            // Only proceed if simulators should be hidden
+            guard Bundle.main.simulatorVisibility.isHidden else { return }
+
+            debug(.service, "Checking if CGM simulator needs to be reset, current CGM type: \(settingsManager.settings.cgm)")
+
+            // Check if the current CGM is a simulator
+            if settingsManager.settings.cgm == .simulator {
+                debug(.service, "CGM simulator detected, resetting...")
+                // Reset the CGM
+                deleteCGM()
+
+                debug(.service, "CGM simulator was reset because simulators are hidden")
             }
         }
     }

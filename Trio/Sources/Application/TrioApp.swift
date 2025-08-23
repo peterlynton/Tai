@@ -84,6 +84,7 @@ extension Notification.Name {
         if #available(iOS 16.2, *) {
             _ = resolver.resolve(LiveActivityManager.self)!
         }
+        _ = resolver.resolve(IOBService.self)!
         PickerSettingsProvider.shared.configure(resolver: resolver)
     }
 
@@ -471,5 +472,9 @@ extension Notification.Name {
 public extension Bundle {
     var appDevVersion: String? {
         object(forInfoDictionaryKey: "AppDevVersion") as? String
+    }
+
+    var hideSimulator: String? {
+        object(forInfoDictionaryKey: "HideSimulator") as? String
     }
 }

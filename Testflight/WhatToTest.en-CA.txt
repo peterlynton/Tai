@@ -1,4 +1,4 @@
 Open Beta update 0.5.2
 
-Trio dev 0.5.1.5
-Localization updates
+Trio dev 0.5.1.18
+latest batch of fixes

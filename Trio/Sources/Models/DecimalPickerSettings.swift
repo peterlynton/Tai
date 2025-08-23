@@ -145,14 +145,11 @@ struct DecimalPickerSettings {
     var timeCap = PickerSetting(value: 8, step: 1, min: 5, max: 12, type: PickerSetting.PickerSettingType.hour)
     var hours = PickerSetting(value: 6, step: 0.5, min: 2, max: 24, type: PickerSetting.PickerSettingType.hour)
     var dia = PickerSetting(value: 10, step: 0.5, min: 5, max: 10, type: PickerSetting.PickerSettingType.hour)
-    var maxBolus = PickerSetting(value: 10, step: 0.5, min: 0.5, max: 30, type: PickerSetting.PickerSettingType.insulinUnit)
-    var maxBasal = PickerSetting(
-        value: 10,
-        step: 0.5,
-        min: 0.5,
-        max: 30,
-        type: PickerSetting.PickerSettingType.insulinUnitPerHour
-    )
+
+    // maxBolus and maxBasal now use calculated step based on bolusIncrement
+    var maxBolus: PickerSetting
+    var maxBasal: PickerSetting
+
     // autoISF
     var autoISFmax = PickerSetting(value: 2, step: 0.1, min: 1, max: 4, type: PickerSetting.PickerSettingType.factorRaw)
     var autoISFmin = PickerSetting(value: 0.4, step: 0.1, min: 0.1, max: 1, type: PickerSetting.PickerSettingType.factorRaw)
@@ -282,6 +279,24 @@ struct DecimalPickerSettings {
             min: 0,
             max: 30,
             type: PickerSetting.PickerSettingType.insulinUnit
+        )
+
+        let maxBolusStep = min(calculatedStep, 0.5)
+        maxBolus = PickerSetting(
+            value: 10,
+            step: maxBolusStep,
+            min: 0.5,
+            max: 30,
+            type: PickerSetting.PickerSettingType.insulinUnit
+        )
+
+        let maxBasalStep = min(calculatedStep, 0.5)
+        maxBasal = PickerSetting(
+            value: 10,
+            step: maxBasalStep,
+            min: 0.5,
+            max: 30,
+            type: PickerSetting.PickerSettingType.insulinUnitPerHour
         )
     }
 }

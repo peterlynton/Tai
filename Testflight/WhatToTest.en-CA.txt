@@ -1,4 +1,4 @@
 Open Beta update 0.5.2
 
-Trio dev 0.5.1.18
-latest batch of fixes
+Trio dev 0.5.1.20
+Tai dev with concentration

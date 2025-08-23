@@ -20,7 +20,9 @@ extension InsulinConcentration {
                 List {
                     selectedConcentrationSection().listRowBackground(Color.chart)
                     concentrationPickerSection().listRowBackground(Color.chart)
-
+                    if state.insulinConcentration < 1 || state.tempConcentration < 1 {
+                        adjustLimtsForDiluted().listRowBackground(Color.chart)
+                    }
                     saveButton()
                 }
                 .scrollContentBackground(.hidden)
@@ -92,6 +94,30 @@ extension InsulinConcentration {
                 .pickerStyle(MenuPickerStyle())
                 .onChange(of: state.tempConcentration) { _ in
                     hasChanges = state.tempConcentration != state.insulinConcentration
+                }
+            }
+        }
+
+        @ViewBuilder func adjustLimtsForDiluted() -> some View {
+            Section(header: Text("Adjust Limits for Diluted Insulin")) {
+                VStack(spacing: 6) {
+                    Text(
+                        "When changing TO or FROM diluted insulins, please check whether you want to decrease (TO) or increase (FROM):"
+                    )
+                    BulletList(
+                        listItems: [
+                            "Maximum Insulin on Board",
+                            "Maximum Bolus",
+                            "Maximum Basal Rate"
+                        ],
+                        listItemSpacing: 10
+                    )
+                    Text(
+                        "as often diluted insulins are used for patients with small insulin dosing requirements."
+                    )
+                    Text(
+                        "You can change these settings in Therapy > Units and Limits after saving the new concentration and after you have added a pump!"
+                    )
                 }
             }
         }

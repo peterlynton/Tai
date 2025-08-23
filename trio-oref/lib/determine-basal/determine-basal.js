@@ -570,7 +570,7 @@ function determine_varSMBratio(profile, bg, target_bg, loop_wanted_smb)
 }
 //end autoISF
 
-var determine_basal = function determine_basal(glucose_status, currenttemp, iob_data, profile, autosens_data, meal_data, tempBasalFunctions, microBolusAllowed, reservoir_data, currentTime, pumphistory, preferences, basalprofile, trio_custom_variables , middleWare) {
+var determine_basal = function determine_basal(glucose_status, currenttemp, iob_data, profile, autosens_data, meal_data, tempBasalFunctions, microBolusAllowed, reservoir_data, currentTime, pumphistory, preferences, basalprofile, trio_custom_variables, middleWare) {
     const tempHBT = trio_custom_variables.hbt;
     const tempHBTset = trio_custom_variables.isEnabled;
     const avgDelta = glucose_status.avgdelta;
@@ -1004,6 +1004,13 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         return rT;
     }
 
+    // min_bg thresholds: 80->60, 90->65, 100->70, 110->75, 120->80
+    threshold = min_bg - 0.5*(min_bg-40);
+    // Set threshold to the user's setting, as long as it's between 60-120 and above the default calculated threshold
+    threshold = Math.min(Math.max(profile.threshold_setting, threshold, 60), 120);
+    console.error(`Threshold set to ${convert_bg(threshold, profile)}`);
+
+
     // min_bg of 90 -> threshold of 65, 100 -> 70 110 -> 75, and 130 -> 85
     //var threshold = min_bg - 0.5*(min_bg-40)
     var threshold_ratio = 0.5; //higer threshold can be set by choosing a higher smb_threshold_ratio in settings
@@ -1011,8 +1018,9 @@ var determine_basal = function determine_basal(glucose_status, currenttemp, iob_
         threshold_ratio = profile.smb_threshold_ratio;
     };
     var threshold = min_bg - (1-threshold_ratio) * (min_bg - 40);
+    threshold = Math.min(Math.max(profile.threshold_setting, threshold, 60), 120);
     threshold = round(threshold);
-    console.log("SMB Threshold set to " + threshold_ratio + " - no SMB's applied below " + convert_bg(threshold, profile));
+    console.log("SMB Threshold ratio set to " + threshold_ratio + " - no SMB's applied below BG " + convert_bg(threshold, profile));
 
 // Initialize rT (requestedTemp) object. Has to be done after eventualBG is calculated.
     rT = {

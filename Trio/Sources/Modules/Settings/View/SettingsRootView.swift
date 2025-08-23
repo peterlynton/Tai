@@ -104,7 +104,7 @@ extension Settings {
                                         .cornerRadius(10)
                                         .padding(.trailing, 10)
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Tai v\(devVersion) (\(buildNumber)) \(copyright)")
+                                        Text("Tai v\(devVersion) (\(buildNumber))")
                                             .font(.headline)
                                         if let expirationDate = buildDetails.calculateExpirationDate() {
                                             let formattedDate = DateFormatter.localizedString(
@@ -224,6 +224,24 @@ extension Settings {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                             Button {
+                                if let url =
+                                    URL(string: "https://discordapp.com/channels/953929437894803478/1025731124615458848")
+                                {
+                                    UIApplication.shared.open(url)
+                                }
+                            } label: {
+                                HStack {
+                                    Text("Tai Discord")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .foregroundColor(.secondary)
+                                        .font(.footnote)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                            Button {
                                 if let url = URL(string: "https://facebook.triodocs.org") {
                                     UIApplication.shared.open(url)
                                 }
@@ -268,7 +286,6 @@ extension Settings {
                     ).listRowBackground(Color.chart)
                 }
 
-                // TODO: remove this more or less entirely; add build-time flag to enable Middleware; add settings export feature
 //                Section {
 //                    Toggle("Developer Options", isOn: $state.debugOptions)
 //                    if state.debugOptions {

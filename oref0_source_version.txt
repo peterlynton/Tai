@@ -1,8 +1,8 @@
-oref0 branch: autoISF3.01 - git version: 7776552
+oref0 branch: autoISF3.01 - git version: bda74d0
 
 Last commits:
-7776552 webpack config for renaming
-b14f956 logging
+bda74d0 typos
+755cd5b introduce minimumSafetyThreshold
 303c27f determine basal call typo
 0b685a8 webpack plugin use
 c3034b7 dynISF

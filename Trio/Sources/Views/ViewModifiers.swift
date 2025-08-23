@@ -59,6 +59,40 @@ struct NavigationLazyView: View {
     }
 }
 
+struct InsulinConcentrationBadge: View {
+    let concentration: Decimal
+    let hide: Bool
+
+    private var badgeColor: Color {
+        if concentration < 1 {
+            return .loopRed
+        } else if concentration == 1 {
+            return .loopGreen
+        } else {
+            return .orange
+        }
+    }
+
+    var body: some View {
+        if hide {
+            EmptyView()
+        } else {
+            ZStack {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(badgeColor) // Dynamic color based on concentration
+                    .frame(width: 42, height: 20)
+                    .overlay {
+                        Text("U\(Int(truncating: NSDecimalNumber(decimal: concentration * 100)))")
+                            .font(.caption)
+                            .fontWeight(.bold)
+                            .fontDesign(.rounded)
+                            .foregroundStyle(Color.white)
+                    }
+            }
+        }
+    }
+}
+
 struct Link: ViewModifier {
     let screen: Screen
 

@@ -59,20 +59,10 @@ struct TrendShape: View {
     /// Flag to be able to adjust size based on Apple Watch size
     let deviceType: WatchSize
 
-    // Angular gradient for the outer circle, transitioning through various blues and purples
-    private let angularGradient = AngularGradient(
-        colors: [
-            Color(red: 0.7215686275, green: 0.3411764706, blue: 1), // #B857FF
-            Color(red: 0.6235294118, green: 0.4235294118, blue: 0.9803921569), // #9F6CFA
-            Color(red: 0.4862745098, green: 0.5450980392, blue: 0.9529411765), // #7C8BF3
-            Color(red: 0.3411764706, green: 0.6666666667, blue: 0.9254901961), // #57AAEC
-            Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902), // #43BBE9
-            Color(red: 0.7215686275, green: 0.3411764706, blue: 1) // #B857FF (repeated for seamless transition)
-        ],
-        center: .center,
-        startAngle: .degrees(270),
-        endAngle: .degrees(-90)
-    )
+    // Updated to use TaiStyle ring gradient with orange at 11 o'clock
+    private var angularGradient: AngularGradient {
+        TaiStyle.ringGradient(startAngle: .degrees(40))
+    }
 
     private let staleWatchStateGradient = AngularGradient(
         colors: [
@@ -85,8 +75,10 @@ struct TrendShape: View {
         center: .center
     )
 
-    // Color for the direction indicator triangle
-    private let triangleColor = Color(red: 0.262745098, green: 0.7333333333, blue: 0.9137254902) // #43BBE9
+    // Color for the direction indicator triangle - using TaiStyle cyan
+    private var triangleColor: Color {
+        TaiStyle.cyanColor
+    }
 
     private var strokeWidth: CGFloat {
         switch deviceType {
@@ -162,7 +154,7 @@ struct TrendShape: View {
                 .frame(width: circleSize, height: circleSize)
                 .background(Circle().fill(Color.black))
 
-            // Triangle with the color of the last gradient color
+            // Triangle with TaiStyle cyan color
             Triangle(deviceType: deviceType)
                 .fill(triangleColor)
                 .frame(width: triangleSize, height: triangleSize)

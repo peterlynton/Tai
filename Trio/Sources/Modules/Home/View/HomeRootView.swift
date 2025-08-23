@@ -125,6 +125,8 @@ extension Home {
 
         var glucoseView: some View {
             CurrentGlucoseView(
+                concentration: state.concentration,
+                hideInsulinBadge: state.hideInsulinBadge,
                 timerDate: state.timerDate,
                 units: state.units,
                 alarm: state.alarm,
@@ -195,7 +197,8 @@ extension Home {
                 onAISRTap: {
                     // Show autoISF history
                     state.showModal(for: .autoisfHistory)
-                }
+                },
+                concentration: state.concentration
             )
         }
 
@@ -553,6 +556,7 @@ extension Home {
                             String(localized: " U", comment: "Insulin unit")
                     )
                     .font(.callout).fontWeight(.bold).fontDesign(.rounded)
+//                    InsulinConcentrationBadge(concentration: 1)
                 }
                 HStack {
                     Image("premeal")
@@ -977,6 +981,12 @@ extension Home {
 
                         /// glucose bobble
                         glucoseView
+
+                        /// left panel with meal related info
+                        HStack {
+                            leftHeaderPanel(geo)
+                            Spacer()
+                        }.padding(.leading, 20)
                     }
                     /// left panel with meal related info
                     HStack {

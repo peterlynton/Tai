@@ -15,6 +15,7 @@ struct HorizontalPumpView: View {
     let pumpSet: Bool
     var onTDDTap: (() -> Void)?
     var onAISRTap: (() -> Void)?
+    let concentration: Decimal
 
     @Environment(\.colorScheme) var colorScheme
 
@@ -64,17 +65,18 @@ struct HorizontalPumpView: View {
                         if let reservoir = reservoir {
                             HStack(spacing: 4) {
                                 Image(systemName: reservoirGaugeIcon)
+                                    .rotationEffect(.degrees(-45))
                                     .font(.body)
                                     .foregroundStyle(reservoirPrimaryColor, reservoirSecondaryColor)
                                 if reservoir == 0xDEAD_BEEF {
-                                    Text("50+ " + String(localized: "U", comment: "Insulin unit"))
+                                    Text("\(50 * concentration)+ " + String(localized: "U", comment: "Insulin unit"))
                                         .font(.callout)
                                         .fontWeight(.bold)
                                         .fontDesign(.rounded)
                                 } else {
                                     Text(
                                         Formatter.integerFormatter
-                                            .string(from: reservoir as NSNumber)! +
+                                            .string(from: (reservoir * concentration) as NSNumber)! +
                                             String(localized: " U", comment: "Insulin unit")
                                     )
                                     .font(.callout)
@@ -116,6 +118,8 @@ struct HorizontalPumpView: View {
                                         alignment: .leading
                                     )
                             }
+                            // aligns the stopwatch icon exactly with the first pixel of the reservoir icon
+                            .padding(.leading, date.timeIntervalSince(timerDate) > 0 ? 12 : 0)
                         }
                     }
                 }
@@ -227,18 +231,22 @@ struct HorizontalPumpView: View {
         }
 
         if reservoir == 0xDEAD_BEEF {
-            return "gauge.with.dots.needle.bottom.100percent"
+            return "gauge.with.dots.needle.100percent"
         }
 
-        let insulinAmount = reservoir
+        let insulinAmount = reservoir * concentration
 
         switch insulinAmount {
         case ...10:
-            return "gauge.with.dots.needle.bottom.0percent"
-        case ...40:
-            return "gauge.with.dots.needle.bottom.50percent"
+            return "gauge.with.dots.needle.0percent"
+        case ...20:
+            return "gauge.with.dots.needle.33percent"
+        case ...30:
+            return "gauge.with.dots.needle.50percent"
+        case ...45:
+            return "gauge.with.dots.needle.67percent"
         default:
-            return "gauge.with.dots.needle.bottom.100percent"
+            return "gauge.with.dots.needle.100percent"
         }
     }
 
@@ -251,20 +259,37 @@ struct HorizontalPumpView: View {
             return Color.loopGreen
         }
 
-        let insulinAmount = reservoir
+        let insulinAmount = reservoir * concentration
 
         switch insulinAmount {
-        case ...10:
+        case ...15:
             return Color.loopRed
-        case ...40:
+        case ...25:
             return Color.orange
+        case ...35:
+            return Color.yellow
         default:
             return Color.loopGreen
         }
     }
 
     private var reservoirSecondaryColor: Color {
-        Color.insulin
+        guard let reservoir = reservoir else {
+            return .gray
+        }
+
+        if reservoir == 0xDEAD_BEEF {
+            return Color.insulin
+        }
+
+        let insulinAmount = reservoir * concentration
+
+        switch insulinAmount {
+        case ...10:
+            return Color.loopRed
+        default:
+            return Color.insulin
+        }
     }
 
     private var timerColor: Color {

@@ -944,7 +944,7 @@ struct PopupView: View {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
+        formatter.maximumFractionDigits = 3
         formatter.locale = Locale.current
 
         // Create a decimal handler with the specified rounding behavior.

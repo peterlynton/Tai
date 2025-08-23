@@ -111,23 +111,31 @@ struct TrioMainWatchView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    HStack {
-                        Image(systemName: "syringe.fill")
+                    HStack(alignment: .center, spacing: 4) {
+                        Image(systemName: "drop.circle")
                             .foregroundStyle(Color.insulin)
+                            .font(.caption2)
 
                         Text(isWatchStateDated || isSessionUnreachable ? "--" : state.iob ?? "--")
                             .foregroundStyle(isWatchStateDated ? Color.secondary : Color.white)
-                    }.font(.caption2)
+                            .font(.caption2)
+                    }
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack {
+                    HStack(alignment: .center, spacing: 4) {
                         Text(isWatchStateDated || isSessionUnreachable ? "--" : state.cob ?? "--")
                             .foregroundStyle(isWatchStateDated || isSessionUnreachable ? Color.secondary : Color.white)
+                            .font(.caption2)
 
-                        Image(systemName: "fork.knife")
+                        Image("premeal")
+                            .renderingMode(.template)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 14, height: 14)
+                            .offset(x: 1, y: -1)
                             .foregroundStyle(Color.orange)
-                    }.font(.caption2)
+                    }
                 }
 
                 ToolbarItemGroup(placement: .bottomBar) {
@@ -153,8 +161,9 @@ struct TrioMainWatchView: View {
                     Button {
                         showingTempTargetSheet = true
                     } label: {
-                        Image(systemName: "target")
-                            .foregroundStyle(isTempTargetActive ? Color.primary : Color.loopGreen.opacity(0.75))
+                        Image(systemName: "arrow.up.circle.badge.clock")
+                            .rotationEffect(.degrees(90))
+                            .foregroundStyle(Color.primary, isTempTargetActive ? Color.primary : Color.loopGreen.opacity(0.75))
                     }
                     .tint(isTempTargetActive ? Color.loopGreen.opacity(0.75) : nil)
                     .disabled(isWatchStateDated || isSessionUnreachable)

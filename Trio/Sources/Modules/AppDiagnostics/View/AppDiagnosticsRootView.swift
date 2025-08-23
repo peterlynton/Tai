@@ -75,6 +75,16 @@ extension AppDiagnostics {
                         Text(
                             "Diagnostics are sent to a Google Firebase Crashlytics project, which is securely maintained and accessed only by the Tai author."
                         )
+//                        Spacer()
+//                        Button {
+//                            let numbers = [0]
+//                            _ = numbers[1] // This will crash with index out of range
+//                        } label: {
+//                            Text("Test crashing Tai!")
+//                                .foregroundColor(Color.orange)
+//                                .frame(maxWidth: .infinity, alignment: .center)
+//                        }
+//                        .buttonStyle(.bordered)
                     }
                     .font(.footnote)
                     .multilineTextAlignment(.leading)

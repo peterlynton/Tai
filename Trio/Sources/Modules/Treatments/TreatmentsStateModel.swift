@@ -127,9 +127,9 @@ extension Treatments {
 
         var isActive: Bool = false
 
+        var bolusIncrement: Decimal = 0.1
         var showDeterminationFailureAlert = false
         var determinationFailureMessage = ""
-
         // Queue for handling Core Data change notifications
         private let queue = DispatchQueue(label: "TreatmentsStateModel.queue", qos: .userInitiated)
         private var coreDataPublisher: AnyPublisher<Set<NSManagedObjectID>, Never>?
@@ -286,6 +286,7 @@ extension Treatments {
 
         @MainActor private func setupSettings() async {
             units = settingsManager.settings.units
+            bolusIncrement = settingsManager.preferences.bolusIncrement
             fraction = settings.settings.overrideFactor
             fattyMeals = settings.settings.fattyMeals
             fattyMealFactor = settings.settings.fattyMealFactor
@@ -418,6 +419,11 @@ extension Treatments {
             }
 
             return apsManager.roundBolus(amount: result.insulinCalculated)
+                .roundedToBolusIncrement(
+                    increment: bolusIncrement,
+                    maxBolus: maxBolus,
+                    roundingMode: .down
+                )
         }
 
         // MARK: - Button tasks
@@ -924,7 +930,7 @@ extension Treatments.StateModel {
             // setup vars for bolus calculation
             insulinRequired = (mostRecentDetermination.insulinReq ?? 0) as Decimal
             evBG = (mostRecentDetermination.eventualBG ?? 0) as Decimal
-            minPredBG = (mostRecentDetermination.minPredBGFromReason(with: units) ?? 0) as Decimal
+            minPredBG = (mostRecentDetermination.minPredBG ?? 0) as Decimal
             lastLoopDate = apsManager.lastLoopDate as Date?
             insulin = (mostRecentDetermination.insulinForManualBolus ?? 0) as Decimal
             target = (mostRecentDetermination.currentTarget ?? currentBGTarget as NSDecimalNumber) as Decimal
@@ -962,7 +968,7 @@ extension Treatments.StateModel {
             // Update evBG and minPredBG from simulated determination
             if let simDetermination = simulatedDetermination {
                 evBG = Decimal(simDetermination.eventualBG ?? 0)
-                minPredBG = simDetermination.minPredBGFromReason ?? 0
+                minPredBG = simDetermination.minPredBG ?? 0
                 debugPrint("\(DebuggingIdentifiers.inProgress) minPredBG: \(minPredBG)")
             }
         }

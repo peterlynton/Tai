@@ -74,7 +74,8 @@ struct TreatmentMenuView: View {
     }
 
     var mealIcon: some View {
-        Image(systemName: "fork.knife")
+        Image("premeal")
+            .renderingMode(.template)
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: iconSize, height: iconSize)
@@ -84,7 +85,7 @@ struct TreatmentMenuView: View {
     }
 
     var bolusIcon: some View {
-        Image(systemName: "syringe.fill")
+        Image(systemName: "drop.circle")
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: iconSize, height: iconSize)

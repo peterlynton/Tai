@@ -15,7 +15,7 @@ enum BolusShortcutLimit: String, JSON, CaseIterable, Identifiable {
     }
 }
 
-struct TrioSettings: JSON, Equatable {
+struct TrioSettings: JSON, Equatable, Encodable {
     var units: GlucoseUnits = .mgdL
     var closedLoop: Bool = false
     var isUploadEnabled: Bool = false
@@ -53,6 +53,9 @@ struct TrioSettings: JSON, Equatable {
     var glucoseColorScheme: GlucoseColorScheme = .staticColor
     var xGridLines: Bool = true
     var yGridLines: Bool = true
+    var hideInsulinBadge: Bool = false
+    var allowDilution: Bool = false
+    var insulinConcentration: Decimal = 1
     var showCobIobChart: Bool = true
     var rulerMarks: Bool = true
     var forecastDisplayType: ForecastDisplayType = .cone
@@ -251,6 +254,18 @@ extension TrioSettings: Decodable {
 
         if let showCobIobChart = try? container.decode(Bool.self, forKey: .showCobIobChart) {
             settings.showCobIobChart = showCobIobChart
+        }
+
+        if let hideInsulinBadge = try? container.decode(Bool.self, forKey: .hideInsulinBadge) {
+            settings.hideInsulinBadge = hideInsulinBadge
+        }
+
+        if let allowDilution = try? container.decode(Bool.self, forKey: .allowDilution) {
+            settings.allowDilution = allowDilution
+        }
+
+        if let insulinConcentration = try? container.decode(Decimal.self, forKey: .insulinConcentration) {
+            settings.insulinConcentration = insulinConcentration
         }
 
         if let rulerMarks = try? container.decode(Bool.self, forKey: .rulerMarks) {

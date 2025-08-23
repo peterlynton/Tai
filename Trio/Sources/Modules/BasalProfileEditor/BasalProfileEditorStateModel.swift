@@ -12,6 +12,9 @@ extension BasalProfileEditor {
         var total: Decimal = 0.0
         var showAlert: Bool = false
         var chartData: [BasalProfile]? = []
+        var concentration: Decimal = 1
+        var basalIncrement: Decimal = 0.05
+        var pumpIncrement: Decimal = 0.05
 
         let timeValues = stride(from: 0.0, to: 1.days.timeInterval, by: 30.minutes.timeInterval).map { $0 }
 
@@ -26,16 +29,100 @@ extension BasalProfileEditor {
             initialItems != items
         }
 
+        var settings: TrioSettings {
+            get { settingsManager.settings }
+            set { settingsManager.settings = newValue }
+        }
+
+        var preferences: Preferences {
+            get { settingsManager.preferences }
+            set { settingsManager.preferences = newValue }
+        }
+
+        var roundingHint: Bool = false
+        var roundedRateIndices: Set<Int> = []
+
         override func subscribe() {
-            rateValues = provider.supportedBasalRates ?? stride(from: 5.0, to: 1001.0, by: 5.0)
-                .map { ($0.decimal ?? .zero) / 100 }
-            items = provider.profile.map { value in
-                let timeIndex = timeValues.firstIndex(of: Double(value.minutes * 60)) ?? 0
-                let rateIndex = rateValues.firstIndex(of: value.rate) ?? 0
-                return Item(rateIndex: rateIndex, timeIndex: timeIndex)
+            // Previous concentration and increment for comparison
+            let previousConcentration = concentration
+            let previousBasalIncrement = basalIncrement
+
+            // Get concentration factor from settings
+            concentration = settings.insulinConcentration
+            basalIncrement = preferences.bolusIncrement
+            pumpIncrement = basalIncrement / concentration
+
+            if let supportedRates = provider.supportedBasalRates {
+                // If provider has defined rates, adjust them by concentration
+                rateValues = supportedRates.map { $0 * concentration }
+            } else {
+                // Default fallback with concentration adjustment
+                let minRate: Decimal = 5.0
+                let maxRate: Decimal = 1001.0
+                let stepSize: Decimal = 5.0
+
+                // Calculate adjusted rates
+                var rates: [Decimal] = []
+                var current = minRate * concentration
+                let adjustedMax = maxRate * concentration
+                let adjustedStep = stepSize * concentration
+
+                while current < adjustedMax {
+                    rates.append(current / 100)
+                    current += adjustedStep
+                }
+
+                rateValues = rates
             }
 
+            // Sort rates to ensure they're in ascending order
+            let sortedRates = rateValues.sorted()
+
+            // Track if the profile has been modified due to rounding
+            var profileModified = false
+            roundingHint = false
+            roundedRateIndices.removeAll()
+
+            // Check if concentration or basal increment has increased
+            let concentrationIncreased = concentration > previousConcentration
+            let basalIncrementIncreased = basalIncrement > previousBasalIncrement
+
+            // Map the previous profile, preserving original order and rounding rates
+            items = provider.profile.enumerated().map { index, value in
+                let timeIndex = timeValues.firstIndex(of: Double(value.minutes * 60)) ?? 0
+
+                // Find the nearest available rate that is less than or equal to the original rate
+                let rateIndex = sortedRates.lastIndex(where: { $0 <= value.rate }) ?? 0
+
+                // Check if the rounded rate is different from the original rate
+                let originalRate = value.rate
+                let roundedRate = sortedRates[rateIndex]
+
+                // Use a percentage-based difference to detect meaningful rounding
+                let rateDifference = abs(originalRate - roundedRate)
+                let relativeDifference = rateDifference / max(abs(originalRate), 0.001)
+
+                if relativeDifference > 0.001 { // 0.1% relative difference
+                    profileModified = true
+
+                    // Always set rounding hint and indices when rates are different
+                    roundingHint = true
+                    roundedRateIndices.insert(index)
+                }
+
+                return Item(rateIndex: rateIndex, timeIndex: timeIndex)
+            }
             initialItems = items.map { Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex) }
+
+            // If profile was modified due to rounding, force hasChanges to be true
+            if profileModified {
+                // Artificially modify initialItems to trigger hasChanges
+                initialItems = initialItems.map {
+                    var modifiedItem = $0
+                    modifiedItem.rateIndex = (modifiedItem.rateIndex + 1) % rateValues.count
+                    return modifiedItem
+                }
+            }
 
             calcTotal()
         }
@@ -90,8 +177,19 @@ extension BasalProfileEditor {
                     self.syncInProgress = false
                     switch completion {
                     case .finished:
-                        // Successfully saved and synced
-                        self.initialItems = self.items.map { Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex) }
+                        // Reset all modification-related flags
+                        self.roundedRateIndices.removeAll()
+                        self.roundingHint = false
+
+                        // Update initial items to current items
+                        self.initialItems = self.items.map {
+                            Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex)
+                        }
+
+                        // Recalculate chart data to reset overwritten status
+                        Task { @MainActor in
+                            self.calculateChartData()
+                        }
 
                         Task.detached(priority: .low) {
                             do {
@@ -146,24 +244,31 @@ extension BasalProfileEditor {
             var basals: [BasalProfile] = []
             let tzOffset = TimeZone.current.secondsFromGMT() * -1
 
-            basals.append(contentsOf: items.enumerated().map { index, item in
+            basals.append(contentsOf: items.enumerated().map { chartIndex, item in
                 let startDate = Date(timeIntervalSinceReferenceDate: self.timeValues[item.timeIndex])
                 var endDate = Date(timeIntervalSinceReferenceDate: self.timeValues.last!).addingTimeInterval(30 * 60)
-                if self.items.count > index + 1 {
-                    let nextItem = self.items[index + 1]
+                if self.items.count > chartIndex + 1 {
+                    let nextItem = self.items[chartIndex + 1]
                     endDate = Date(timeIntervalSinceReferenceDate: self.timeValues[nextItem.timeIndex])
                 }
 
+                // Find the corresponding original profile index
+                let originalProfileIndex = provider.profile.enumerated().first { _, originalEntry in
+                    let originalTimeIndex = timeValues.firstIndex(of: Double(originalEntry.minutes * 60)) ?? -1
+                    return originalTimeIndex == item.timeIndex
+                }?.offset
+
+                // Check if this rate was rounded
+                let isRounded = originalProfileIndex.flatMap { roundedRateIndices.contains($0) } ?? false
+
                 return BasalProfile(
                     amount: Double(self.rateValues[item.rateIndex]),
-                    isOverwritten: false,
+                    isOverwritten: isRounded,
                     startDate: startDate.addingTimeInterval(TimeInterval(tzOffset)),
                     endDate: endDate.addingTimeInterval(TimeInterval(tzOffset))
                 )
             })
-            basals.sort(by: {
-                $0.startDate > $1.startDate
-            })
+            basals.sort(by: { $0.startDate > $1.startDate })
 
             chartData = basals
         }

@@ -52,7 +52,7 @@ extension Stat {
         }
 
         // Selected Duration for Insulin Stats
-        var selectedIntervalForInsulinStats: StatsTimeInterval = .week
+        var selectedIntervalForInsulinStats: StatsTimeInterval = .day
 
         // Selected Duration for Meal Stats
         var selectedIntervalForMealStats: StatsTimeInterval = .week

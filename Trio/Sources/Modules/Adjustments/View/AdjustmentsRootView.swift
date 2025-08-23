@@ -54,7 +54,7 @@ extension Adjustments {
                         Image(systemName: "arrow.up.circle.badge.clock")
                             .rotationEffect(.degrees(90))
                             .font(.system(size: 20))
-                            .foregroundStyle(Color.primary, Color.loopGreen)
+                            .foregroundStyle(Color.secondary, Color.loopGreen)
                         Text(Adjustments.Tab.tempTargets.name)
                             .font(.subheadline)
                             .lineLimit(1)

@@ -84,6 +84,7 @@ extension Notification.Name {
         if #available(iOS 16.2, *) {
             _ = resolver.resolve(LiveActivityManager.self)!
         }
+        PickerSettingsProvider.shared.configure(resolver: resolver)
     }
 
     init() {

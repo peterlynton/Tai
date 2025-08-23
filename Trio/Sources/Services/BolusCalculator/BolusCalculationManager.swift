@@ -28,6 +28,9 @@ final class BaseBolusCalculationManager: BolusCalculationManager, Injectable {
         injectServices(resolver)
     }
 
+    private var bolusIncrement: Decimal { settingsManager.preferences.bolusIncrement }
+    private var insulinConcentration: Decimal { settingsManager.settings.insulinConcentration }
+
     // MARK: - Types
 
     private struct GlucoseVariables {
@@ -272,7 +275,7 @@ final class BaseBolusCalculationManager: BolusCalculationManager, Injectable {
         return BolusCalculatorVariables(
             insulinRequired: (mostRecentDetermination.insulinReq ?? 0) as Decimal,
             evBG: (mostRecentDetermination.eventualBG ?? 0) as Decimal,
-            minPredBG: (mostRecentDetermination.minPredBGFromReason(with: settingsManager.settings.units) ?? 0) as Decimal,
+            minPredBG: (mostRecentDetermination.minPredBG ?? 0) as Decimal,
             lastLoopDate: apsManager.lastLoopDate as Date?,
             insulin: (mostRecentDetermination.insulinForManualBolus ?? 0) as Decimal,
             target: (mostRecentDetermination.currentTarget ?? currentBGTarget as NSDecimalNumber) as Decimal,
@@ -380,6 +383,10 @@ final class BaseBolusCalculationManager: BolusCalculationManager, Injectable {
     /// - Parameter input: CalculationInput containing all necessary parameters
     /// - Returns: CalculationResult with detailed breakdown of the calculation
     func calculateInsulin(input: CalculationInput) async -> CalculationResult {
+        debug(
+            .service,
+            "Concentration U\(Int(truncating: NSDecimalNumber(decimal: insulinConcentration * 100))), Bolus increment: \(bolusIncrement)"
+        )
         // insulin needed for the current blood glucose
         let targetDifference = input.currentBG - input.target
         debug(.default, "Target difference: \(targetDifference)")

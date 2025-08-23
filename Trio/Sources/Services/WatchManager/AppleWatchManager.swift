@@ -69,6 +69,9 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
             .receive(on: DispatchQueue.global(qos: .background))
             .sink { [weak self] _ in
                 guard let self = self else { return }
+                // Skip if no watch is paired or app not installed
+                guard let session = self.session, session.isPaired, session.isReachable,
+                      session.isWatchAppInstalled else { return }
                 Task {
                     let state = await self.setupWatchState()
                     await self.sendDataToWatch(state)
@@ -82,6 +85,8 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
     private func registerHandlers() {
         coreDataPublisher?.filteredByEntityName("OrefDetermination").sink { [weak self] _ in
             guard let self = self else { return }
+            // Skip if no watch is paired or app not installed
+            guard let session = self.session, session.isPaired, session.isReachable, session.isWatchAppInstalled else { return }
             Task {
                 let state = await self.setupWatchState()
                 await self.sendDataToWatch(state)
@@ -91,6 +96,8 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
         // Due to the Batch insert this only is used for observing Deletion of Glucose entries
         coreDataPublisher?.filteredByEntityName("GlucoseStored").sink { [weak self] _ in
             guard let self = self else { return }
+            // Skip if no watch is paired or app not installed
+            guard let session = self.session, session.isPaired, session.isReachable, session.isWatchAppInstalled else { return }
             Task {
                 let state = await self.setupWatchState()
                 await self.sendDataToWatch(state)
@@ -106,6 +113,8 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
 
         coreDataPublisher?.filteredByEntityName("OverrideStored").sink { [weak self] _ in
             guard let self = self else { return }
+            // Skip if no watch is paired or app not installed
+            guard let session = self.session, session.isPaired, session.isReachable, session.isWatchAppInstalled else { return }
             Task {
                 let state = await self.setupWatchState()
                 await self.sendDataToWatch(state)
@@ -114,6 +123,8 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
 
         coreDataPublisher?.filteredByEntityName("TempTargetStored").sink { [weak self] _ in
             guard let self = self else { return }
+            // Skip if no watch is paired or app not installed
+            guard let session = self.session, session.isPaired, session.isReachable, session.isWatchAppInstalled else { return }
             Task {
                 let state = await self.setupWatchState()
                 await self.sendDataToWatch(state)
@@ -148,6 +159,17 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
     /// Prepares the current state data to be sent to the Watch
     /// - Returns: WatchState containing current glucose readings and trends and determination infos for displaying cob and iob in the view
     func setupWatchState() async -> WatchState {
+        // Check if a watch is paired and reachable before doing expensive calculations
+        guard let session = session, session.isPaired, session.isReachable, session.isWatchAppInstalled else {
+            debug(.watchManager, "⌚️❌ Skipping setupWatchState - No Watch is paired or app not installed")
+            return WatchState(date: Date())
+        }
+
+        // Skip if watch session is not activated
+        guard session.activationState == .activated else {
+            debug(.watchManager, "⌚️❌ Skipping setupWatchState - Watch session not activated")
+            return WatchState(date: Date())
+        }
         do {
             // Get NSManagedObjectIDs
             let glucoseIds = try await fetchGlucose()
@@ -316,11 +338,11 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
                 watchState.bolusIncrement = self.settingsManager.preferences.bolusIncrement
                 watchState.confirmBolusFaster = self.settingsManager.settings.confirmBolusFaster
 
-                debug(
-                    .watchManager,
-
-                    "📱 Setup WatchState - currentGlucose: \(watchState.currentGlucose ?? "nil"), trend: \(watchState.trend ?? "nil"), delta: \(watchState.delta ?? "nil"), values: \(watchState.glucoseValues.count)"
-                )
+//                debug(
+//                    .watchManager,
+//
+//                    "📱 Setup WatchState - currentGlucose: \(watchState.currentGlucose ?? "nil"), trend: \(watchState.trend ?? "nil"), delta: \(watchState.delta ?? "nil"), values: \(watchState.glucoseValues.count)"
+//                )
 
                 return watchState
             }
@@ -527,7 +549,9 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
             {
                 debug(.watchManager, "📱 Watch requested watch state data update.")
                 guard let self = self else { return }
-
+                // Skip if no watch is paired or app not installed
+                guard let session = self.session, session.isPaired, session.isReachable,
+                      session.isWatchAppInstalled else { return }
                 Task {
                     let state = await self.setupWatchState()
                     await self.sendDataToWatch(state)
@@ -607,8 +631,9 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
                         )
 
                         await MainActor.run {
-                            minPredBG = determinationObjects.first?
-                                .minPredBGFromReason(with: self.settingsManager.settings.units) ?? 54
+                            if let latestDetermination = determinationObjects.first {
+                                minPredBG = (latestDetermination.minPredBG ?? 54) as Decimal
+                            }
                         }
 
                     } catch let error as CoreDataError {
@@ -1138,6 +1163,8 @@ final class BaseWatchManager: NSObject, WCSessionDelegate, Injectable, WatchMana
 extension BaseWatchManager: SettingsObserver, PumpSettingsObserver {
     // to update maxBolus
     func pumpSettingsDidChange(_: PumpSettings) {
+        // Skip if no watch is paired or app not installed
+        guard let session = self.session, session.isPaired, session.isReachable, session.isWatchAppInstalled else { return }
         Task {
             let state = await self.setupWatchState()
             await self.sendDataToWatch(state)
@@ -1150,6 +1177,9 @@ extension BaseWatchManager: SettingsObserver, PumpSettingsObserver {
         glucoseColorScheme = settingsManager.settings.glucoseColorScheme
         lowGlucose = settingsManager.settings.low
         highGlucose = settingsManager.settings.high
+
+        // Skip if no watch is paired or app not installed
+        guard let session = self.session, session.isPaired, session.isReachable, session.isWatchAppInstalled else { return }
 
         Task {
             let state = await self.setupWatchState()

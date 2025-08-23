@@ -54,7 +54,21 @@ enum SettingItems {
     ]
 
     static let devicesItems = [
-        SettingItem(title: "Insulin Pump", view: .pumpConfig, path: ["Devices"]),
+        SettingItem(
+            title: "Insulin Pump & Concentration",
+            view: .pumpConfig,
+            searchContents: [
+                "Custom Peak Time",
+                "Duration Insulin Action",
+                "DIA",
+                "Badge",
+                "UU100100",
+                "U200",
+                "U50",
+                "hide"
+            ],
+            path: ["Devices"]
+        ),
         SettingItem(
             title: "CGM",
             view: .cgm,
@@ -156,9 +170,6 @@ enum SettingItems {
             searchContents: [
                 "Max Daily Safety Multiplier",
                 "Current Basal Safety Multiplier",
-                "Use Custom Peak Time",
-                "Duration of Insulin Action", "DIA",
-                "Insulin Peak Time",
                 "Skip Neutral Temps",
                 "Unsuspend If No Temp",
                 "SMB Delivery Ratio",
@@ -369,7 +380,13 @@ enum SettingItems {
             path: ["Services", "Nightscout", "Fetch and Remote Control"]
         ),
         SettingItem(title: "Tidepool", view: .serviceSettings, path: ["Services"]),
-        SettingItem(title: "Apple Health", view: .healthkit, path: ["Services"])
+        SettingItem(title: "Apple Health", view: .healthkit, path: ["Services"]),
+        SettingItem(
+            title: "Export Settings",
+            view: .export,
+            searchContents: ["Export", "CSV", "Backup", "Share"],
+            path: ["Services"]
+        )
     ]
 
     static var allItems: [SettingItem] {

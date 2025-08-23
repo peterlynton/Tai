@@ -100,6 +100,16 @@ final class BaseAPSManager: APSManager, Injectable {
         set { deviceDataManager.pumpManager = newValue }
     }
 
+    var settings: TrioSettings {
+        get { settingsManager.settings }
+        set { settingsManager.settings = newValue }
+    }
+
+    var preferences: Preferences {
+        get { settingsManager.preferences }
+        set { settingsManager.preferences = newValue }
+    }
+
     var bluetoothManager: BluetoothStateManager? { deviceDataManager.bluetoothManager }
 
     @Persisted(key: "isManualTempBasal") var isManualTempBasal: Bool = false
@@ -120,11 +130,6 @@ final class BaseAPSManager: APSManager, Injectable {
 
     var pumpExpiresAtDate: CurrentValueSubject<Date?, Never> {
         deviceDataManager.pumpExpiresAtDate
-    }
-
-    var settings: TrioSettings {
-        get { settingsManager.settings }
-        set { settingsManager.settings = newValue }
     }
 
     init(resolver: Resolver) {
@@ -331,7 +336,52 @@ final class BaseAPSManager: APSManager, Injectable {
         }
     }
 
-    // Loop exit point
+    private func adjustPumpedVolumeToConcentration(_ volume: Double) -> Double {
+        guard settings.insulinConcentration != 1 else { return volume }
+
+        let roundedVolume = Decimal(volume).precisionRounded()
+        let convertedVolume = (Decimal(volume) / settings.insulinConcentration).precisionRounded()
+
+        debug(
+            .apsManager,
+            "Concentration: Bolus \(roundedVolume) U adjusted to U\(Int(settings.insulinConcentration * 100))-Volume of \(convertedVolume)"
+        )
+
+        return Double(truncating: convertedVolume as NSNumber)
+    }
+
+    private func adjustPumpedRateToConcentration(_ rate: Double) -> Double {
+        guard settings.insulinConcentration != 1 else { return rate }
+
+        let roundedRate = Decimal(rate).precisionRounded()
+        let convertedRate = (Decimal(rate) / settings.insulinConcentration).precisionRounded()
+
+        debug(
+            .apsManager,
+            "Concentration: Rate \(roundedRate) IU/hr adjusted to U\(Int(settings.insulinConcentration * 100))-Rate of \(convertedRate)"
+        )
+
+        return Double(truncating: convertedRate as NSNumber)
+    }
+
+    private func adjustPumpedRateToU100(_ rate: Decimal) -> Decimal {
+        guard settings.insulinConcentration != 1 else { return rate }
+        let u100Rate = (rate * settings.insulinConcentration)
+            .precisionRounded()
+            .roundedWithIncrement(
+                increment: preferences.bolusIncrement,
+                roundingMode: .plain
+            )
+
+        debug(
+            .apsManager,
+            "Concentration: Pumped rate volume \(rate.precisionRounded()) U\(Int(settings.insulinConcentration * 100))/hr, adjusted to U100 rate of \(u100Rate) IU/hr"
+        )
+
+        return u100Rate
+    }
+
+//     Loop exit point
     private func loopCompleted(error: Error? = nil, loopStatRecord: LoopStats) async {
         isLooping.send(false)
 
@@ -545,7 +595,7 @@ final class BaseAPSManager: APSManager, Injectable {
             return
         }
 
-        let roundedAmount = pump.roundToSupportedBolusVolume(units: amount)
+        let roundedAmount = pump.roundToSupportedBolusVolume(units: adjustPumpedVolumeToConcentration(amount))
 
         debug(.apsManager, "Enact bolus \(roundedAmount), manual \(!isSMB)")
 
@@ -599,6 +649,12 @@ final class BaseAPSManager: APSManager, Injectable {
         bolusProgress.send(nil)
     }
 
+    func checkMaxBasal(rate: Double) -> Double {
+        guard let pump = pumpManager else { return rate }
+        let maxBasal = Double(pump.roundToSupportedBolusVolume(units: Double(settingsManager.pumpSettings.maxBasal)))
+        return min(rate, maxBasal)
+    }
+
     func enactTempBasal(rate: Double, duration: TimeInterval) async {
         if let error = verifyStatus() {
             processError(error)
@@ -613,12 +669,15 @@ final class BaseAPSManager: APSManager, Injectable {
             return
         }
 
-        debug(.apsManager, "Enact temp basal \(rate) - \(duration)")
+        let safeRate = checkMaxBasal(rate: rate)
 
-        let roundedAmout = pump.roundToSupportedBasalRate(unitsPerHour: rate)
+        debug(.apsManager, "Enact temp basal \(safeRate) - \(duration)")
+
+        let adjustedRate = adjustPumpedRateToConcentration(safeRate)
+        let roundedRate = pump.roundToSupportedBasalRate(unitsPerHour: adjustedRate)
 
         do {
-            try await pump.enactTempBasal(unitsPerHour: roundedAmout, for: duration)
+            try await pump.enactTempBasal(unitsPerHour: roundedRate, for: duration)
             debug(.apsManager, "Temp Basal succeeded")
         } catch {
             debug(.apsManager, "Temp Basal failed with error: \(error)")
@@ -648,6 +707,10 @@ final class BaseAPSManager: APSManager, Injectable {
             let delta = Int((date.timeIntervalSince1970 - eventTimestamp.timeIntervalSince1970) / 60)
             let duration = max(0, Int(tempBasal.duration) - delta)
             let rate = tempBasal.rate as? Decimal ?? 0
+            debug(
+                .apsManager,
+                "Concentration: last fetched TB rate \(rate) IU/hr started \(Formatter.timeFormatter.string(from: eventTimestamp)) for another \(duration) minutes from PumpHistory"
+            )
             return TempBasal(duration: duration, rate: rate, temp: .absolute, timestamp: date)
         }
 
@@ -657,8 +720,9 @@ final class BaseAPSManager: APSManager, Injectable {
         case .active:
             return TempBasal(duration: 0, rate: 0, temp: .absolute, timestamp: date)
         case let .tempBasal(dose):
-            let rate = Decimal(dose.unitsPerHour)
+            let rate = adjustPumpedRateToU100(Decimal(dose.unitsPerHour))
             let durationMin = max(0, Int((dose.endDate.timeIntervalSince1970 - date.timeIntervalSince1970) / 60))
+            debug(.apsManager, "Concentration: last fetched TB rate \(rate) IU/hr for \(durationMin)m from PumpManager")
             return TempBasal(duration: durationMin, rate: rate, temp: .absolute, timestamp: date)
         default:
             return fetchedTempBasal
@@ -690,12 +754,18 @@ final class BaseAPSManager: APSManager, Injectable {
         let (rateDecimal, durationInSeconds, smbToDeliver) = try await setValues(determinationID: determinationID)
 
         if let rate = rateDecimal, let duration = durationInSeconds {
-            try await performBasal(pump: pump, rate: rate, duration: duration)
+            let requestedRate = rate.doubleValue
+            let adjustedRate = requestedRate > 0 ? pump
+                .roundToSupportedBasalRate(unitsPerHour: adjustPumpedRateToConcentration(requestedRate)) : requestedRate
+            try await performBasal(pump: pump, rate: NSDecimalNumber(value: adjustedRate), duration: duration)
         }
 
         // only perform a bolus if smbToDeliver is > 0
         if let smb = smbToDeliver, smb.compare(NSDecimalNumber(value: 0)) == .orderedDescending {
-            try await performBolus(pump: pump, smbToDeliver: smb)
+            let smbAmount = Double(truncating: smb)
+            let adjustedSMBAmount = pump.roundToSupportedBolusVolume(units: adjustPumpedVolumeToConcentration(smbAmount))
+            let finalSMBAmount = NSDecimalNumber(value: adjustedSMBAmount) // Convert to NSDecimalNumber
+            try await performBolus(pump: pump, smbToDeliver: finalSMBAmount)
         }
     }
 

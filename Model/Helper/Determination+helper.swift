@@ -11,25 +11,6 @@ extension OrefDetermination {
     }
 }
 
-extension Determination {
-    var minPredBGFromReason: Decimal? {
-        // Split reason into parts by semicolon and get first part
-        let reasonParts = reason.components(separatedBy: "; ").first?.components(separatedBy: ", ") ?? []
-
-        // Find the part that contains "minPredBG"
-        if let minPredBGPart = reasonParts.first(where: { $0.contains("minPredBG") }) {
-            // Extract the number after "minPredBG"
-            let components = minPredBGPart.components(separatedBy: "minPredBG ")
-            if let valueComponent = components.dropFirst().first {
-                // Get everything after "minPredBG " and convert to Decimal
-                let valueString = valueComponent.trimmingCharacters(in: CharacterSet(charactersIn: "0123456789.-").inverted)
-                return Decimal(string: valueString)
-            }
-        }
-        return nil
-    }
-}
-
 extension OrefDetermination {
     var reasonParts: [String] {
         reason?.components(separatedBy: "; ").first?.components(separatedBy: ", ") ?? []
@@ -37,27 +18,6 @@ extension OrefDetermination {
 
     var reasonConclusion: String {
         reason?.components(separatedBy: "; ").last ?? ""
-    }
-
-    func minPredBGFromReason(with units: GlucoseUnits) -> Decimal? {
-        // Find the part that contains "minPredBG"
-        if let minPredBGPart = reasonParts.first(where: { $0.contains("minPredBG") }) {
-            // Extract the number after "minPredBG"
-            let components = minPredBGPart.components(separatedBy: "minPredBG ")
-            if let valueComponent = components.dropFirst().first {
-                // Get everything after "minPredBG " and convert to Decimal
-                let valueString = valueComponent.trimmingCharacters(in: CharacterSet(charactersIn: "0123456789.-").inverted)
-                var value = Decimal(string: valueString)
-
-                // Check if conversion is needed
-                if units == .mmolL {
-                    value = value?.asMgdL
-                }
-                // debug(.service, "minPredBG is \(value ?? 0)")
-                return value
-            }
-        }
-        return nil
     }
 }
 

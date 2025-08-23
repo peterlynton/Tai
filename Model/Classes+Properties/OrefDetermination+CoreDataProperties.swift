@@ -25,6 +25,7 @@ public extension OrefDetermination {
     @NSManaged var isUploadedToNS: Bool
     @NSManaged var manualBolusErrorString: NSDecimalNumber?
     @NSManaged var minDelta: NSDecimalNumber?
+    @NSManaged var minPredBG: NSDecimalNumber?
     @NSManaged var rate: NSDecimalNumber?
     @NSManaged var reason: String?
     @NSManaged var received: Bool

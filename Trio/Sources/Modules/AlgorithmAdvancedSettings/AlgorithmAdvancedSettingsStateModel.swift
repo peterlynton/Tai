@@ -12,8 +12,6 @@ extension AlgorithmAdvancedSettings {
 
         @Published var maxDailySafetyMultiplier: Decimal = 3
         @Published var currentBasalSafetyMultiplier: Decimal = 4
-        @Published var useCustomPeakTime: Bool = false
-        @Published var insulinPeakTime: Decimal = 75
         @Published var skipNeutralTemps: Bool = false
         @Published var unsuspendIfNoTemp: Bool = false
         @Published var min5mCarbimpact: Decimal = 8
@@ -24,10 +22,6 @@ extension AlgorithmAdvancedSettings {
         @Published var smbDeliveryRatio: Decimal = 0.5
         @Published var smbInterval: Decimal = 3
 
-        var pumpSettings: PumpSettings {
-            provider.settings()
-        }
-
         override func subscribe() {
             units = settingsManager.settings.units
 
@@ -35,9 +29,6 @@ extension AlgorithmAdvancedSettings {
                 maxDailySafetyMultiplier = $0 }
             subscribePreferencesSetting(\.currentBasalSafetyMultiplier, on: $currentBasalSafetyMultiplier) {
                 currentBasalSafetyMultiplier = $0 }
-            subscribePreferencesSetting(\.useCustomPeakTime, on: $useCustomPeakTime) { useCustomPeakTime = $0 }
-            subscribePreferencesSetting(\.insulinPeakTime, on: $insulinPeakTime) { insulinPeakTime = $0 }
-            subscribePreferencesSetting(\.skipNeutralTemps, on: $skipNeutralTemps) { skipNeutralTemps = $0 }
             subscribePreferencesSetting(\.unsuspendIfNoTemp, on: $unsuspendIfNoTemp) { unsuspendIfNoTemp = $0 }
             subscribePreferencesSetting(\.min5mCarbimpact, on: $min5mCarbimpact) { min5mCarbimpact = $0 }
             subscribePreferencesSetting(\.remainingCarbsFraction, on: $remainingCarbsFraction) { remainingCarbsFraction = $0 }
@@ -46,41 +37,6 @@ extension AlgorithmAdvancedSettings {
                 noisyCGMTargetMultiplier = $0 }
             subscribePreferencesSetting(\.smbDeliveryRatio, on: $smbDeliveryRatio) { smbDeliveryRatio = $0 }
             subscribePreferencesSetting(\.smbInterval, on: $smbInterval) { smbInterval = $0 }
-
-            insulinActionCurve = pumpSettings.insulinActionCurve
-        }
-
-        var isPumpSettingUnchanged: Bool {
-            pumpSettings.insulinActionCurve == insulinActionCurve
-        }
-
-        func saveIfChanged() {
-            if !isPumpSettingUnchanged {
-                let settings = PumpSettings(
-                    insulinActionCurve: insulinActionCurve,
-                    maxBolus: pumpSettings.maxBolus,
-                    maxBasal: pumpSettings.maxBasal
-                )
-                provider.save(settings: settings)
-                    .receive(on: DispatchQueue.main)
-                    .sink { _ in
-                        let settings = self.provider.settings()
-                        self.insulinActionCurve = settings.insulinActionCurve
-
-                        Task.detached(priority: .low) {
-                            do {
-                                debug(.nightscout, "Attempting to upload DIA to Nightscout")
-                                try await self.nightscout.uploadProfiles()
-                            } catch {
-                                debug(
-                                    .default,
-                                    "\(DebuggingIdentifiers.failed) failed to upload DIA to Nightscout: \(error)"
-                                )
-                            }
-                        }
-                    } receiveValue: {}
-                    .store(in: &lifetime)
-            }
         }
     }
 }

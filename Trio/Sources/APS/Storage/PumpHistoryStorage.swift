@@ -23,7 +23,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
     private let processQueue = DispatchQueue(label: "BasePumpHistoryStorage.processQueue")
     @Injected() private var storage: FileStorage!
     @Injected() private var broadcaster: Broadcaster!
-    @Injected() private var settings: SettingsManager!
+    @Injected() private var settingsManager: SettingsManager!
 
     private let updateSubject = PassthroughSubject<Void, Never>()
 
@@ -33,6 +33,16 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
 
     private let context: NSManagedObjectContext
 
+    var settings: TrioSettings {
+        get { settingsManager.settings }
+        set { settingsManager.settings = newValue }
+    }
+
+    var preferences: Preferences {
+        get { settingsManager.preferences }
+        set { settingsManager.preferences = newValue }
+    }
+
     init(resolver: Resolver, context: NSManagedObjectContext? = nil) {
         self.context = context ?? CoreDataStack.shared.newTaskContext()
         injectServices(resolver)
@@ -41,9 +51,39 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
     typealias PumpEvent = PumpEventStored.EventType
     typealias TempType = PumpEventStored.TempType
 
-    private func roundDose(_ dose: Double, toIncrement increment: Double) -> Decimal {
-        let roundedValue = (dose / increment).rounded() * increment
-        return Decimal(roundedValue)
+    private func adjustPumpedVolumeToU100(pumpedVolume: Double) -> Decimal {
+        guard settings.insulinConcentration != 1 else { return Decimal(pumpedVolume) }
+
+        let concentration = settings.insulinConcentration
+        let roundedVolume = Decimal(pumpedVolume).precisionRounded()
+        let u100Volume = (Decimal(pumpedVolume) * concentration)
+            .precisionRounded()
+            .roundedWithIncrement(
+                increment: preferences.bolusIncrement,
+                roundingMode: .plain
+            )
+        debug(
+            .apsManager,
+            "Concentration: Pumped bolus volume \(roundedVolume) at U\(Int(concentration * 100)), adjusted to U100 bolus: \(u100Volume) U"
+        )
+        return u100Volume
+    }
+
+    private func adjustPumpedRateToU100(pumpedRate: Decimal) -> Decimal {
+        guard settings.insulinConcentration != 1 else { return pumpedRate }
+
+        let concentration = settings.insulinConcentration
+        let u100Rate = (pumpedRate * concentration)
+            .precisionRounded()
+            .roundedWithIncrement(
+                increment: preferences.bolusIncrement,
+                roundingMode: .plain
+            )
+        debug(
+            .apsManager,
+            "Concentration: Pumped rate volume \(pumpedRate.precisionRounded()) U\(Int(concentration * 100))/hr, adjusted to U100 rate: \(u100Rate) IU/hr."
+        )
+        return u100Rate
     }
 
     func storePumpEvents(_ events: [NewPumpEvent]) async throws {
@@ -62,10 +102,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                 case .bolus:
 
                     guard let dose = event.dose else { continue }
-                    let amount = self.roundDose(
-                        dose.unitsInDeliverableIncrements,
-                        toIncrement: Double(self.settings.preferences.bolusIncrement)
-                    )
+                    let amount = self.adjustPumpedVolumeToU100(pumpedVolume: dose.unitsInDeliverableIncrements)
 
                     guard existingEvents.isEmpty else {
                         // Duplicate found, do not store the event
@@ -112,7 +149,7 @@ final class BasePumpHistoryStorage: PumpHistoryStorage, Injectable {
                         continue
                     }
 
-                    let rate = Decimal(dose.unitsPerHour)
+                    let rate = self.adjustPumpedRateToU100(pumpedRate: Decimal(dose.unitsPerHour))
                     let minutes = (dose.endDate - dose.startDate).timeInterval / 60
                     let delivered = dose.deliveredUnits
                     let date = event.date

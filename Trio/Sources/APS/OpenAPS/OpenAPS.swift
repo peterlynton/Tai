@@ -50,6 +50,7 @@ final class OpenAPS {
             newOrefDetermination.reason = determination.reason
             newOrefDetermination.duration = self.decimalToNSDecimalNumber(determination.duration)
             newOrefDetermination.iob = self.decimalToNSDecimalNumber(determination.iob)
+            newOrefDetermination.minPredBG = self.decimalToNSDecimalNumber(determination.minPredBG)
             newOrefDetermination.threshold = self.decimalToNSDecimalNumber(determination.threshold)
             newOrefDetermination.minDelta = self.decimalToNSDecimalNumber(determination.minDelta)
             newOrefDetermination.sensitivityRatio = self.decimalToNSDecimalNumber(determination.sensitivityRatio)

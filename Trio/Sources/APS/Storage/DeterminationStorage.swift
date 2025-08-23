@@ -188,7 +188,7 @@ final class BaseDeterminationStorage: DeterminationStorage, Injectable {
                         minDelta: self.decimal(from: orefDetermination.minDelta),
                         expectedDelta: self.decimal(from: orefDetermination.expectedDelta),
                         minGuardBG: nil,
-                        minPredBG: nil,
+                        minPredBG: self.decimal(from: orefDetermination.minPredBG),
                         threshold: self.decimal(from: orefDetermination.threshold),
                         carbRatio: self.decimal(from: orefDetermination.carbRatio),
                         received: orefDetermination.enacted, // this is actually part of NS...

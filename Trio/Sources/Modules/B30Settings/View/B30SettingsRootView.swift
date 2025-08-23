@@ -50,6 +50,7 @@ extension B30Settings {
                                             "in order to activate B30 a minimum manual Bolus needs to be given",
                                             "you can specify how long B30 run and how high it is",
                                             "while B30 TBR runs no SMB's will be enacted",
+                                            "TBR ignores maxBasal multipliers, but respects maxBasal of pump",
                                             "once activated you can stop the B30 TBR and allowing SMB's by just cancelling the TT"
                                         ],
                                         listItemSpacing: 10
@@ -167,14 +168,14 @@ extension B30Settings {
                             label: String(localized: "B30 Basal Rate Increase Factor", comment: "B30 Factor"),
                             miniHint: String(
                                 localized:
-                                "Factor that multiplies your regular basal rate from profile for B30. Default is 10.",
+                                "Factor that multiplies your regular basal rate from profile for B30. Max is 10. The TBR will ignore the maxBasalMultipliers but respect maxBasal setting!",
                                 comment: "B30 Factor miniHint"
                             ),
                             verboseHint: AnyView(
                                 Text(
                                     String(
                                         localized:
-                                        "Specify the factor to increase the basal rate during B30. Default is 10x.",
+                                        "Specify the factor to increase the basal rate during B30. Max is 10x.",
                                         comment: "B30 Factor VerboseHint"
                                     )
                                 )

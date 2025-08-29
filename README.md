@@ -14,7 +14,7 @@ Following the release of iAPS version 3.0.0, due to differing views on developme
 The vast majority of the autoISF design and development effort was done by [ga-zelle](https://github.com/ga-zelle) with support from
   [swissalpine](https://github.com/swissalpine), [claudi](https://github.com/lutzlukesch),
   [BerNie](https://github.com/bherpichb), [mountrcg](https://github.com/mountrcg),
-  [Bjr](https://github.com/blaqone) and [myself](https://github.com/T-o-b-i-a-s).
+  [Bjr](https://github.com/blaqone) and [Tobias](https://github.com/T-o-b-i-a-s).
 
 autoISF adds more power to the oref1 algorithm used in Trio by adjusting the insulin sensitivity based on different scenarios (e.g. high BG,
 accelerating/decelerating BG, BG plateau). autoISF has many different settings to fine-tune these adjustments.
@@ -31,6 +31,38 @@ autoISF adjusts ISF depending on 4 different effects in glucose behaviour that a
 * dura_ISF is a factor derived from glucose being stuck at high levels
 
 ![Bildschirmfoto 2025-01-31 um 13 40 11](https://github.com/user-attachments/assets/dfb4d0b8-b0bc-491d-b391-7e6f645ead0b)
+
+## Insulin Concentrations
+
+Tai can handle dosing of insulin in the following concentrations:
+* standard insulin U100 - 100 IU per ml
+* high concentration insulin U200 - 200 IU per ml
+* diluted insulins
+  * U50 - 50 IU per ml
+  * U10 - 10 IU per ml
+
+| Concentrations | diluted | concentrated |
+| --- | --- | --- |
+| <img src="U-concentrations.png" width = "300"> | <img src="U50.png" width = "300"> | <img src="U200.png" width = "300"> |
+
+ The pump and the pump drivers always assume standard U100 insulin and are basing all their calculations of IU delivered on that assumption. Introducing different concentration to Tai means, that the app does all the very simple calculations to ensure the proper use of Insulin Units independant of the concentration of the insulin in the pump. So for delivering 1 IU of (a) U50, the pumpdriver will get the information delivering double the volume of liquid, compared to 1 IU of (b) U100 insulin. However if one would look into the pump itself it would acount 2 IU in case (a) and 1 IU for case (b). The UI in Tai would of course account for 1 IU in both cases!
+
+ ### Benefit
+
+ Independant of concentration of insulin used, all therapy parameters and the statistics re. insulin usage are always the same accross different insulin concentrations.
+
+ ### Considerations & Precautions
+
+ Insulin concentration is not only changing the volume of liquid delivered by the pump for a set amount of IU but it also changes the possible pump incremnts in IU. So with a U10 insulin in a dash pod the smallest bolus or increment can be 0.005 IU, whereas for U200 insulin in the same pump it would be 0.1 IU. So increment is a combination of concentration and pump specific bolus/basal increment.
+ As a result I decided if you want to change the concentration of your insulin, you first need to delete your current pump. Insulin can only be changed with a reservoir refill or a pod change. That is nothing I can reliably check pump driver independant in the app. Also the the pump natural increments only get set and updated when adding the pump. Therefore I apllied the stricter rule to only be able to set the concentration when no pump is added. So once you set the concentration and add your pump, the increments for bolus and basal delivery will be set and also be available in your basal profile, pump limits, max IOB etc.
+
+ ### Configuration
+
+ I have moved all insulin related settings to the pump (Settings > Devices > Insulin Pump & Concentration). This includes settings for DIA and insulin peak times. Those are essentialy parameters of your insulin and not of your therapy (debateable).
+ <img src="insulin-settings.png" width = "300">
+
+There are some hints and warnings in Tai that guide you to change some increment related settings if you change insulin concentration. E.g. if you switch to a higher concentrated insulin your current basal profile might need adjustment as basal increment supported now increased.
+ <img src="basal-rates.png" width = "300">
 
 ## AIMI B30
 Another new feature is an enhanced EatingSoon TT on steroids. It is derived from AAPS AIMI branch and is called B30 (as in basal 30 minutes).

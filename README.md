@@ -59,10 +59,12 @@ Tai can handle dosing of insulin in the following concentrations:
  ### Configuration
 
  I have moved all insulin related settings to the pump (Settings > Devices > Insulin Pump & Concentration). This includes settings for DIA and insulin peak times. Those are essentialy parameters of your insulin and not of your therapy (debateable).
+ 
  <img src="insulin-settings.png" width = "300">
 
 There are some hints and warnings in Tai that guide you to change some increment related settings if you change insulin concentration. E.g. if you switch to a higher concentrated insulin your current basal profile might need adjustment as basal increment supported now increased.
- <img src="basal-rates.png" width = "300">
+
+<img src="basal-rates.png" width = "300">
 
 ## AIMI B30
 Another new feature is an enhanced EatingSoon TT on steroids. It is derived from AAPS AIMI branch and is called B30 (as in basal 30 minutes).

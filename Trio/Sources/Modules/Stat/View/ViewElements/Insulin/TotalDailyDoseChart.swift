@@ -172,6 +172,11 @@ struct TotalDailyDoseChart: View {
                                 .foregroundColor(Color.primary)
                         }
                     }
+                    .opacity(
+                        selectedDate.map { date in
+                            StatChartUtils.isSameTimeUnit(stat.date, date, for: selectedInterval) ? 1 : 0.3
+                        } ?? 1
+                    )
                 }
                 // Dummy PointMark to force SwiftCharts to render a visible domain of 00:00-23:59
                 // i.e. single day from midnight to midnight

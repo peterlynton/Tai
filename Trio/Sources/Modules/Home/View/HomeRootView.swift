@@ -989,6 +989,11 @@ extension Home {
                             Spacer()
                         }.padding(.leading, 20)
                     }
+                    /// left panel with meal related info
+                    HStack {
+                        leftHeaderPanel(geo)
+                        Spacer()
+                    }.padding(.leading, 20)
                 }
                 .padding(.top, 10)
                 .safeAreaInset(edge: .top, spacing: 0) {

@@ -1,9 +1,3 @@
-//
-//  GarminWatchState.swift
-//  Trio
-//
-//  Created by Cengiz Deniz on 25.01.25.
-//
 import Foundation
 import SwiftUI
 
@@ -16,7 +10,7 @@ struct GarminWatchState: Hashable, Equatable, Sendable, Encodable {
     var lastLoopDateInterval: UInt64?
     var eventualBGRaw: String?
     var isf: String?
-    var aiSR: String?
+    var sensRatio: String?
 
     static func == (lhs: GarminWatchState, rhs: GarminWatchState) -> Bool {
         lhs.glucose == rhs.glucose &&
@@ -27,7 +21,7 @@ struct GarminWatchState: Hashable, Equatable, Sendable, Encodable {
             lhs.lastLoopDateInterval == rhs.lastLoopDateInterval &&
             lhs.eventualBGRaw == rhs.eventualBGRaw &&
             lhs.isf == rhs.isf &&
-            lhs.aiSR == rhs.aiSR
+            lhs.sensRatio == rhs.sensRatio
     }
 
     func hash(into hasher: inout Hasher) {
@@ -39,6 +33,34 @@ struct GarminWatchState: Hashable, Equatable, Sendable, Encodable {
         hasher.combine(lastLoopDateInterval)
         hasher.combine(eventualBGRaw)
         hasher.combine(isf)
-        hasher.combine(aiSR)
+        hasher.combine(sensRatio)
+    }
+
+    // Custom encoding to exclude nil values
+    enum CodingKeys: String, CodingKey {
+        case glucose
+        case trendRaw
+        case delta
+        case iob
+        case cob
+        case lastLoopDateInterval
+        case eventualBGRaw
+        case isf
+        case sensRatio
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encodeIfPresent(glucose, forKey: .glucose)
+        try container.encodeIfPresent(trendRaw, forKey: .trendRaw)
+        try container.encodeIfPresent(delta, forKey: .delta)
+        try container.encodeIfPresent(iob, forKey: .iob)
+        try container.encodeIfPresent(cob, forKey: .cob)
+        try container.encodeIfPresent(lastLoopDateInterval, forKey: .lastLoopDateInterval)
+        try container.encodeIfPresent(eventualBGRaw, forKey: .eventualBGRaw)
+        try container.encodeIfPresent(isf, forKey: .isf)
+        // sensRatio will only be encoded if it's not nil
+        try container.encodeIfPresent(sensRatio, forKey: .sensRatio)
     }
 }

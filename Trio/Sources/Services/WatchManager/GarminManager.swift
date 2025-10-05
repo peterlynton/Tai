@@ -416,7 +416,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     let currentSetting = self.settingsManager.settings.garminWatchSetting
                     if currentSetting == .sensRatio {
                         let sensRatio = latestDetermination.autoISFratio ?? 1
-                        let sensRatioValue = Double(sensRatio)
+                        let sensRatioValue = Double(truncating: sensRatio as NSNumber)
                         watchState.sensRatio = sensRatioValue.roundedDouble(toPlaces: 2)
                     }
 

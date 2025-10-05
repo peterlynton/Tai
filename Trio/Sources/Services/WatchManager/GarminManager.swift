@@ -270,40 +270,41 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             return await backgroundContext.perform {
                 var watchState = GarminWatchState()
 
-                /// Pull `glucose`, `trendRaw`, `delta`, `lastLoopDateInterval`, `iob`, `cob`,  `isf`, and `eventualBGRaw` from the latest determination.
-                let iobValue = self.iobService.currentIOB ?? 0
-                watchState.iob = self.iobFormatterWithOneFractionDigit(iobValue)
+                // Set units_hint based on current unit setting
+                watchState.units_hint = self.units == .mgdL ? "mgdl" : "mmol"
+                
+                // Set noise to 0.0 (default value, rounded to 2 decimal places)
+                watchState.noise = 0.0.roundedDouble(toPlaces: 2)
 
+                // Set IOB from the IOB service (rounded to 1 decimal place)
+                let iobValue = self.iobService.currentIOB ?? 0
+                watchState.iob = Double(iobValue).roundedDouble(toPlaces: 1)
+
+                // Process determination data (COB, date, eventualBG, ISF, sensRatio)
                 if let latestDetermination = determinationObjects.first {
-                    watchState.lastLoopDateInterval = latestDetermination.timestamp.map {
-                        guard $0.timeIntervalSince1970 > 0 else { return 0 }
-                        return UInt64($0.timeIntervalSince1970)
+                    // Set date (timestamp in milliseconds)
+                    if let timestamp = latestDetermination.timestamp, timestamp.timeIntervalSince1970 > 0 {
+                        watchState.date = UInt64(timestamp.timeIntervalSince1970 * 1000)
                     }
 
-                    let cobNumber = NSNumber(value: latestDetermination.cob)
-                    watchState.cob = Formatter.integerFormatter.string(from: cobNumber)
+                    // Set COB (rounded to 1 decimal place)
+                    let cobValue = Double(latestDetermination.cob)
+                    watchState.cob = cobValue.roundedDouble(toPlaces: 1)
 
-                    // Get the setting from settingsManager and only include sensRatio if setting is .sensRatio
+                    // Set sensRatio based on settings (rounded to 2 decimal places)
                     let currentSetting = self.settingsManager.settings.garminWatchSetting
                     if currentSetting == .sensRatio {
                         let sensRatio = latestDetermination.autoISFratio ?? 1
-                        watchState.sensRatio = sensRatio.description
+                        let sensRatioValue = Double(sensRatio)
+                        watchState.sensRatio = sensRatioValue.roundedDouble(toPlaces: 2)
                     }
-                    // If garminWatchSetting is .cob, sensRatio remains nil and won't be included in JSON
 
+                    // Set ISF and eventualBG (no unit conversion, raw values)
                     let insulinSensitivity = latestDetermination.insulinSensitivity ?? 0
                     let eventualBG = latestDetermination.eventualBG ?? 0
-
-                    if self.units == .mgdL {
-                        watchState.isf = insulinSensitivity.description
-                        watchState.eventualBGRaw = eventualBG.description
-                    } else {
-                        let parsedIsf = Double(truncating: insulinSensitivity).asMmolL
-                        let parsedEventualBG = Double(truncating: eventualBG).asMmolL
-
-                        watchState.isf = parsedIsf.description
-                        watchState.eventualBGRaw = parsedEventualBG.description
-                    }
+                    
+                    watchState.isf = Int16(truncating: insulinSensitivity)
+                    watchState.eventualBG = Int16(truncating: eventualBG)
                 }
 
                 // If no glucose data is present, just return partial watch state
@@ -311,43 +312,36 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                     return watchState
                 }
 
-                // Format the current glucose reading
-                if self.units == .mgdL {
-                    watchState.glucose = "\(latestGlucose.glucose)"
-                } else {
-                    let mgdlValue = Decimal(latestGlucose.glucose)
-                    let latestGlucoseValue = Double(truncating: mgdlValue.asMmolL as NSNumber)
-                    watchState.glucose = "\(latestGlucoseValue)"
-                }
+                // Set SGV (sensor glucose value - raw value, no conversion)
+                watchState.sgv = Int16(latestGlucose.glucose)
 
-                // Convert direction to a textual trend
-                watchState.trendRaw = latestGlucose.direction ?? "--"
+                // Set direction (trend)
+                watchState.direction = latestGlucose.direction ?? "--"
 
-                // Calculate a glucose delta if we have at least two readings
+                // Calculate delta if we have at least two readings (raw value, no conversion)
                 if glucoseObjects.count >= 2 {
-                    var deltaValue = Decimal(glucoseObjects[0].glucose - glucoseObjects[1].glucose)
-
-                    if self.units == .mmolL {
-                        deltaValue = Double(truncating: deltaValue as NSNumber).asMmolL
-                    }
-
-                    let formattedDelta = deltaValue.description
-                    watchState.delta = deltaValue < 0 ? "\(formattedDelta)" : "+\(formattedDelta)"
+                    let deltaValue = glucoseObjects[0].glucose - glucoseObjects[1].glucose
+                    watchState.delta = Int16(deltaValue)
                 }
+
+                // TODO: Set TBR (temporary basal rate) - needs to be implemented based on your data source
+                // watchState.tbr = ...
 
 //                debug(
 //                    .watchManager,
 //                    """
 //                    📱 Setup GarminWatchState - \
-//                    glucose: \(watchState.glucose ?? "nil"), \
-//                    trendRaw: \(watchState.trendRaw ?? "nil"), \
-//                    delta: \(watchState.delta ?? "nil"), \
-//                    eventualBGRaw: \(watchState.eventualBGRaw ?? "nil"), \
-//                    isf: \(watchState.isf ?? "nil"), \
-//                    sensRatio: \(watchState.sensRatio ?? "nil"), \
-//                    cob: \(watchState.cob ?? "nil"), \
-//                    iob: \(watchState.iob ?? "nil"), \
-//                    lastLoopDateInterval: \(watchState.lastLoopDateInterval?.description ?? "nil")
+//                    date: \(watchState.date?.description ?? "nil"), \
+//                    sgv: \(watchState.sgv?.description ?? "nil"), \
+//                    delta: \(watchState.delta?.description ?? "nil"), \
+//                    direction: \(watchState.direction ?? "nil"), \
+//                    units_hint: \(watchState.units_hint ?? "nil"), \
+//                    iob: \(watchState.iob?.description ?? "nil"), \
+//                    cob: \(watchState.cob?.description ?? "nil"), \
+//                    eventualBG: \(watchState.eventualBG?.description ?? "nil"), \
+//                    isf: \(watchState.isf?.description ?? "nil"), \
+//                    sensRatio: \(watchState.sensRatio?.description ?? "nil"), \
+//                    tbr: \(watchState.tbr?.description ?? "nil")
 //                    """
 //                )
 
@@ -530,21 +524,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                 }
             }
         )
-    }
-
-    func iobFormatterWithOneFractionDigit(_ value: Decimal) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.decimalSeparator = "."
-        formatter.maximumFractionDigits = 1
-        formatter.minimumFractionDigits = 1
-
-        // Prevent small values from rounding to 0 by enforcing a minimum threshold
-        if value.magnitude < 0.1, value != 0 {
-            return value > 0 ? "0.1" : "-0.1"
-        }
-
-        return formatter.string(from: value as NSNumber) ?? "\(value)"
     }
 }
 

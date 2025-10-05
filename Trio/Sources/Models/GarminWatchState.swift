@@ -3,16 +3,16 @@ import SwiftUI
 
 struct GarminWatchState: Hashable, Equatable, Sendable, Encodable {
     var date: UInt64?
-    var sgv: Int?
-    var delta: Double?
+    var sgv: Int16?
+    var delta: Int16?
     var direction: String?
     var noise: Double?
     var units_hint: String?
     var iob: Double?
-    var tbr: Int?
+    var tbr: Int16?
     var cob: Double?
-    var eventualBG: Int?
-    var isf: Int?
+    var eventualBG: Int16?
+    var isf: Int16?
     var sensRatio: Double?
 
     static func == (lhs: GarminWatchState, rhs: GarminWatchState) -> Bool {

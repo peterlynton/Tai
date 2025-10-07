@@ -901,7 +901,9 @@ extension DataTable {
                                 comment: "Alert message for meal deletion"
                             )
                         }
-                        isRemoveHistoryItemAlertPresented = true
+
+                        // Use separate alert for meals
+                        isRemoveMealAlertPresented = true
                     }
                 ).tint(.red)
 

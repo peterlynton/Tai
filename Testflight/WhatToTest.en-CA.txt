@@ -1,5 +1,2 @@
-Open Beta update 0.5.2
-
-Trio dev 0.5.1.28
-Garmin sensRatio instead aiSR
-fix application of autoISF ratio for Tai
+Trio dev 0.6.0.1
+new garmin data structure

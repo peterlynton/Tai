@@ -22,6 +22,15 @@ struct LoopView: View {
 
     var body: some View {
         HStack(alignment: .center) {
+            if determination.first?
+                .deliverAt !=
+                nil
+            {
+                // previously the .timestamp property was used here because this only gets updated when the reportenacted function in the aps manager gets called
+                Text(timeString)
+            } else {
+                Text("--")
+            }
             ZStack {
                 if isLooping {
                     CircleProgress()
@@ -31,15 +40,6 @@ struct LoopView: View {
                         .frame(width: rect.width, height: rect.height, alignment: .center)
                         .mask(mask(in: rect).fill(style: FillStyle(eoFill: true)))
                 }
-            }
-            if determination.first?
-                .deliverAt !=
-                nil
-            {
-                // previously the .timestamp property was used here because this only gets updated when the reportenacted function in the aps manager gets called
-                Text(timeString)
-            } else {
-                Text("--")
             }
         }
         .font(.callout).fontWeight(.bold).fontDesign(.rounded)

@@ -325,8 +325,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         return nil
     }
 
-    /// Builds a `GarminWatchState` reflecting the latest glucose, trend, delta, eventual BG, ISF, IOB, and COB.
-    /// - Returns: A `GarminWatchState` containing the most recent device- and therapy-related info.
+    // Then, update the setupGarminWatchState function to include transmitTime
     func setupGarminWatchState() async throws -> GarminWatchState {
         // Skip expensive calculations if no Garmin devices are connected (except in simulator)
         #if targetEnvironment(simulator)
@@ -337,7 +336,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
         guard !devices.isEmpty || skipDeviceCheck else {
             debug(.watchManager, "⌚️❌ Skipping setupGarminWatchState - No Garmin devices connected")
-            return GarminWatchState()
+            return GarminWatchState(transmitTime: UInt64(Date().timeIntervalSince1970 * 1000))
         }
 
         do {
@@ -366,7 +365,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
             // Perform logic on the background context
             return await backgroundContext.perform {
-                var watchState = GarminWatchState()
+                var watchState = GarminWatchState(transmitTime: UInt64(Date().timeIntervalSince1970 * 1000))
+
+                // NEW: Set transmitTime to current time in milliseconds
+                watchState.transmitTime = UInt64(Date().timeIntervalSince1970 * 1000)
 
                 // Set units_hint based on current unit setting
                 watchState.units_hint = self.units == .mgdL ? "mgdl" : "mmol"
@@ -403,7 +405,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
                 // Process determination data (COB, date, eventualBG, ISF, sensRatio)
                 if let latestDetermination = determinationObjects.first {
-                    // Set date (timestamp in milliseconds)
+                    // Set date (timestamp of the determination data in milliseconds)
                     if let timestamp = latestDetermination.timestamp, timestamp.timeIntervalSince1970 > 0 {
                         watchState.date = UInt64(timestamp.timeIntervalSince1970 * 1000)
                     }
@@ -459,13 +461,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         }
     }
 
-    /// Logs the complete watch state for debugging
+    // Update the logWatchState function to include transmitTime
     private func logWatchState(_ watchState: GarminWatchState) {
         debug(
             .watchManager,
             """
             📱 GarminWatchState Summary:
-            ├─ date: \(watchState.date?.description ?? "nil")
+            ├─ transmitTime: \(watchState.transmitTime.description) (sent time)
+            ├─ date: \(watchState.date?.description ?? "nil") (determination time)
             ├─ sgv: \(watchState.sgv?.description ?? "nil")
             ├─ delta: \(watchState.delta?.description ?? "nil")
             ├─ direction: \(watchState.direction ?? "nil")
@@ -479,6 +482,15 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             └─ sensRatio: \(watchState.sensRatio?.description ?? "nil")
             """
         )
+
+        // Optional: Add time difference calculation for debugging
+        if let date = watchState.date {
+            let dateDiff = Double(watchState.transmitTime - date) / 1000.0 // Convert to seconds
+            debug(
+                .watchManager,
+                "⌚️ Time difference: determination is \(dateDiff) seconds old when transmitted"
+            )
+        }
     }
 
     // MARK: - Device & App Registration

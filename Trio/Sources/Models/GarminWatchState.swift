@@ -2,7 +2,8 @@ import Foundation
 import SwiftUI
 
 struct GarminWatchState: Hashable, Equatable, Sendable, Encodable {
-    var date: UInt64?
+    var transmitTime: UInt64 // Timestamp when this state is transmitted to the watch
+    var date: UInt64? // Timestamp of the determination data
     var sgv: Int16?
     var delta: Int16?
     var direction: String?
@@ -16,7 +17,8 @@ struct GarminWatchState: Hashable, Equatable, Sendable, Encodable {
     var sensRatio: Double?
 
     static func == (lhs: GarminWatchState, rhs: GarminWatchState) -> Bool {
-        lhs.date == rhs.date &&
+        lhs.transmitTime == rhs.transmitTime &&
+            lhs.date == rhs.date &&
             lhs.sgv == rhs.sgv &&
             lhs.delta == rhs.delta &&
             lhs.direction == rhs.direction &&
@@ -31,6 +33,7 @@ struct GarminWatchState: Hashable, Equatable, Sendable, Encodable {
     }
 
     func hash(into hasher: inout Hasher) {
+        hasher.combine(transmitTime)
         hasher.combine(date)
         hasher.combine(sgv)
         hasher.combine(delta)
@@ -47,6 +50,7 @@ struct GarminWatchState: Hashable, Equatable, Sendable, Encodable {
 
     // Custom encoding to exclude nil values
     enum CodingKeys: String, CodingKey {
+        case transmitTime
         case date
         case sgv
         case delta
@@ -63,7 +67,7 @@ struct GarminWatchState: Hashable, Equatable, Sendable, Encodable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-
+        try container.encodeIfPresent(transmitTime, forKey: .transmitTime)
         try container.encodeIfPresent(date, forKey: .date)
         try container.encodeIfPresent(sgv, forKey: .sgv)
         try container.encodeIfPresent(delta, forKey: .delta)

@@ -141,7 +141,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 guard !self.devices.isEmpty else { return }
                 Task {
                     do {
-                        let watchface = self.settingsManager.settings.garminWatchface
+                        let watchface = self.currentWatchface
                         if watchface == .swissalpine {
                             let watchState = try await self.setupGarminSwissAlpineWatchState()
                             let watchStateData = try JSONEncoder().encode(watchState)
@@ -167,7 +167,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 guard let self = self else { return }
                 Task {
                     do {
-                        let watchface = self.settingsManager.settings.garminWatchface
+                        let watchface = self.currentWatchface
                         if watchface == .swissalpine {
                             let watchState = try await self.setupGarminSwissAlpineWatchState()
                             let watchStateData = try JSONEncoder().encode(watchState)
@@ -190,6 +190,18 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         registerHandlers()
     }
 
+    // MARK: - Helper Properties
+
+    /// Safely gets the current Garmin watchface setting
+    private var currentWatchface: GarminWatchface {
+        settingsManager.settings.garminWatchface
+    }
+
+    /// Safely gets the current Garmin data type setting
+    private var currentDataType: GarminDataType {
+        settingsManager.settings.garminDataType
+    }
+
     // MARK: - Internal Setup / Handlers
 
     /// Sets up handlers for OrefDetermination and GlucoseStored entity changes in CoreData.
@@ -203,7 +215,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 guard !self.devices.isEmpty else { return }
                 Task {
                     do {
-                        let watchface = self.settingsManager.settings.garminWatchface
+                        let watchface = self.currentWatchface
                         if watchface == .swissalpine {
                             let watchState = try await self.setupGarminSwissAlpineWatchState()
                             let watchStateData = try JSONEncoder().encode(watchState)
@@ -232,7 +244,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 guard !self.devices.isEmpty else { return }
                 Task {
                     do {
-                        let watchface = self.settingsManager.settings.garminWatchface
+                        let watchface = self.currentWatchface
                         if watchface == .swissalpine {
                             let watchState = try await self.setupGarminSwissAlpineWatchState()
                             let watchStateData = try JSONEncoder().encode(watchState)
@@ -318,12 +330,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             return profile[0].rate
         }
 
-        // Log all profile entries
-        for (index, entry) in profile.enumerated() {
-            debug(.watchManager, "⌚️ Profile[\(index)]: start=\(entry.start), minutes=\(entry.minutes), rate=\(entry.rate)")
-        }
-
-        // Find the applicable basal rate using binary search (similar to TDDStorage)
+        // Find the applicable basal rate using binary search
         var left = 0
         var right = profile.count - 1
 
@@ -331,11 +338,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             let mid = (left + right) / 2
             let entry = profile[mid]
             let nextMinutes = mid + 1 < profile.count ? profile[mid + 1].minutes : 1440
-
-            debug(
-                .watchManager,
-                "⌚️ Binary search - checking entry[\(mid)]: \(entry.minutes) <= \(totalMinutes) < \(nextMinutes)?"
-            )
 
             if totalMinutes >= entry.minutes, totalMinutes < nextMinutes {
                 debug(.watchManager, "⌚️ getCurrentBasalRate - Found matching rate: \(entry.rate) at entry[\(mid)]")
@@ -353,22 +355,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         return nil
     }
 
-    // setup Watchface selection
-    private var currentWatchface: GarminWatchface {
-        if let watchface = settingsManager.settings.garminWatchface as? GarminWatchface {
-            return watchface
-        }
-        if let rawValue = settingsManager.settings.garminWatchface as? String,
-           let watchface = GarminWatchface(rawValue: rawValue)
-        {
-            return watchface
-        }
-        return .trio
-    }
+    // MARK: - Trio Watchface State Setup
 
-    // MARK: - Original Watchface State Setup
-
-    /// Builds an Original format GarminWatchState with string values and unit conversion
+    /// Builds a Trio format GarminWatchState with string values and unit conversion
     func setupGarminTrioWatchState() async throws -> GarminTrioWatchState {
         // Skip expensive calculations if no Garmin devices are connected (except in simulator)
         #if targetEnvironment(simulator)
@@ -415,7 +404,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     watchState.cob = Formatter.integerFormatter.string(from: cobNumber)
 
                     // Get the setting from settingsManager and only include sensRatio if setting is .sensRatio
-                    let currentDataType = self.settingsManager.settings.garminDataType
+                    let currentDataType = self.currentDataType
                     if currentDataType == .sensRatio {
                         let sensRatio = latestDetermination.autoISFratio ?? 1
                         watchState.sensRatio = sensRatio.description
@@ -471,7 +460,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         } catch {
             debug(
                 .watchManager,
-                "\(DebuggingIdentifiers.failed) Error setting up Garmin original watch state: \(error)"
+                "\(DebuggingIdentifiers.failed) Error setting up Garmin Trio watch state: \(error)"
             )
             throw error
         }
@@ -543,7 +532,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     if let scheduledRate = self.getCurrentBasalRate(at: now, from: basalProfile) {
                         let tbrPercentage = (Double(truncating: tempRate) / Double(scheduledRate)) * 100
                         watchState.tbr = Int16(tbrPercentage.rounded())
-
                         debug(
                             .watchManager,
                             "⌚️ TBR Calculation - Temp Rate: \(Double(truncating: tempRate)) U/hr, Scheduled Rate: \(Double(scheduledRate)) U/hr, TBR: \(watchState.tbr ?? 0)%"
@@ -569,7 +557,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     watchState.cob = cobValue.roundedDouble(toPlaces: 1)
 
                     // Set sensRatio based on settings (rounded to 2 decimal places)
-                    let currentDataType = self.settingsManager.settings.garminDataType
+                    let currentDataType = self.currentDataType
                     if currentDataType == .sensRatio {
                         let sensRatio = latestDetermination.autoISFratio ?? 1
                         let sensRatioValue = Double(truncating: sensRatio as NSNumber)
@@ -601,9 +589,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     watchState.delta = Int16(deltaValue)
                 }
 
-                // Log the complete watch state for review
-                self.logSwissAlpineWatchState(watchState)
-
                 return watchState
             }
         } catch {
@@ -631,38 +616,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         }
 
         return formatter.string(from: value as NSNumber) ?? "\(value)"
-    }
-
-    /// Logs the SwissAlpine watch state for debugging
-    private func logSwissAlpineWatchState(_ watchState: GarminSwissAlpineWatchState) {
-        debug(
-            .watchManager,
-            """
-            📱 GarminSwissAlpineWatchState Summary:
-            ├─ transmitTime: \(watchState.transmitTime.description) (sent time)
-            ├─ date: \(watchState.date?.description ?? "nil") (determination time)
-            ├─ sgv: \(watchState.sgv?.description ?? "nil")
-            ├─ delta: \(watchState.delta?.description ?? "nil")
-            ├─ direction: \(watchState.direction ?? "nil")
-            ├─ units_hint: \(watchState.units_hint ?? "nil")
-            ├─ noise: \(watchState.noise?.description ?? "nil")
-            ├─ iob: \(watchState.iob?.description ?? "nil")
-            ├─ tbr: \(watchState.tbr?.description ?? "nil")
-            ├─ cob: \(watchState.cob?.description ?? "nil")
-            ├─ eventualBG: \(watchState.eventualBG?.description ?? "nil")
-            ├─ isf: \(watchState.isf?.description ?? "nil")
-            └─ sensRatio: \(watchState.sensRatio?.description ?? "nil")
-            """
-        )
-
-        // Optional: Add time difference calculation for debugging
-        if let date = watchState.date {
-            let dateDiff = Double(watchState.transmitTime - date) / 1000.0 // Convert to seconds
-            debug(
-                .watchManager,
-                "⌚️ Time difference: determination is \(dateDiff) seconds old when transmitted"
-            )
-        }
     }
 
     // MARK: - Device & App Registration
@@ -911,7 +864,7 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
             }
 
             do {
-                let watchface = self.settingsManager.settings.garminWatchface
+                let watchface = self.currentWatchface
                 if watchface == .swissalpine {
                     let watchState = try await self.setupGarminSwissAlpineWatchState()
                     let watchStateData = try JSONEncoder().encode(watchState)
@@ -928,33 +881,64 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     }
 }
 
+// MARK: - SettingsObserver
+
 extension BaseGarminManager: SettingsObserver {
-    /// Called whenever TrioSettings changes (e.g., user toggles mg/dL vs. mmol/L or changes watchface).
-    /// - Parameter _: The updated TrioSettings instance.
-    func settingsDidChange(_: TrioSettings) {
-        // Update local units and re-register devices if watchface changed
-        units = settingsManager.settings.units
+    /// Called whenever TrioSettings changes (units, watchface, or data type).
+    /// - Parameter settings: The updated TrioSettings instance.
+    func settingsDidChange(_ settings: TrioSettings) {
+        // Track if we need to re-register devices (when watchface changes)
+        let oldWatchface = currentWatchface
+        let newWatchface = settings.garminWatchface // No need for ?? .trio since it's not optional
+        let watchfaceChanged = oldWatchface != newWatchface
 
-        // Re-register devices with potentially new watchface UUID
-        registerDevices(devices)
+        // Track if data type changed
+        let oldDataType = currentDataType
+        let newDataType = settings.garminDataType // No need for ?? .cob since it's not optional
+        let dataTypeChanged = oldDataType != newDataType
 
-        Task {
-            do {
-                let watchface = self.settingsManager.settings.garminWatchface
-                if watchface == .swissalpine {
-                    let watchState = try await self.setupGarminSwissAlpineWatchState()
-                    let watchStateData = try JSONEncoder().encode(watchState)
-                    self.sendWatchStateData(watchStateData)
-                } else {
-                    let watchState = try await self.setupGarminTrioWatchState()
-                    let watchStateData = try JSONEncoder().encode(watchState)
-                    self.sendWatchStateData(watchStateData)
+        // Track if units changed
+        let oldUnits = units
+        let newUnits = settings.units
+        let unitsChanged = oldUnits != newUnits
+
+        // Update local units
+        units = newUnits
+
+        // If watchface changed, re-register devices with new watchface UUID
+        if watchfaceChanged {
+            debug(.watchManager, "Garmin: Watchface changed from \(oldWatchface.displayName) to \(newWatchface.displayName)")
+            registerDevices(devices)
+        }
+
+        // If any relevant setting changed, update and send new watch state
+        if watchfaceChanged || dataTypeChanged || unitsChanged {
+            if dataTypeChanged {
+                debug(.watchManager, "Garmin: Data type changed from \(oldDataType.displayName) to \(newDataType.displayName)")
+            }
+            if unitsChanged {
+                debug(.watchManager, "Garmin: Units changed from \(oldUnits) to \(newUnits)")
+            }
+
+            Task {
+                do {
+                    // Use the new watchface setting to determine which state to generate
+                    if newWatchface == .swissalpine {
+                        let watchState = try await self.setupGarminSwissAlpineWatchState()
+                        let watchStateData = try JSONEncoder().encode(watchState)
+                        self.sendWatchStateData(watchStateData)
+                    } else {
+                        let watchState = try await self.setupGarminTrioWatchState()
+                        let watchStateData = try JSONEncoder().encode(watchState)
+                        self.sendWatchStateData(watchStateData)
+                    }
+                    debug(.watchManager, "Garmin: Updated watch state sent after settings change")
+                } catch {
+                    debug(
+                        .watchManager,
+                        "\(DebuggingIdentifiers.failed) Failed to send watch state data after settings change: \(error)"
+                    )
                 }
-            } catch {
-                debug(
-                    .watchManager,
-                    "\(DebuggingIdentifiers.failed) failed to send watch state data: \(error)"
-                )
             }
         }
     }

@@ -412,16 +412,19 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     private func logSwissAlpineWatchStates(_ watchStates: [GarminSwissAlpineWatchState]) {
         guard debugWatchState else { return }
 
+        let watchface = currentWatchface
+        let watchfaceUUID = watchface.watchfaceUUID?.uuidString ?? "Unknown"
+        let datafieldUUID = watchface.datafieldUUID?.uuidString ?? "Unknown"
+
         do {
             let jsonData = try JSONEncoder().encode(watchStates)
             if let jsonString = String(data: jsonData, encoding: .utf8) {
-                // Compact the JSON by removing extra whitespace
                 let compactJson = jsonString.replacingOccurrences(of: "\n", with: "")
                     .replacingOccurrences(of: "  ", with: " ")
 
                 debug(
                     .watchManager,
-                    "📱 SwissAlpine: Sending \(watchStates.count) entries: \(compactJson)"
+                    "📱 SwissAlpine: Sending \(watchStates.count) entries to watchface \(watchfaceUUID) / datafield \(datafieldUUID): \(compactJson)"
                 )
             }
         } catch {
@@ -432,6 +435,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     private func logTrioWatchState(_ watchState: GarminTrioWatchState) {
         guard debugWatchState else { return }
 
+        let watchface = currentWatchface
+        let watchfaceUUID = watchface.watchfaceUUID?.uuidString ?? "Unknown"
+        let datafieldUUID = watchface.datafieldUUID?.uuidString ?? "Unknown"
+
         do {
             let jsonData = try JSONEncoder().encode(watchState)
             if let jsonString = String(data: jsonData, encoding: .utf8) {
@@ -440,7 +447,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
                 debug(
                     .watchManager,
-                    "📱 Trio: Sending: \(compactJson)"
+                    "📱 Trio: Sending to watchface \(watchfaceUUID) / datafield \(datafieldUUID): \(compactJson)"
                 )
             }
         } catch {

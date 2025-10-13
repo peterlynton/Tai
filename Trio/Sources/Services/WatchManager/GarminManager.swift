@@ -900,6 +900,26 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         watchStateSubject.send(jsonObject)
     }
 
+    /// Sends watch state data immediately, bypassing the 10-second throttling
+    /// Used when re-enabling data transmission after the cooldown period
+    private func sendWatchStateDataImmediately(_ data: Data) {
+        guard let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []) else {
+            debug(.watchManager, "Garmin: Invalid JSON for immediate watch-state data")
+            return
+        }
+
+        if debugWatchState {
+            if let dict = jsonObject as? NSDictionary {
+                debug(.watchManager, "Garmin: Immediately sending watch state dictionary with \(dict.count) fields (no throttle)")
+            } else if let array = jsonObject as? NSArray {
+                debug(.watchManager, "Garmin: Immediately sending watch state array with \(array.count) entries (no throttle)")
+            }
+        }
+
+        // Directly broadcast without going through the throttled subject
+        broadcastStateToWatchApps(jsonObject)
+    }
+
     // MARK: - Helper: Sending Messages
 
     /// Sends a message to a given IQApp with optional progress and completion callbacks.
@@ -1041,7 +1061,7 @@ extension BaseGarminManager: SettingsObserver {
         if watchfaceChanged {
             debug(
                 .watchManager,
-                "Garmin: Watchface changed from \(previousWatchface.displayName) to \(settings.garminWatchface.displayName)"
+                "Garmin: Watchface changed from \(previousWatchface.displayName) to \(settings.garminWatchface.displayName). Skipping watch state update"
             )
         }
 
@@ -1092,8 +1112,8 @@ extension BaseGarminManager: SettingsObserver {
             debug(.watchManager, "Garmin: Re-registered devices for new watchface")
         }
 
-        // If any setting changed, update watch state (datafield will still receive updates)
-        if watchfaceChanged || dataType1Changed || dataType2Changed || unitsChanged || disabledChanged {
+        // If any setting changed or watchface data stream is being enabled, update watch state (datafield will still receive updates)
+        if dataType1Changed || dataType2Changed || unitsChanged || (disabledChanged && !settings.garminDisableWatchfaceData) {
             Task {
                 do {
                     if settings.garminWatchface == .swissalpine {

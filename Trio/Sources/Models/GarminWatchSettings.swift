@@ -2,6 +2,8 @@ import Foundation
 
 // MARK: - Garmin Data Type Settings
 
+/// Primary data type selection for Garmin watchface and datafield.
+/// Determines whether to display COB or Sensitivity Ratio alongside glucose data.
 enum GarminDataType1: String, JSON, CaseIterable, Identifiable, Codable, Hashable {
     var id: String { rawValue }
 
@@ -18,6 +20,8 @@ enum GarminDataType1: String, JSON, CaseIterable, Identifiable, Codable, Hashabl
     }
 }
 
+/// Secondary data type selection for SwissAlpine watchface only.
+/// Determines whether to display Temp Basal Rate or Eventual BG.
 enum GarminDataType2: String, JSON, CaseIterable, Identifiable, Codable, Hashable {
     var id: String { rawValue }
 
@@ -36,6 +40,8 @@ enum GarminDataType2: String, JSON, CaseIterable, Identifiable, Codable, Hashabl
 
 // MARK: - Garmin Watchface Setting
 
+/// Defines the available Garmin watchfaces with their associated UUIDs.
+/// Each watchface has both a watchface app UUID and a datafield app UUID.
 enum GarminWatchface: String, JSON, CaseIterable, Identifiable, Codable, Hashable {
     var id: String { rawValue }
 
@@ -51,6 +57,7 @@ enum GarminWatchface: String, JSON, CaseIterable, Identifiable, Codable, Hashabl
         }
     }
 
+    /// The UUID for the watchface application in Garmin Connect IQ
     var watchfaceUUID: UUID? {
         switch self {
         case .trio:
@@ -60,6 +67,7 @@ enum GarminWatchface: String, JSON, CaseIterable, Identifiable, Codable, Hashabl
         }
     }
 
+    /// The UUID for the datafield application in Garmin Connect IQ
     var datafieldUUID: UUID? {
         switch self {
         case .trio:
@@ -70,10 +78,9 @@ enum GarminWatchface: String, JSON, CaseIterable, Identifiable, Codable, Hashabl
     }
 }
 
-// MARK: - Garmin Watchface Data Toggle
+// MARK: - Garmin Watch Settings Group
 
-// struct to group related settings
-
+/// Groups related Garmin watch settings together for easier management
 struct GarminWatchSettings: Codable, Hashable {
     var watchface: GarminWatchface = .trio
     var dataType1: GarminDataType1 = .cob

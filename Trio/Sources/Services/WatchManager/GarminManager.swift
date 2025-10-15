@@ -79,9 +79,12 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// Track when immediate sends happen to cancel throttled ones
     private var lastImmediateSendTime: Date?
     private var throttledUpdatePending = false
-    
+
     /// Cache last determination data to avoid CoreData staleness on immediate sends
     private var cachedDeterminationData: Data?
+
+    /// Track when watchface was last changed to prevent caching stale format data
+    private var lastWatchfaceChangeTime: Date?
 
     /// Array of Garmin `IQDevice` objects currently tracked.
     /// Changing this property triggers re-registration and updates persisted devices.
@@ -376,7 +379,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 if let lastImmediate = self.lastImmediateSendTime,
                    Date().timeIntervalSince(lastImmediate) < 5
                 {
-                    debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: 30s timer cancelled - recent determination/IOB send")
+                    debug(
+                        .watchManager,
+                        "[\(self.formatTimeForLog())] Garmin: 30s timer cancelled - recent determination/IOB send"
+                    )
                     self.throttleTimer30s = nil
                     self.pendingThrottledData30s = nil
                     self.throttledUpdatePending = false
@@ -469,7 +475,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 } else {
                     destinations = "watchface \(watchfaceUUID) / datafield \(datafieldUUID)"
                 }
-                
+
                 debug(
                     .watchManager,
                     "📱 SwissAlpine: Sending \(watchStates.count) entries to \(destinations): \(compactJson)"
@@ -500,7 +506,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 } else {
                     destinations = "watchface \(watchfaceUUID) / datafield \(datafieldUUID)"
                 }
-                
+
                 debug(
                     .watchManager,
                     "📱 Trio: Sending to \(destinations): \(compactJson)"
@@ -919,9 +925,27 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             .throttle(for: .seconds(20), scheduler: DispatchQueue.main, latest: false)
             .sink { [weak self] data in
                 guard let self = self else { return }
-                
-                // Cache this data for use in immediate sends (settings changes, etc.)
-                self.cachedDeterminationData = data
+
+                // Only cache if no recent watchface change (within last 25 seconds)
+                // This prevents caching stale format data that was in the throttle pipeline
+                let shouldCache: Bool
+                if let lastChange = self.lastWatchfaceChangeTime {
+                    let timeSinceChange = Date().timeIntervalSince(lastChange)
+                    shouldCache = timeSinceChange > 25 // Throttle is 20s, add 5s buffer
+                    if !shouldCache {
+                        debug(
+                            .watchManager,
+                            "[\(self.formatTimeForLog())] Garmin: Not caching - data may be from before watchface change (\(Int(timeSinceChange))s ago)"
+                        )
+                    }
+                } else {
+                    shouldCache = true // No recent watchface change
+                }
+
+                if shouldCache {
+                    self.cachedDeterminationData = data
+                }
+
                 self.lastImmediateSendTime = Date() // Mark for any 30s timers (status requests, settings)
 
                 // Convert data to JSON object for sending
@@ -1293,8 +1317,9 @@ extension BaseGarminManager: SettingsObserver {
         if watchfaceChanged {
             // Clear cached determination data - different watchfaces have different formats
             cachedDeterminationData = nil
+            lastWatchfaceChangeTime = Date()
             debug(.watchManager, "Garmin: Cleared cached determination data due to watchface change")
-            
+
             registerDevices(devices)
             debug(.watchManager, "Garmin: Re-registered devices for new watchface UUID")
             // NO data send here - wait for watch to request or next regular update

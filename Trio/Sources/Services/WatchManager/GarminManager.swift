@@ -80,6 +80,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     private var lastImmediateSendTime: Date?
     private var throttledUpdatePending = false
 
+    /// Cache last determination data to avoid CoreData staleness on immediate sends
+    private var cachedDeterminationData: Data?
+
     /// Array of Garmin `IQDevice` objects currently tracked.
     /// Changing this property triggers re-registration and updates persisted devices.
     private(set) var devices: [IQDevice] = [] {
@@ -462,9 +465,17 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 let compactJson = jsonString.replacingOccurrences(of: "\n", with: "")
                     .replacingOccurrences(of: "  ", with: " ")
 
+                // Show which apps will actually receive data
+                let destinations: String
+                if isWatchfaceDataDisabled {
+                    destinations = "datafield \(datafieldUUID) only (watchface disabled)"
+                } else {
+                    destinations = "watchface \(watchfaceUUID) / datafield \(datafieldUUID)"
+                }
+
                 debug(
                     .watchManager,
-                    "📱 SwissAlpine: Sending \(watchStates.count) entries to watchface \(watchfaceUUID) / datafield \(datafieldUUID): \(compactJson)"
+                    "📱 SwissAlpine: Sending \(watchStates.count) entries to \(destinations): \(compactJson)"
                 )
             }
         } catch {
@@ -485,9 +496,17 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 let compactJson = jsonString.replacingOccurrences(of: "\n", with: "")
                     .replacingOccurrences(of: "  ", with: " ")
 
+                // Show which apps will actually receive data
+                let destinations: String
+                if isWatchfaceDataDisabled {
+                    destinations = "datafield \(datafieldUUID) only (watchface disabled)"
+                } else {
+                    destinations = "watchface \(watchfaceUUID) / datafield \(datafieldUUID)"
+                }
+
                 debug(
                     .watchManager,
-                    "📱 Trio: Sending to watchface \(watchfaceUUID) / datafield \(datafieldUUID): \(compactJson)"
+                    "📱 Trio: Sending to \(destinations): \(compactJson)"
                 )
             }
         } catch {
@@ -896,7 +915,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             .store(in: &cancellables)
     }
 
-    /// Subscribes to determination updates with 10s throttle (first goes through, rest discarded)
+    /// Subscribes to determination updates with 20s throttle (first goes through, rest discarded)
     /// Also handles IOB updates since they fire simultaneously with determinations
     private func subscribeToDeterminationThrottle() {
         determinationSubject
@@ -904,14 +923,17 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             .sink { [weak self] data in
                 guard let self = self else { return }
 
+                // Cache this data for use in immediate sends (settings changes, etc.)
+                self.cachedDeterminationData = data
+                self.lastImmediateSendTime = Date() // Mark for any 30s timers (status requests, settings)
+
                 // Convert data to JSON object for sending
                 guard let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []) else {
                     debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Invalid JSON in determination data")
                     return
                 }
 
-                debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Sending determination/IOB (10s throttle passed)")
-                self.lastImmediateSendTime = Date() // Mark for any 30s timers (status requests, settings)
+                debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Sending determination/IOB (20s throttle passed)")
                 self.broadcastStateToWatchApps(jsonObject as Any)
             }
             .store(in: &cancellables)
@@ -1291,22 +1313,30 @@ extension BaseGarminManager: SettingsObserver {
         if needsImmediateUpdate {
             Task {
                 do {
-                    if settings.garminWatchface == .swissalpine {
-                        let watchStates = try await self.setupGarminSwissAlpineWatchState()
-                        let watchStateData = try JSONEncoder().encode(watchStates)
+                    // Try to use cached determination data first to avoid CoreData staleness
+                    if let cachedData = self.cachedDeterminationData {
                         self.currentSendTrigger = "Settings-Units/Re-enable"
-                        // Units and re-enabling need immediate update
-                        self.sendWatchStateDataImmediately(watchStateData)
+                        debug(.watchManager, "Garmin: Using cached determination data for immediate settings update")
+                        self.sendWatchStateDataImmediately(cachedData)
                         self.lastImmediateSendTime = Date()
-                        debug(.watchManager, "Garmin: Immediate update sent for units/re-enable change")
-                    } else { // Must be .trio
-                        let watchState = try await self.setupGarminTrioWatchState()
-                        let watchStateData = try JSONEncoder().encode(watchState)
-                        self.currentSendTrigger = "Settings-Units/Re-enable"
-                        // Units and re-enabling need immediate update
-                        self.sendWatchStateDataImmediately(watchStateData)
-                        self.lastImmediateSendTime = Date()
-                        debug(.watchManager, "Garmin: Immediate update sent for units/re-enable change")
+                        debug(.watchManager, "Garmin: Immediate update sent for units/re-enable change (from cache)")
+                    } else {
+                        // Fallback to fresh query if no cache available
+                        if settings.garminWatchface == .swissalpine {
+                            let watchStates = try await self.setupGarminSwissAlpineWatchState()
+                            let watchStateData = try JSONEncoder().encode(watchStates)
+                            self.currentSendTrigger = "Settings-Units/Re-enable"
+                            self.sendWatchStateDataImmediately(watchStateData)
+                            self.lastImmediateSendTime = Date()
+                            debug(.watchManager, "Garmin: Immediate update sent for units/re-enable change (fresh query)")
+                        } else { // Must be .trio
+                            let watchState = try await self.setupGarminTrioWatchState()
+                            let watchStateData = try JSONEncoder().encode(watchState)
+                            self.currentSendTrigger = "Settings-Units/Re-enable"
+                            self.sendWatchStateDataImmediately(watchStateData)
+                            self.lastImmediateSendTime = Date()
+                            debug(.watchManager, "Garmin: Immediate update sent for units/re-enable change (fresh query)")
+                        }
                     }
                 } catch {
                     debug(

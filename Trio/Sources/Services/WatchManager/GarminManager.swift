@@ -177,11 +177,13 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                             if watchface == .swissalpine {
                                 let watchStates = try await self.setupGarminSwissAlpineWatchState()
                                 let watchStateData = try JSONEncoder().encode(watchStates)
+                                self.currentSendTrigger = "Glucose-Stale-Loop (\(Int(loopAge / 60))m)"
                                 self.sendWatchStateDataImmediately(watchStateData)
                                 self.lastImmediateSendTime = Date()
                             } else {
                                 let watchState = try await self.setupGarminTrioWatchState()
                                 let watchStateData = try JSONEncoder().encode(watchState)
+                                self.currentSendTrigger = "Glucose-Stale-Loop (\(Int(loopAge / 60))m)"
                                 self.sendWatchStateDataImmediately(watchStateData)
                                 self.lastImmediateSendTime = Date()
                             }
@@ -220,10 +222,12 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         if watchface == .swissalpine {
                             let watchStates = try await self.setupGarminSwissAlpineWatchState()
                             let watchStateData = try JSONEncoder().encode(watchStates)
+                            self.currentSendTrigger = "IOB-Update"
                             self.sendWatchStateDataWithSmartThrottle(watchStateData)
                         } else {
                             let watchState = try await self.setupGarminTrioWatchState()
                             let watchStateData = try JSONEncoder().encode(watchState)
+                            self.currentSendTrigger = "IOB-Update"
                             self.sendWatchStateDataWithSmartThrottle(watchStateData)
                         }
                     } catch {
@@ -288,11 +292,13 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         if watchface == .swissalpine {
                             let watchStates = try await self.setupGarminSwissAlpineWatchState()
                             let watchStateData = try JSONEncoder().encode(watchStates)
+                            self.currentSendTrigger = "Determination"
                             self.sendWatchStateDataImmediately(watchStateData)
                             self.lastImmediateSendTime = Date()
                         } else {
                             let watchState = try await self.setupGarminTrioWatchState()
                             let watchStateData = try JSONEncoder().encode(watchState)
+                            self.currentSendTrigger = "Determination"
                             self.sendWatchStateDataImmediately(watchStateData)
                             self.lastImmediateSendTime = Date()
                         }
@@ -327,11 +333,13 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         if watchface == .swissalpine {
                             let watchStates = try await self.setupGarminSwissAlpineWatchState()
                             let watchStateData = try JSONEncoder().encode(watchStates)
+                            self.currentSendTrigger = "Glucose-Deletion"
                             self.sendWatchStateDataImmediately(watchStateData)
                             self.lastImmediateSendTime = Date()
                         } else {
                             let watchState = try await self.setupGarminTrioWatchState()
                             let watchStateData = try JSONEncoder().encode(watchState)
+                            self.currentSendTrigger = "Glucose-Deletion"
                             self.sendWatchStateDataImmediately(watchStateData)
                             self.lastImmediateSendTime = Date()
                         }
@@ -900,7 +908,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     return
                 }
 
-                debug(.watchManager, "Garmin: Sending throttled update after 30s delay")
+                debug(.watchManager, "Garmin: Sending throttled update after 30s delay [Trigger: \(self.currentSendTrigger)]")
                 self.broadcastStateToWatchApps(state)
                 self.throttledUpdatePending = false
             }
@@ -1002,6 +1010,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         broadcastStateToWatchApps(jsonObject)
     }
 
+    // Track current send trigger for debugging
+    private var currentSendTrigger: String = "Unknown"
+
     // MARK: - Helper: Sending Messages
 
     /// Sends a message to a given IQApp with optional progress and completion callbacks.
@@ -1025,12 +1036,16 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             progress: { _, _ in
                 // Optionally track progress here
             },
-            completion: { result in
+            completion: { [weak self] result in
+                guard let self = self else { return }
                 switch result {
                 case .success:
-                    debug(.watchManager, "Garmin: Successfully sent message to \(app.uuid!)")
+                    debug(
+                        .watchManager,
+                        "Garmin: Successfully sent message to \(app.uuid!) [Trigger: \(self.currentSendTrigger)]"
+                    )
                 default:
-                    debug(.watchManager, "Garmin: Unknown result or failed to send message to \(app.uuid!)")
+                    debug(.watchManager, "Garmin: Failed to send message to \(app.uuid!) [Trigger: \(self.currentSendTrigger)]")
                 }
             }
         )
@@ -1113,12 +1128,14 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
                 if watchface == .swissalpine {
                     let watchStates = try await self.setupGarminSwissAlpineWatchState()
                     let watchStateData = try JSONEncoder().encode(watchStates)
+                    self.currentSendTrigger = "Status-Request"
                     // Use immediate send for status requests (bypass throttling)
                     self.sendWatchStateDataImmediately(watchStateData)
                     self.lastImmediateSendTime = Date()
                 } else {
                     let watchState = try await self.setupGarminTrioWatchState()
                     let watchStateData = try JSONEncoder().encode(watchState)
+                    self.currentSendTrigger = "Status-Request"
                     // Use immediate send for status requests (bypass throttling)
                     self.sendWatchStateDataImmediately(watchStateData)
                     self.lastImmediateSendTime = Date()
@@ -1217,6 +1234,7 @@ extension BaseGarminManager: SettingsObserver {
                     if settings.garminWatchface == .swissalpine {
                         let watchStates = try await self.setupGarminSwissAlpineWatchState()
                         let watchStateData = try JSONEncoder().encode(watchStates)
+                        self.currentSendTrigger = "Settings-Units/Re-enable"
                         // Units and re-enabling need immediate update
                         self.sendWatchStateDataImmediately(watchStateData)
                         self.lastImmediateSendTime = Date()
@@ -1224,6 +1242,7 @@ extension BaseGarminManager: SettingsObserver {
                     } else { // Must be .trio
                         let watchState = try await self.setupGarminTrioWatchState()
                         let watchStateData = try JSONEncoder().encode(watchState)
+                        self.currentSendTrigger = "Settings-Units/Re-enable"
                         // Units and re-enabling need immediate update
                         self.sendWatchStateDataImmediately(watchStateData)
                         self.lastImmediateSendTime = Date()
@@ -1244,12 +1263,14 @@ extension BaseGarminManager: SettingsObserver {
                     if settings.garminWatchface == .swissalpine {
                         let watchStates = try await self.setupGarminSwissAlpineWatchState()
                         let watchStateData = try JSONEncoder().encode(watchStates)
+                        self.currentSendTrigger = "Settings-DataType"
                         // DataType changes use smart throttling
                         self.sendWatchStateDataWithSmartThrottle(watchStateData)
                         debug(.watchManager, "Garmin: Throttled update queued for data type change")
                     } else { // Must be .trio
                         let watchState = try await self.setupGarminTrioWatchState()
                         let watchStateData = try JSONEncoder().encode(watchState)
+                        self.currentSendTrigger = "Settings-DataType"
                         // DataType changes use smart throttling
                         self.sendWatchStateDataWithSmartThrottle(watchStateData)
                         debug(.watchManager, "Garmin: Throttled update queued for data type change")

@@ -67,9 +67,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// Keeps references to watch apps (both watchface & data field) for each registered device.
     private var watchApps: [IQApp] = []
 
-    /// A subject that publishes watch-state dictionaries; watchers can throttle or debounce.
-    private let watchStateSubject = PassthroughSubject<Any, Never>()
-
     /// A set of Combine cancellables for managing the lifecycle of various subscriptions.
     private var cancellables = Set<AnyCancellable>()
 
@@ -132,7 +129,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
         restoreDevices()
         subscribeToOpenFromGarminConnect()
-        subscribeToWatchState()
+        // Note: subscribeToWatchState() removed - using manual timer management
 
         units = settingsManager.settings.units
 
@@ -339,13 +336,8 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         }
     }
 
-    /// Smart throttle function that checks for recent immediate sends
+    /// Smart throttle function with manual timer management
     private func sendWatchStateDataWithSmartThrottle(_ data: Data) {
-        guard let jsonObject = try? JSONSerialization.jsonObject(with: data, options: []) else {
-            debug(.watchManager, "Garmin: Invalid JSON for smart throttle")
-            return
-        }
-        
         // Check if an immediate send happened recently
         if let lastImmediate = lastImmediateSendTime,
            Date().timeIntervalSince(lastImmediate) < 30 {
@@ -354,16 +346,53 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             return
         }
         
-        if debugWatchState {
-            if let dict = jsonObject as? NSDictionary {
-                debug(.watchManager, "[\(formatTimeForLog())] Garmin: Queuing throttled update with \(dict.count) fields")
-            } else if let array = jsonObject as? NSArray {
-                debug(.watchManager, "[\(formatTimeForLog())] Garmin: Queuing throttled update with \(array.count) entries")
-            }
+        // Store the latest data (always keep the newest)
+        pendingThrottledData = data
+        
+        // If timer is already running, let it continue with the new data
+        if throttleTimer?.isValid == true {
+            debug(.watchManager, "[\(formatTimeForLog())] Garmin: Throttle timer already running, updated with newer data")
+            return
         }
         
-        // Send to throttle subject
-        watchStateSubject.send(jsonObject)
+        // Start new 30s timer
+        throttleTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: false) { [weak self] timer in
+            guard let self = self,
+                  let dataToSend = self.pendingThrottledData else {
+                timer.invalidate()
+                return
+            }
+            
+            // Check one more time if immediate send happened while we were waiting
+            if let lastImmediate = self.lastImmediateSendTime,
+               Date().timeIntervalSince(lastImmediate) < 5 {
+                debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Timer-triggered send cancelled - recent immediate send")
+                self.throttleTimer = nil
+                self.pendingThrottledData = nil
+                self.throttledUpdatePending = false
+                return
+            }
+            
+            // Convert data to JSON object for sending
+            guard let jsonObject = try? JSONSerialization.jsonObject(with: dataToSend, options: []) else {
+                debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Invalid JSON in throttled data")
+                self.throttleTimer = nil
+                self.pendingThrottledData = nil
+                self.throttledUpdatePending = false
+                return
+            }
+            
+            debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Sending update after 30s timer [Trigger: \(self.currentSendTrigger)]")
+            self.broadcastStateToWatchApps(jsonObject as Any)
+            
+            // Clean up
+            self.throttleTimer = nil
+            self.pendingThrottledData = nil
+            self.throttledUpdatePending = false
+        }
+        
+        throttledUpdatePending = true
+        debug(.watchManager, "[\(formatTimeForLog())] Garmin: Throttle timer started - will send in 30s [Trigger: \(currentSendTrigger)]")
     }
 
     /// Fetches recent glucose readings from CoreData, up to specified limit.
@@ -856,29 +885,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             .store(in: &cancellables)
     }
 
-    /// Subscribes to any watch-state dictionaries published via `watchStateSubject`, and throttles them
-    /// so updates aren't sent too frequently. Each update triggers a broadcast to all watch apps.
-    /// OPTIMIZED: Changed from 10 seconds to 30 seconds, with smart cancellation
-    private func subscribeToWatchState() {
-        watchStateSubject
-            .throttle(for: .seconds(30), scheduler: DispatchQueue.main, latest: true)
-            .sink { [weak self] state in
-                guard let self = self else { return }
-                
-                // Check again before sending - if immediate send happened recently, skip
-                if let lastImmediate = self.lastImmediateSendTime,
-                   Date().timeIntervalSince(lastImmediate) < 5 {
-                    debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Throttled broadcast cancelled - immediate send just happened")
-                    self.throttledUpdatePending = false
-                    return
-                }
-                
-                debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Sending throttled update after 30s delay [Trigger: \(self.currentSendTrigger)]")
-                self.broadcastStateToWatchApps(state)
-                self.throttledUpdatePending = false
-            }
-            .store(in: &cancellables)
-    }
+    // Note: Old subscribeToWatchState() removed - using manual timer management instead
 
     // MARK: - Parsing & Broadcasting
 
@@ -910,16 +917,16 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
             // Skip broadcasting to watchface if data is disabled
             if isWatchfaceDataDisabled, isWatchfaceApp {
-                debug(.watchManager, "Garmin: Watchface data disabled, skipping broadcast to watchface")
+                debug(.watchManager, "[\(formatTimeForLog())] Garmin: Watchface data disabled, skipping broadcast to watchface")
                 return
             }
 
             connectIQ?.getAppStatus(app) { [weak self] status in
                 guard status?.isInstalled == true else {
-                    debug(.watchManager, "Garmin: App not installed on device: \(app.uuid!)")
+                    debug(.watchManager, "[\(self?.formatTimeForLog() ?? "")] Garmin: App not installed on device: \(app.uuid!)")
                     return
                 }
-                debug(.watchManager, "Garmin: Sending watch-state to app \(app.uuid!)")
+                debug(.watchManager, "[\(self?.formatTimeForLog() ?? "")] Garmin: Sending watch-state to app \(app.uuid!)")
                 self?.sendMessage(state, to: app)
             }
         }
@@ -989,6 +996,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     private var failedSendCount = 0
     private var connectionAlertShown = false
     
+    // Manual throttle management
+    private var throttleTimer: Timer?
+    private var pendingThrottledData: Data?
+    
     // MARK: - Helper: Sending Messages
 
     /// Sends a message to a given IQApp with optional progress and completion callbacks.
@@ -1002,7 +1013,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
         // Skip sending if data is disabled AND this is the watchface app
         if isWatchfaceDataDisabled, isWatchfaceApp {
-            debug(.watchManager, "Garmin: Watchface data disabled, not sending message to watchface")
+            debug(.watchManager, "[\(formatTimeForLog())] Garmin: Watchface data disabled, not sending message to watchface")
             return
         }
 
@@ -1075,17 +1086,17 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     func deviceStatusChanged(_ device: IQDevice, status: IQDeviceStatus) {
         switch status {
         case .invalidDevice:
-            debug(.watchManager, "Garmin: invalidDevice (\(device.uuid!))")
+            debug(.watchManager, "[\(formatTimeForLog())] Garmin: invalidDevice (\(device.uuid!))")
         case .bluetoothNotReady:
-            debug(.watchManager, "Garmin: bluetoothNotReady (\(device.uuid!))")
+            debug(.watchManager, "[\(formatTimeForLog())] Garmin: bluetoothNotReady (\(device.uuid!))")
         case .notFound:
-            debug(.watchManager, "Garmin: notFound (\(device.uuid!))")
+            debug(.watchManager, "[\(formatTimeForLog())] Garmin: notFound (\(device.uuid!))")
         case .notConnected:
-            debug(.watchManager, "Garmin: notConnected (\(device.uuid!))")
+            debug(.watchManager, "[\(formatTimeForLog())] Garmin: notConnected (\(device.uuid!))")
         case .connected:
-            debug(.watchManager, "Garmin: connected (\(device.uuid!))")
+            debug(.watchManager, "[\(formatTimeForLog())] Garmin: connected (\(device.uuid!))")
         @unknown default:
-            debug(.watchManager, "Garmin: unknown state (\(device.uuid!))")
+            debug(.watchManager, "[\(formatTimeForLog())] Garmin: unknown state (\(device.uuid!))")
         }
     }
 

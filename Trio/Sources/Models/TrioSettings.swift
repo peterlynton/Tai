@@ -74,18 +74,18 @@ struct TrioSettings: JSON, Equatable, Encodable {
     var lockScreenView: LockScreenView = .simple
     var bolusShortcut: BolusShortcutLimit = .notAllowed
     var timeInRangeType: TimeInRangeType = .timeInTightRange
-    
+
     /// Selected Garmin watchface (Trio or SwissAlpine)
     var garminWatchface: GarminWatchface = .trio
-    
+
     /// Primary data type for Garmin display (COB or Sensitivity Ratio)
     var garminDataType1: GarminDataType1 = .cob
-    
+
     /// Secondary data type for SwissAlpine watchface (TBR or Eventual BG)
     var garminDataType2: GarminDataType2 = .tbr
-    
+
     /// Controls whether watchface data transmission is disabled
-    var garminDisableWatchfaceData: Bool = false
+    var garminDisableWatchfaceData: Bool = true
 }
 
 extension TrioSettings: Decodable {

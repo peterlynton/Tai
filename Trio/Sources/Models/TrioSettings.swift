@@ -85,7 +85,7 @@ struct TrioSettings: JSON, Equatable, Encodable {
     var garminDataType2: GarminDataType2 = .tbr
 
     /// Controls whether watchface data transmission is disabled
-    var garminDisableWatchfaceData: Bool = false
+    var garminDisableWatchfaceData: Bool = true
 }
 
 extension TrioSettings: Decodable {

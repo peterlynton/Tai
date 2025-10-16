@@ -55,5 +55,5 @@
   "garminWatchface": "trio",
   "garminDataType1": "cob",
   "garminDataType2": "tbr",
-
+  "garminDisableWatchfaceData": true
 }

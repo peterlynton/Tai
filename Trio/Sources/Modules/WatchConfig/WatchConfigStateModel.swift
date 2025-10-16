@@ -9,30 +9,30 @@ extension WatchConfig {
         @Published var units: GlucoseUnits = .mgdL
         @Published var devices: [IQDevice] = []
         @Published var confirmBolusFaster = false
-        
+
         /// Current selected Garmin watchface (Trio or SwissAlpine)
         @Published var garminWatchface: GarminWatchface = .trio
-        
+
         /// Primary data type selection (COB or Sensitivity Ratio)
         @Published var garminDataType1: GarminDataType1 = .cob
-        
+
         /// Secondary data type selection (TBR or Eventual BG) - SwissAlpine only
         @Published var garminDataType2: GarminDataType2 = .tbr
-        
+
         /// Controls whether watchface data transmission is disabled
-        @Published var garminDisableWatchfaceData: Bool = false
-        
+        @Published var garminDisableWatchfaceData: Bool = true
+
         /// Indicates if the disable toggle is locked during cooldown period
         @Published var isDisableToggleLocked: Bool = false
-        
+
         /// Remaining seconds in the cooldown period
         @Published var remainingCooldownSeconds: Int = 0
 
         private(set) var preferences = Preferences()
-        
+
         /// Timer for managing the 20-second cooldown after watchface changes
         private var cooldownTimer: Timer?
-        
+
         /// The timestamp when the current cooldown period will end
         private var cooldownEndTime: Date?
 

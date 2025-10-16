@@ -26,7 +26,7 @@ struct WatchConfigGarminView: View {
     var body: some View {
         Form {
             // MARK: - Device Configuration Section
-            
+
             Section(
                 header: Text("Garmin Configuration"),
                 content:
@@ -64,7 +64,7 @@ struct WatchConfigGarminView: View {
             ).listRowBackground(Color.chart)
 
             // MARK: - Device List Section
-            
+
             if !state.devices.isEmpty {
                 Section(
                     header: Text("Garmin Watch"),
@@ -80,7 +80,7 @@ struct WatchConfigGarminView: View {
             }
 
             // MARK: - Watchface Selection Section
-            
+
             Section(
                 header: Text("Garmin Watch Settings"),
                 content: {
@@ -122,7 +122,7 @@ struct WatchConfigGarminView: View {
             ).listRowBackground(Color.chart)
 
             // MARK: - Disable Watchface Data Section
-            
+
             Section(
                 content: {
                     VStack {
@@ -168,7 +168,7 @@ struct WatchConfigGarminView: View {
             ).listRowBackground(Color.chart)
 
             // MARK: - Data Type 1 Selection Section
-            
+
             Section(
                 content: {
                     VStack {
@@ -204,7 +204,7 @@ struct WatchConfigGarminView: View {
             ).listRowBackground(Color.chart)
 
             // MARK: - Data Type 2 Selection Section (SwissAlpine Only)
-            
+
             if state.garminWatchface == .swissalpine {
                 Section(
                     content: {
@@ -242,9 +242,9 @@ struct WatchConfigGarminView: View {
             }
         }
         .listSectionSpacing(sectionSpacing)
-        
+
         // MARK: - Help Sheets
-        
+
         .sheet(isPresented: $shouldDisplayHint1) {
             SettingInputHintView(
                 hintDetent: $hintDetent,

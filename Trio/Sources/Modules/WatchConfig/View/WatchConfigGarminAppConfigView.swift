@@ -17,7 +17,6 @@ struct WatchConfigGarminAppConfigView: View {
             // MARK: - Watchface Selection Section
 
             Section(
-                header: Text("Garmin Watch Settings"),
                 content: {
                     VStack {
                         Picker(

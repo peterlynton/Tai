@@ -2,7 +2,7 @@ import SwiftUI
 
 struct WatchConfigGarminView: View {
     @ObservedObject var state: WatchConfig.StateModel
-
+    @State private var showDeviceList = false
     @State private var shouldDisplayHint: Bool = false
     @State var hintDetent = PresentationDetent.large
 
@@ -16,25 +16,36 @@ struct WatchConfigGarminView: View {
     }
 
     var body: some View {
-        if state.devices.isEmpty {
-            // No devices connected - show device list/add view
-            deviceListView
-        } else {
-            // Devices connected - go directly to configuration with nav option to device list
-            WatchConfigGarminAppConfigView(state: state)
-                .navigationTitle("Garmin")
-                .navigationBarTitleDisplayMode(.automatic)
-                .navigationBarBackButtonHidden(true)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        NavigationLink(destination: deviceListView) {
-                            HStack {
-                                Image(systemName: "chevron.left")
-                                Text("Garmin Watches")
+        Group {
+            if state.devices.isEmpty || showDeviceList {
+                // No devices connected OR user wants to see device list - show device list/add view
+                deviceListView
+            } else {
+                // Devices connected - go directly to configuration
+                WatchConfigGarminAppConfigView(state: state)
+                    .navigationTitle("Garmin App Settings")
+                    .navigationBarTitleDisplayMode(.automatic)
+                    .navigationBarBackButtonHidden(true)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button(action: {
+                                showDeviceList = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "chevron.left")
+                                    Text("Garmin Devices")
+                                }
                             }
                         }
                     }
-                }
+            }
+        }
+        .id(state.devices.count) // Force view refresh when device count changes
+        .onChange(of: state.devices.count) { _, newValue in
+            // If devices were deleted and now empty, ensure we show device list
+            if newValue == 0 {
+                showDeviceList = false
+            }
         }
     }
 
@@ -98,9 +109,18 @@ struct WatchConfigGarminView: View {
                 Section(
                     header: Text("Watch App Settings"),
                     content: {
-                        NavigationLink(destination: WatchConfigGarminAppConfigView(state: state)) {
-                            Text("Configure Watch Apps")
+                        Button(action: {
+                            showDeviceList = false
+                        }) {
+                            HStack {
+                                Text("Configure Watch Apps")
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
                         }
+                        .foregroundColor(.primary)
                     }
                 ).listRowBackground(Color.chart)
             }

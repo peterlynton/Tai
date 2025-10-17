@@ -77,149 +77,29 @@ struct WatchConfigGarminView: View {
                         }
                     }
                 ).listRowBackground(Color.chart)
-            }
 
-            // MARK: - Watchface Selection Section
+                // MARK: - Watchface Selection Section
 
-            Section(
-                header: Text("Garmin Watch Settings"),
-                content: {
-                    VStack {
-                        Picker(
-                            selection: $state.garminWatchface,
-                            label: Text("Watch App selection").multilineTextAlignment(.leading)
-                        ) {
-                            ForEach(GarminWatchface.allCases) { selection in
-                                Text(selection.displayName).tag(selection)
-                            }
-                        }
-                        .padding(.top)
-                        .onChange(of: state.garminWatchface) { _ in
-                            state.handleWatchfaceChange()
-                        }
-
-                        HStack(alignment: .center) {
-                            Text(
-                                "Choose which watchface/datafield to support."
-                            )
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .lineLimit(nil)
-                            Spacer()
-                            Button(
-                                action: {
-                                    shouldDisplayHint2.toggle()
-                                },
-                                label: {
-                                    HStack {
-                                        Image(systemName: "questionmark.circle")
-                                    }
-                                }
-                            ).buttonStyle(BorderlessButtonStyle())
-                        }.padding(.top)
-                    }.padding(.vertical)
-                }
-            ).listRowBackground(Color.chart)
-
-            // MARK: - Disable Watchface Data Section
-
-            Section(
-                content: {
-                    VStack {
-                        Toggle("Disable Watchface Data", isOn: $state.garminDisableWatchfaceData)
-                            .disabled(state.isDisableToggleLocked)
-
-                        // Display cooldown warning when toggle is locked
-                        if state.isDisableToggleLocked {
-                            HStack {
-                                Text(
-                                    "Please wait \(state.remainingCooldownSeconds) seconds!\n\n" +
-                                        "After the lockout you can re-enable watchface data transmission, but you need to change to the new watchface on your Garmin watch before that - e.g. now!"
-                                )
-                                .font(.footnote)
-                                .foregroundColor(.orange)
-                                .multilineTextAlignment(.leading)
-                                .lineLimit(nil)
-                                Spacer()
-                            }
-                        }
-
-                        HStack(alignment: .center) {
-                            Text(
-                                "Choose if you only want to use a datafield and no supported watchface!"
-                            )
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .lineLimit(nil)
-                            Spacer()
-                            Button(
-                                action: {
-                                    shouldDisplayHint5.toggle()
-                                },
-                                label: {
-                                    HStack {
-                                        Image(systemName: "questionmark.circle")
-                                    }
-                                }
-                            ).buttonStyle(BorderlessButtonStyle())
-                        }.padding(.top)
-                    }.padding(.vertical)
-                }
-            ).listRowBackground(Color.chart)
-
-            // MARK: - Data Type 1 Selection Section
-
-            Section(
-                content: {
-                    VStack {
-                        Picker(
-                            selection: $state.garminDataType1,
-                            label: Text("Data Field 1").multilineTextAlignment(.leading)
-                        ) {
-                            ForEach(GarminDataType1.allCases) { selection in
-                                Text(selection.displayName).tag(selection)
-                            }
-                        }.padding(.top)
-                        HStack(alignment: .center) {
-                            Text(
-                                "Choose between display of COB or Sensitivity Ratio on Garmin device."
-                            )
-                            .font(.footnote)
-                            .foregroundColor(.secondary)
-                            .lineLimit(nil)
-                            Spacer()
-                            Button(
-                                action: {
-                                    shouldDisplayHint3.toggle()
-                                },
-                                label: {
-                                    HStack {
-                                        Image(systemName: "questionmark.circle")
-                                    }
-                                }
-                            ).buttonStyle(BorderlessButtonStyle())
-                        }.padding(.top)
-                    }.padding(.vertical)
-                }
-            ).listRowBackground(Color.chart)
-
-            // MARK: - Data Type 2 Selection Section (SwissAlpine Only)
-
-            if state.garminWatchface == .swissalpine {
                 Section(
+                    header: Text("Garmin Watch Settings"),
                     content: {
                         VStack {
                             Picker(
-                                selection: $state.garminDataType2,
-                                label: Text("Data Field 2").multilineTextAlignment(.leading)
+                                selection: $state.garminWatchface,
+                                label: Text("Watch App selection").multilineTextAlignment(.leading)
                             ) {
-                                ForEach(GarminDataType2.allCases) { selection in
+                                ForEach(GarminWatchface.allCases) { selection in
                                     Text(selection.displayName).tag(selection)
                                 }
-                            }.padding(.top)
+                            }
+                            .padding(.top)
+                            .onChange(of: state.garminWatchface) { _ in
+                                state.handleWatchfaceChange()
+                            }
+
                             HStack(alignment: .center) {
                                 Text(
-                                    "Choose between display of TBR or Eventual BG on Garmin device."
+                                    "Choose which watchface/datafield to support."
                                 )
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
@@ -227,7 +107,7 @@ struct WatchConfigGarminView: View {
                                 Spacer()
                                 Button(
                                     action: {
-                                        shouldDisplayHint4.toggle()
+                                        shouldDisplayHint2.toggle()
                                     },
                                     label: {
                                         HStack {
@@ -239,6 +119,126 @@ struct WatchConfigGarminView: View {
                         }.padding(.vertical)
                     }
                 ).listRowBackground(Color.chart)
+
+                // MARK: - Disable Watchface Data Section
+
+                Section(
+                    content: {
+                        VStack {
+                            Toggle("Disable Watchface Data", isOn: $state.garminDisableWatchfaceData)
+                                .disabled(state.isDisableToggleLocked)
+
+                            // Display cooldown warning when toggle is locked
+                            if state.isDisableToggleLocked {
+                                HStack {
+                                    Text(
+                                        "Please wait \(state.remainingCooldownSeconds) seconds!\n\n" +
+                                            "After the lockout you can re-enable watchface data transmission, but you need to change to the new watchface on your Garmin watch before that - e.g. now!"
+                                    )
+                                    .font(.footnote)
+                                    .foregroundColor(.orange)
+                                    .multilineTextAlignment(.leading)
+                                    .lineLimit(nil)
+                                    Spacer()
+                                }
+                            }
+
+                            HStack(alignment: .center) {
+                                Text(
+                                    "Choose if you only want to use a datafield and no supported watchface!"
+                                )
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                                .lineLimit(nil)
+                                Spacer()
+                                Button(
+                                    action: {
+                                        shouldDisplayHint5.toggle()
+                                    },
+                                    label: {
+                                        HStack {
+                                            Image(systemName: "questionmark.circle")
+                                        }
+                                    }
+                                ).buttonStyle(BorderlessButtonStyle())
+                            }.padding(.top)
+                        }.padding(.vertical)
+                    }
+                ).listRowBackground(Color.chart)
+
+                // MARK: - Data Type 1 Selection Section
+
+                Section(
+                    content: {
+                        VStack {
+                            Picker(
+                                selection: $state.garminDataType1,
+                                label: Text("Data Field 1").multilineTextAlignment(.leading)
+                            ) {
+                                ForEach(GarminDataType1.allCases) { selection in
+                                    Text(selection.displayName).tag(selection)
+                                }
+                            }.padding(.top)
+                            HStack(alignment: .center) {
+                                Text(
+                                    "Choose between display of COB or Sensitivity Ratio on Garmin device."
+                                )
+                                .font(.footnote)
+                                .foregroundColor(.secondary)
+                                .lineLimit(nil)
+                                Spacer()
+                                Button(
+                                    action: {
+                                        shouldDisplayHint3.toggle()
+                                    },
+                                    label: {
+                                        HStack {
+                                            Image(systemName: "questionmark.circle")
+                                        }
+                                    }
+                                ).buttonStyle(BorderlessButtonStyle())
+                            }.padding(.top)
+                        }.padding(.vertical)
+                    }
+                ).listRowBackground(Color.chart)
+
+                // MARK: - Data Type 2 Selection Section (SwissAlpine Only)
+
+                if state.garminWatchface == .swissalpine {
+                    Section(
+                        content: {
+                            VStack {
+                                Picker(
+                                    selection: $state.garminDataType2,
+                                    label: Text("Data Field 2").multilineTextAlignment(.leading)
+                                ) {
+                                    ForEach(GarminDataType2.allCases) { selection in
+                                        Text(selection.displayName).tag(selection)
+                                    }
+                                }.padding(.top)
+                                HStack(alignment: .center) {
+                                    Text(
+                                        "Choose between display of TBR or Eventual BG on Garmin device."
+                                    )
+                                    .font(.footnote)
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(nil)
+                                    Spacer()
+                                    Button(
+                                        action: {
+                                            shouldDisplayHint4.toggle()
+                                        },
+                                        label: {
+                                            HStack {
+                                                Image(systemName: "questionmark.circle")
+                                            }
+                                        }
+                                    ).buttonStyle(BorderlessButtonStyle())
+                                }.padding(.top)
+                            }.padding(.vertical)
+                        }
+                    ).listRowBackground(Color.chart)
+                }
             }
         }
         .listSectionSpacing(sectionSpacing)

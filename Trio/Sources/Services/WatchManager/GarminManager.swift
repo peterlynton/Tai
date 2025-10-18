@@ -2,6 +2,7 @@ import Combine
 import ConnectIQ
 import CoreData
 import Foundation
+import os // For thread-safe OSAllocatedUnfairLock
 import Swinject
 
 // MARK: - GarminManager Protocol
@@ -201,30 +202,39 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         let loopAge = await self.getLoopAge(determinationIds)
 
                         // Only send if loop is stale (> 8 minutes)
-                        if loopAge > 480 { // 8 minutes in seconds
+                        // Handle infinity case (no loop data available)
+                        if loopAge.isFinite, loopAge > 480 { // 8 minutes in seconds
+                            let loopAgeMinutes = Int(loopAge / 60)
                             let watchface = self.currentWatchface
                             if watchface == .swissalpine {
                                 let watchStates = try await self.setupGarminSwissAlpineWatchState()
                                 let watchStateData = try JSONEncoder().encode(watchStates)
-                                self.currentSendTrigger = "Glucose-Stale-Loop (\(Int(loopAge / 60))m)"
+                                self.currentSendTrigger = "Glucose-Stale-Loop (\(loopAgeMinutes)m)"
                                 self.sendWatchStateDataImmediately(watchStateData)
                                 self.lastImmediateSendTime = Date()
                             } else {
                                 let watchState = try await self.setupGarminTrioWatchState()
                                 let watchStateData = try JSONEncoder().encode(watchState)
-                                self.currentSendTrigger = "Glucose-Stale-Loop (\(Int(loopAge / 60))m)"
+                                self.currentSendTrigger = "Glucose-Stale-Loop (\(loopAgeMinutes)m)"
                                 self.sendWatchStateDataImmediately(watchStateData)
                                 self.lastImmediateSendTime = Date()
                             }
                             debug(
                                 .watchManager,
-                                "[\(self.formatTimeForLog())] Garmin: Glucose sent immediately - loop age > 8 min (\(Int(loopAge / 60))m)"
+                                "[\(self.formatTimeForLog())] Garmin: Glucose sent immediately - loop age > 8 min (\(loopAgeMinutes)m)"
                             )
                         } else {
-                            debug(
-                                .watchManager,
-                                "[\(self.formatTimeForLog())] Garmin: Glucose skipped - loop age \(Int(loopAge / 60))m < 8m"
-                            )
+                            if loopAge.isInfinite {
+                                debug(
+                                    .watchManager,
+                                    "[\(self.formatTimeForLog())] Garmin: Glucose skipped - no loop data available (infinite loop age)"
+                                )
+                            } else {
+                                debug(
+                                    .watchManager,
+                                    "[\(self.formatTimeForLog())] Garmin: Glucose skipped - loop age \(Int(loopAge / 60))m < 8m"
+                                )
+                            }
                         }
                     } catch {
                         debug(
@@ -584,31 +594,52 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         return UInt64($0.timeIntervalSince1970)
                     }
 
-                    let cobNumber = NSNumber(value: latestDetermination.cob)
-                    watchState.cob = Formatter.integerFormatter.string(from: cobNumber)
+                    // COB with validation
+                    let cobDouble = Double(latestDetermination.cob)
+                    if cobDouble.isFinite, !cobDouble.isNaN, cobDouble >= 0 {
+                        let cobNumber = NSNumber(value: latestDetermination.cob)
+                        watchState.cob = Formatter.integerFormatter.string(from: cobNumber)
+                    }
 
                     // Get the setting from settingsManager and only include sensRatio if setting is .sensRatio
                     let currentDataType1 = self.currentDataType1
                     if currentDataType1 == .sensRatio {
-                        let sensRatio = latestDetermination.autoISFratio ?? 1
-                        watchState.sensRatio = sensRatio.description
+                        if let sensRatio = latestDetermination.autoISFratio {
+                            let sensRatioDouble = Double(truncating: sensRatio as NSNumber)
+                            if sensRatioDouble.isFinite, !sensRatioDouble.isNaN, sensRatioDouble > 0 {
+                                watchState.sensRatio = sensRatio.description
+                            } else {
+                                // Invalid ratio - default to 1.0 (no adjustment)
+                                watchState.sensRatio = "1.0"
+                            }
+                        } else {
+                            // Nil ratio - default to 1.0 (no adjustment)
+                            watchState.sensRatio = "1.0"
+                        }
                     }
 
-                    let eventualBG = latestDetermination.eventualBG ?? 0
-                    if self.units == .mgdL {
-                        watchState.eventualBGRaw = eventualBG.description
-                    } else {
-                        let parsedEventualBG = Double(truncating: eventualBG).asMmolL
-                        watchState.eventualBGRaw = parsedEventualBG.description
+                    // EventualBG with validation (stored as Int16 mg/dL in CoreData)
+                    if let eventualBG = latestDetermination.eventualBG as? Int16 {
+                        if eventualBG >= 0, eventualBG <= 500 {
+                            if self.units == .mgdL {
+                                watchState.eventualBGRaw = eventualBG.description
+                            } else {
+                                let parsedEventualBG = Double(eventualBG).asMmolL
+                                watchState.eventualBGRaw = parsedEventualBG.description
+                            }
+                        }
                     }
 
-                    let insulinSensitivity = latestDetermination.insulinSensitivity ?? 0
-
-                    if self.units == .mgdL {
-                        watchState.isf = insulinSensitivity.description
-                    } else {
-                        let parsedIsf = Double(truncating: insulinSensitivity).asMmolL
-                        watchState.isf = parsedIsf.description
+                    // ISF with validation (stored as Int16 mg/dL in CoreData)
+                    if let insulinSensitivity = latestDetermination.insulinSensitivity as? Int16 {
+                        if insulinSensitivity > 0, insulinSensitivity <= 300 {
+                            if self.units == .mgdL {
+                                watchState.isf = insulinSensitivity.description
+                            } else {
+                                let parsedIsf = Double(insulinSensitivity).asMmolL
+                                watchState.isf = parsedIsf.description
+                            }
+                        }
                     }
                 }
 
@@ -709,18 +740,68 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 var eventualBGValue: Int16?
 
                 if let latestDetermination = determinationObjects.first {
-                    cobValue = Double(latestDetermination.cob)
+                    // Safe COB conversion
+                    let cobDouble = Double(latestDetermination.cob)
+                    if cobDouble.isFinite, !cobDouble.isNaN {
+                        cobValue = cobDouble
+                    } else {
+                        cobValue = nil
+                        if self.debugWatchState {
+                            debug(.watchManager, "⌚️ SwissAlpine: COB is NaN or infinite, excluding from data")
+                        }
+                    }
 
                     // Only include sensRatio if data type setting is .sensRatio
                     let currentDataType1 = self.currentDataType1
                     if currentDataType1 == .sensRatio {
-                        let sensRatio = latestDetermination.autoISFratio ?? 1
-                        sensRatioValue = Double(truncating: sensRatio as NSNumber)
+                        if let sensRatio = latestDetermination.autoISFratio {
+                            let sensRatioDouble = Double(truncating: sensRatio as NSNumber)
+                            if sensRatioDouble.isFinite, !sensRatioDouble.isNaN, sensRatioDouble > 0 {
+                                sensRatioValue = sensRatioDouble
+                            } else {
+                                // Invalid ratio - default to 1.0 (no adjustment)
+                                sensRatioValue = 1.0
+                                if self.debugWatchState {
+                                    debug(.watchManager, "⌚️ SwissAlpine: SensRatio is NaN or infinite, using default 1.0")
+                                }
+                            }
+                        } else {
+                            // Nil ratio - default to 1.0 (no adjustment)
+                            sensRatioValue = 1.0
+                        }
                     }
 
-                    // ISF and eventualBG as raw values (no unit conversion)
-                    isfValue = Int16(truncating: latestDetermination.insulinSensitivity ?? 0)
-                    eventualBGValue = Int16(truncating: latestDetermination.eventualBG ?? 0)
+                    // ISF and eventualBG - stored as Int16 in CoreData (mg/dL values)
+                    // For SwissAlpine: send raw mg/dL values (no unit conversion needed)
+                    if let insulinSensitivity = latestDetermination.insulinSensitivity as? Int16 {
+                        // Validate reasonable range for ISF (20-300 mg/dL per unit typical)
+                        if insulinSensitivity > 0, insulinSensitivity <= 300 {
+                            isfValue = insulinSensitivity
+                        } else {
+                            isfValue = nil
+                            if self.debugWatchState {
+                                debug(
+                                    .watchManager,
+                                    "⌚️ SwissAlpine: ISF out of range (\(insulinSensitivity)), excluding from data"
+                                )
+                            }
+                        }
+                    }
+
+                    if let eventualBG = latestDetermination.eventualBG as? Int16 {
+                        // Validate reasonable range for BG (0-500 mg/dL)
+                        if eventualBG >= 0, eventualBG <= 500 {
+                            eventualBGValue = eventualBG
+                        } else {
+                            eventualBGValue = nil
+                            if self.debugWatchState {
+                                debug(
+                                    .watchManager,
+                                    "⌚️ SwissAlpine: EventualBG out of range (\(eventualBG)), excluding from data"
+                                )
+                            }
+                        }
+                    }
                 }
 
                 let currentDataType2 = self.currentDataType2
@@ -798,8 +879,18 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         }
                     }
 
-                    // Set SGV (raw value, no conversion)
-                    watchState.sgv = Int16(glucose.glucose)
+                    // Set SGV (already Int16, just validate it's reasonable)
+                    let glucoseValue = glucose.glucose
+                    // Glucose should be 0-500 range (0 = sensor error, 500+ = HIGH)
+                    if glucoseValue >= 0, glucoseValue <= 500 {
+                        watchState.sgv = glucoseValue // Already Int16, just assign
+                    } else {
+                        watchState.sgv = nil
+                        if self.debugWatchState {
+                            debug(.watchManager, "⌚️ SwissAlpine: Invalid glucose value (\(glucoseValue)), excluding from data")
+                        }
+                        continue // Skip this invalid glucose entry
+                    }
 
                     // Set direction
                     watchState.direction = glucose.direction ?? "--"
@@ -807,7 +898,15 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     // Calculate delta if we have a next reading
                     if index < glucoseObjects.count - 1 {
                         let deltaValue = glucose.glucose - glucoseObjects[index + 1].glucose
-                        watchState.delta = Int16(deltaValue)
+                        // Delta is already Int16 (Int16 - Int16 = Int16), just validate reasonable range
+                        if deltaValue >= -100, deltaValue <= 100 {
+                            watchState.delta = deltaValue // Already Int16, just assign
+                        } else {
+                            watchState.delta = nil
+                            if self.debugWatchState {
+                                debug(.watchManager, "⌚️ SwissAlpine: Delta out of range (\(deltaValue)), excluding from data")
+                            }
+                        }
                     } else {
                         // Last entry has no delta
                         watchState.delta = nil
@@ -1147,8 +1246,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         broadcastStateToWatchApps(jsonObject)
     }
 
-    // Track current send trigger for debugging
-    private var currentSendTrigger: String = "Unknown"
+    // Track current send trigger for debugging (thread-safe)
+    private let triggerLock = OSAllocatedUnfairLock()
+    private var _currentSendTrigger: String = "Unknown"
+
+    private var currentSendTrigger: String {
+        get { triggerLock.withLock { _currentSendTrigger } }
+        set { triggerLock.withLock { _currentSendTrigger = newValue } }
+    }
 
     // Track connection health
     private var lastSuccessfulSendTime: Date?

@@ -1,2 +1,2 @@
-Trio dev 0.6.0.2
-new garmin data structure
+Trio dev 0.6.0.3
+new garmin config workflow

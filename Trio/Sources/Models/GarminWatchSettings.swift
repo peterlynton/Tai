@@ -73,7 +73,7 @@ enum GarminWatchface: String, JSON, CaseIterable, Identifiable, Codable, Hashabl
         case .trio:
             return UUID(uuidString: "71CF0982-CA41-42A5-8441-EA81D36056C3")
         case .swissalpine:
-            return UUID(uuidString: "71CF0982-CA41-42A5-8441-EA81D36056C3")
+            return UUID(uuidString: "7A2268F6-3381-4474-81BD-0A3E7F458CB8")
         }
     }
 }

@@ -75,18 +75,18 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
     /// Enable/disable debug logging for watch state (SwissAlpine/Trio data being sent)
     private let debugWatchState = true // Set to false to disable debug logging
-    
+
     /// Enable/disable general Garmin debug logging (connections, settings, throttling, etc.)
     private let debugGarmin = true // Set to false to disable verbose Garmin logging
-    
+
     /// Enable simulated Garmin device for Xcode Simulator testing
     /// When true, creates a fake Garmin device so you can test the workflow in Simulator
     #if targetEnvironment(simulator)
-    private let enableSimulatedDevice = true // Set to false to disable simulated device
+        private let enableSimulatedDevice = true // Set to false to disable simulated device
     #else
-    private let enableSimulatedDevice = false // Never enable on real device
+        private let enableSimulatedDevice = false // Never enable on real device
     #endif
-    
+
     /// Helper method for conditional Garmin debug logging
     private func debugGarmin(_ message: String) {
         guard debugGarmin else { return }
@@ -96,10 +96,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// Track when immediate sends happen to cancel throttled ones
     private var lastImmediateSendTime: Date?
     private var throttledUpdatePending = false
-    
+
     /// Cache last determination data to avoid CoreData staleness on immediate sends
     private var cachedDeterminationData: Data?
-    
+
     /// Track when watchface was last changed to prevent caching stale format data
     private var lastWatchfaceChangeTime: Date?
 
@@ -151,14 +151,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         connectIQ?.initialize(withUrlScheme: "Trio", uiOverrideDelegate: self)
 
         restoreDevices()
-        
+
         // Add simulated device for Xcode Simulator testing
         #if targetEnvironment(simulator)
-        if enableSimulatedDevice && devices.isEmpty {
-            addSimulatedGarminDevice()
-        }
+            if enableSimulatedDevice, devices.isEmpty {
+                addSimulatedGarminDevice()
+            }
         #endif
-        
+
         subscribeToOpenFromGarminConnect()
         subscribeToDeterminationThrottle()
         // Note: Old subscribeToWatchState() removed - using manual timer management for 30s
@@ -497,7 +497,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 } else {
                     destinations = "watchface \(watchfaceUUID) / datafield \(datafieldUUID)"
                 }
-                
+
                 debug(
                     .watchManager,
                     "📱 SwissAlpine: Sending \(watchStates.count) entries to \(destinations): \(compactJson)"
@@ -528,7 +528,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 } else {
                     destinations = "watchface \(watchfaceUUID) / datafield \(datafieldUUID)"
                 }
-                
+
                 debug(
                     .watchManager,
                     "📱 Trio: Sending to \(destinations): \(compactJson)"
@@ -779,8 +779,23 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     var watchState = GarminSwissAlpineWatchState()
 
                     // Set timestamp for this glucose reading (in milliseconds)
-                    if let glucoseDate = glucose.date {
-                        watchState.date = UInt64(glucoseDate.timeIntervalSince1970 * 1000)
+                    // CRITICAL FIX: For index 0 (most recent), use determination timestamp (last loop time)
+                    // For historical readings (index > 0), use glucose timestamp
+                    if index == 0 {
+                        // Use last loop time for the current reading (like Trio watchface does)
+                        if let latestDetermination = determinationObjects.first,
+                           let loopTimestamp = latestDetermination.timestamp
+                        {
+                            watchState.date = UInt64(loopTimestamp.timeIntervalSince1970 * 1000)
+                        } else if let glucoseDate = glucose.date {
+                            // Fallback to glucose date if no determination available
+                            watchState.date = UInt64(glucoseDate.timeIntervalSince1970 * 1000)
+                        }
+                    } else {
+                        // Historical readings use their actual glucose timestamp
+                        if let glucoseDate = glucose.date {
+                            watchState.date = UInt64(glucoseDate.timeIntervalSince1970 * 1000)
+                        }
                     }
 
                     // Set SGV (raw value, no conversion)
@@ -856,50 +871,50 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     }
 
     // MARK: - Simulated Device (for Xcode Simulator Testing)
-    
+
     #if targetEnvironment(simulator)
-    /// Creates a simulated Garmin device for testing in Xcode Simulator
-    /// This allows testing the full workflow without a real Garmin watch
-    private func addSimulatedGarminDevice() {
-        guard enableSimulatedDevice else { return }
-        
-        // Create a mock IQDevice for simulator testing
-        // Using a fixed UUID so it persists across app launches
-        let simulatedUUID = UUID(uuidString: "12345678-1234-1234-1234-123456789ABC")!
-        
-        // Note: IQDevice initializer may vary - adjust as needed
-        // This is a placeholder that may need adjustment based on actual IQDevice API
-        if let simulatedDevice = createMockIQDevice(
-            uuid: simulatedUUID,
-            friendlyName: "Simulated Garmin Watch",
-            modelName: "Enduro 3 (Simulator)"
-        ) {
-            devices = [simulatedDevice]
-            debugGarmin("📱 Simulator: Added simulated Garmin device for testing")
-            debugGarmin("📱 Simulator: Device UUID: \(simulatedUUID)")
-            debugGarmin("📱 Simulator: Use this to test determination/IOB throttling, settings changes, etc.")
-        } else {
-            debugGarmin("⚠️ Simulator: Could not create simulated device (IQDevice API may have changed)")
+        /// Creates a simulated Garmin device for testing in Xcode Simulator
+        /// This allows testing the full workflow without a real Garmin watch
+        private func addSimulatedGarminDevice() {
+            guard enableSimulatedDevice else { return }
+
+            // Create a mock IQDevice for simulator testing
+            // Using a fixed UUID so it persists across app launches
+            let simulatedUUID = UUID(uuidString: "12345678-1234-1234-1234-123456789ABC")!
+
+            // Note: IQDevice initializer may vary - adjust as needed
+            // This is a placeholder that may need adjustment based on actual IQDevice API
+            if let simulatedDevice = createMockIQDevice(
+                uuid: simulatedUUID,
+                friendlyName: "Simulated Garmin Watch",
+                modelName: "Enduro 3 (Simulator)"
+            ) {
+                devices = [simulatedDevice]
+                debugGarmin("📱 Simulator: Added simulated Garmin device for testing")
+                debugGarmin("📱 Simulator: Device UUID: \(simulatedUUID)")
+                debugGarmin("📱 Simulator: Use this to test determination/IOB throttling, settings changes, etc.")
+            } else {
+                debugGarmin("⚠️ Simulator: Could not create simulated device (IQDevice API may have changed)")
+            }
         }
-    }
-    
-    /// Helper to create a mock IQDevice - implementation depends on IQDevice's actual initializers
-    private func createMockIQDevice(uuid: UUID, friendlyName: String, modelName: String) -> IQDevice? {
-        // Note: This is a placeholder - the actual IQDevice creation may require
-        // different parameters or may not be possible to mock directly.
-        // You may need to adjust this based on ConnectIQ SDK documentation.
-        
-        // If IQDevice can't be created directly, you might need to:
-        // 1. Use a real device connection once and persist it
-        // 2. Or modify IQDevice to support test initialization
-        // 3. Or create a protocol and use dependency injection
-        
-        // For now, returning nil as IQDevice likely requires Garmin SDK initialization
-        // Users should connect a real device once, then it will be persisted
-        return nil
-    }
+
+        /// Helper to create a mock IQDevice - implementation depends on IQDevice's actual initializers
+        private func createMockIQDevice(uuid _: UUID, friendlyName _: String, modelName _: String) -> IQDevice? {
+            // Note: This is a placeholder - the actual IQDevice creation may require
+            // different parameters or may not be possible to mock directly.
+            // You may need to adjust this based on ConnectIQ SDK documentation.
+
+            // If IQDevice can't be created directly, you might need to:
+            // 1. Use a real device connection once and persist it
+            // 2. Or modify IQDevice to support test initialization
+            // 3. Or create a protocol and use dependency injection
+
+            // For now, returning nil as IQDevice likely requires Garmin SDK initialization
+            // Users should connect a real device once, then it will be persisted
+            nil
+        }
     #endif
-    
+
     // MARK: - Device & App Registration
 
     /// Registers the given devices for ConnectIQ events (device status changes) and watch app messages.
@@ -992,7 +1007,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             .throttle(for: .seconds(20), scheduler: DispatchQueue.main, latest: false)
             .sink { [weak self] data in
                 guard let self = self else { return }
-                
+
                 // Only cache if no recent watchface change (within last 25 seconds)
                 // This prevents caching stale format data that was in the throttle pipeline
                 let shouldCache: Bool
@@ -1000,16 +1015,18 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     let timeSinceChange = Date().timeIntervalSince(lastChange)
                     shouldCache = timeSinceChange > 25 // Throttle is 20s, add 5s buffer
                     if !shouldCache {
-                        debugGarmin("[\(self.formatTimeForLog())] Garmin: Not caching - data may be from before watchface change (\(Int(timeSinceChange))s ago)")
+                        debugGarmin(
+                            "[\(self.formatTimeForLog())] Garmin: Not caching - data may be from before watchface change (\(Int(timeSinceChange))s ago)"
+                        )
                     }
                 } else {
                     shouldCache = true // No recent watchface change
                 }
-                
+
                 if shouldCache {
                     self.cachedDeterminationData = data
                 }
-                
+
                 self.lastImmediateSendTime = Date() // Mark for any 30s timers (status requests, settings)
 
                 // Convert data to JSON object for sending
@@ -1383,7 +1400,7 @@ extension BaseGarminManager: SettingsObserver {
             cachedDeterminationData = nil
             lastWatchfaceChangeTime = Date()
             debugGarmin("Garmin: Cleared cached determination data due to watchface change")
-            
+
             registerDevices(devices)
             debugGarmin("Garmin: Re-registered devices for new watchface UUID")
             // NO data send here - wait for watch to request or next regular update

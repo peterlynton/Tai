@@ -2,6 +2,7 @@ import Combine
 import ConnectIQ
 import CoreData
 import Foundation
+import os // For thread-safe OSAllocatedUnfairLock
 import Swinject
 
 // MARK: - GarminManager Protocol
@@ -201,30 +202,39 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         let loopAge = await self.getLoopAge(determinationIds)
 
                         // Only send if loop is stale (> 8 minutes)
-                        if loopAge > 480 { // 8 minutes in seconds
+                        // Handle infinity case (no loop data available)
+                        if loopAge.isFinite, loopAge > 480 { // 8 minutes in seconds
+                            let loopAgeMinutes = Int(loopAge / 60)
                             let watchface = self.currentWatchface
                             if watchface == .swissalpine {
                                 let watchStates = try await self.setupGarminSwissAlpineWatchState()
                                 let watchStateData = try JSONEncoder().encode(watchStates)
-                                self.currentSendTrigger = "Glucose-Stale-Loop (\(Int(loopAge / 60))m)"
+                                self.currentSendTrigger = "Glucose-Stale-Loop (\(loopAgeMinutes)m)"
                                 self.sendWatchStateDataImmediately(watchStateData)
                                 self.lastImmediateSendTime = Date()
                             } else {
                                 let watchState = try await self.setupGarminTrioWatchState()
                                 let watchStateData = try JSONEncoder().encode(watchState)
-                                self.currentSendTrigger = "Glucose-Stale-Loop (\(Int(loopAge / 60))m)"
+                                self.currentSendTrigger = "Glucose-Stale-Loop (\(loopAgeMinutes)m)"
                                 self.sendWatchStateDataImmediately(watchStateData)
                                 self.lastImmediateSendTime = Date()
                             }
                             debug(
                                 .watchManager,
-                                "[\(self.formatTimeForLog())] Garmin: Glucose sent immediately - loop age > 8 min (\(Int(loopAge / 60))m)"
+                                "[\(self.formatTimeForLog())] Garmin: Glucose sent immediately - loop age > 8 min (\(loopAgeMinutes)m)"
                             )
                         } else {
-                            debug(
-                                .watchManager,
-                                "[\(self.formatTimeForLog())] Garmin: Glucose skipped - loop age \(Int(loopAge / 60))m < 8m"
-                            )
+                            if loopAge.isInfinite {
+                                debug(
+                                    .watchManager,
+                                    "[\(self.formatTimeForLog())] Garmin: Glucose skipped - no loop data available (infinite loop age)"
+                                )
+                            } else {
+                                debug(
+                                    .watchManager,
+                                    "[\(self.formatTimeForLog())] Garmin: Glucose skipped - loop age \(Int(loopAge / 60))m < 8m"
+                                )
+                            }
                         }
                     } catch {
                         debug(
@@ -1147,8 +1157,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         broadcastStateToWatchApps(jsonObject)
     }
 
-    // Track current send trigger for debugging
-    private var currentSendTrigger: String = "Unknown"
+    // Track current send trigger for debugging (thread-safe)
+    private let triggerLock = OSAllocatedUnfairLock()
+    private var _currentSendTrigger: String = "Unknown"
+
+    private var currentSendTrigger: String {
+        get { triggerLock.withLock { _currentSendTrigger } }
+        set { triggerLock.withLock { _currentSendTrigger = newValue } }
+    }
 
     // Track connection health
     private var lastSuccessfulSendTime: Date?

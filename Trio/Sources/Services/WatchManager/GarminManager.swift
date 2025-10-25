@@ -238,49 +238,36 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             .store(in: &subscriptions)
 
         // ⚠️ IOB TRIGGER TEMPORARILY COMMENTED OUT FOR TESTING
-        // Testing to measure:
-        // 1. Watch battery impact (expected 15-25% improvement)
-        // 2. IOB freshness between enacted determinations (will be stale for up to 5 min)
-        // 3. User acceptance of IOB lag vs battery savings
-        //
-        // Background: Two types of determinations exist:
-        // - Enacted: Loop acts on pump (temp basal, bolus) → Saved to CoreData → Updates loop time
-        // - Suggested: Loop calculates but no pump action → IOB decays naturally → No CoreData save
-        //
-        // With this commented: Watch only updates on enacted determinations (~every 5 min)
-        // Without this: Watch also updates on suggested determinations (IOB decay between loops)
-        //
-        // To revert: Uncomment lines 240-269
         /*
-        iobService.iobPublisher
-            .receive(on: DispatchQueue.global(qos: .background))
-            .sink { [weak self] _ in
-                guard let self = self else { return }
+         iobService.iobPublisher
+             .receive(on: DispatchQueue.global(qos: .background))
+             .sink { [weak self] _ in
+                 guard let self = self else { return }
 
-                // Skip if no Garmin devices are connected (unless in simulator)
-                #if targetEnvironment(simulator)
-                // Allow processing in simulator even without devices
-                #else
-                    guard !self.devices.isEmpty else { return }
-                #endif
+                 // Skip if no Garmin devices are connected (unless in simulator)
+                 #if targetEnvironment(simulator)
+                 // Allow processing in simulator even without devices
+                 #else
+                     guard !self.devices.isEmpty else { return }
+                 #endif
 
-                Task {
-                    do {
-                        let watchState = try await self.setupGarminWatchState()
-                        let watchStateData = try JSONEncoder().encode(watchState)
-                        self.currentSendTrigger = "IOB-Update"
-                        // Use same throttled pipeline as determinations
-                        self.determinationSubject.send(watchStateData)
-                    } catch {
-                        debug(
-                            .watchManager,
-                            "\(DebuggingIdentifiers.failed) Error updating watch state: \(error)"
-                        )
-                    }
-                }
-            }
-            .store(in: &subscriptions)
-        */
+                 Task {
+                     do {
+                         let watchState = try await self.setupGarminWatchState()
+                         let watchStateData = try JSONEncoder().encode(watchState)
+                         self.currentSendTrigger = "IOB-Update"
+                         // Use same throttled pipeline as determinations
+                         self.determinationSubject.send(watchStateData)
+                     } catch {
+                         debug(
+                             .watchManager,
+                             "\(DebuggingIdentifiers.failed) Error updating watch state: \(error)"
+                         )
+                     }
+                 }
+             }
+             .store(in: &subscriptions)
+         */
 
         registerHandlers()
     }

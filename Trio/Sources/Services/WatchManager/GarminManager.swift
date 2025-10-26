@@ -326,9 +326,12 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// Sets up handlers for OrefDetermination and GlucoseStored entity changes in CoreData.
     /// When these change, we re-compute the Garmin watch state and send updates to the watch.
     private func registerHandlers() {
-        // OrefDetermination - publish to determinationSubject for Combine throttling
+        // OrefDetermination - debounce at CoreData level to avoid redundant data preparation
+        // Multiple determination saves happen within 1-2 seconds during a loop run
+        // Debouncing here prevents fetching glucose/basals/IOB multiple times for the same loop
         coreDataPublisher?
             .filteredByEntityName("OrefDetermination")
+            .debounce(for: .seconds(2), scheduler: DispatchQueue.main) // Wait 2s after last save before expensive work
             .sink { [weak self] _ in
                 guard let self = self else { return }
 
@@ -349,7 +352,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         let watchState = try await self.setupGarminWatchState()
                         let watchStateData = try JSONEncoder().encode(watchState)
                         self.currentSendTrigger = "Determination"
-                        // Publish to subject for throttling - Combine will dedupe
+                        // Send to subject for additional 2s debouncing before Bluetooth transmission
                         self.determinationSubject.send(watchStateData)
                     } catch {
                         debug(
@@ -945,21 +948,22 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             .store(in: &cancellables)
     }
 
-    /// Subscribes to determination updates with 5s debounce (waits for quiet period, then sends latest)
+    /// Subscribes to determination updates with 2s debounce (waits for quiet period, then sends latest)
     /// Also handles IOB updates since they fire simultaneously with determinations
-    /// Debounce prevents double-sends when multiple OrefDetermination records are saved in quick succession
+    /// Two-stage debouncing: 2s at CoreData level (skip redundant prep) + 2s here (skip redundant sends)
+    /// Total delay: ~4s from first CoreData save to Bluetooth transmission (faster than old 5s throttle)
     private func subscribeToDeterminationThrottle() {
         determinationSubject
-            .debounce(for: .seconds(5), scheduler: DispatchQueue.main)
+            .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
             .sink { [weak self] data in
                 guard let self = self else { return }
 
-                // Only cache if no recent watchface change (within last 10 seconds)
+                // Only cache if no recent watchface change (within last 6 seconds)
                 // This prevents caching stale format data that was in the debounce pipeline
                 let shouldCache: Bool
                 if let lastChange = self.lastWatchfaceChangeTime {
                     let timeSinceChange = Date().timeIntervalSince(lastChange)
-                    shouldCache = timeSinceChange > 10 // Debounce is 5s, add 5s buffer
+                    shouldCache = timeSinceChange > 6 // 2s CoreData + 2s send debounce + 2s buffer
                     if !shouldCache {
                         debugGarmin(
                             "[\(self.formatTimeForLog())] Garmin: Not caching - data may be from before watchface change (\(Int(timeSinceChange))s ago)"
@@ -981,7 +985,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     return
                 }
 
-                debugGarmin("[\(self.formatTimeForLog())] Garmin: Sending determination/IOB (5s debounce passed)")
+                debugGarmin("[\(self.formatTimeForLog())] Garmin: Sending determination/IOB (2s debounce passed)")
                 self.broadcastStateToWatchApps(jsonObject as Any)
             }
             .store(in: &cancellables)
@@ -1313,6 +1317,12 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
             }
 
             // Use throttled send for status requests to avoid spam
+            // Skip if no apps are installed (based on cache)
+            guard self.areAppsLikelyInstalled() else {
+                debugGarmin("[\(self.formatTimeForLog())] ⏩ Skipping status request - no apps installed (cached)")
+                return
+            }
+            
             do {
                 let watchState = try await self.setupGarminWatchState()
                 let watchStateData = try JSONEncoder().encode(watchState)
@@ -1414,6 +1424,12 @@ extension BaseGarminManager: SettingsObserver {
         // Send immediate update for critical changes
         if needsImmediateUpdate {
             Task {
+                // Skip if no apps are installed (based on cache)
+                guard self.areAppsLikelyInstalled() else {
+                    debugGarmin("⏩ Skipping immediate settings update - no apps installed (cached)")
+                    return
+                }
+                
                 do {
                     // Try to use cached determination data first to avoid CoreData staleness
                     if let cachedData = self.cachedDeterminationData {
@@ -1442,6 +1458,12 @@ extension BaseGarminManager: SettingsObserver {
         // Send throttled update for data type changes
         else if needsThrottledUpdate {
             Task {
+                // Skip if no apps are installed (based on cache)
+                guard self.areAppsLikelyInstalled() else {
+                    debugGarmin("⏩ Skipping throttled settings update - no apps installed (cached)")
+                    return
+                }
+                
                 do {
                     let watchState = try await self.setupGarminWatchState()
                     let watchStateData = try JSONEncoder().encode(watchState)

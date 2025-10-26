@@ -1060,42 +1060,43 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     }
     
     /// Checks if any Garmin apps are likely to receive data based on cached status and settings
-    /// Returns true if cache suggests apps will receive data, or if cache is empty/stale (optimistic)
+    /// Returns true if cache suggests apps will receive data, or if cache is empty (optimistic on first check)
     /// Considers both app installation status AND whether watchface data is disabled
+    /// Cache is trusted indefinitely and only cleared on settings changes or device re-registration
     private func areAppsLikelyInstalled() -> Bool {
         appStatusCacheLock.lock()
         defer { appStatusCacheLock.unlock() }
         
-        // If cache is empty, be optimistic and allow data preparation
-        guard !appInstallationCache.isEmpty else {
-            return true
-        }
-        
-        let now = Date()
+        // Get current watchface info for disabled check (always accurate, not cached)
         let watchface = currentWatchface
         let watchfaceUUIDString = watchface.watchfaceUUID?.uuidString
         
-        // Check if ANY app will actually receive data
-        for (uuidString, status) in appInstallationCache {
-            let cacheAge = now.timeIntervalSince(status.lastChecked)
-            
-            // If cache is stale, be optimistic
-            if cacheAge > appStatusCacheTimeout {
-                return true
+        // If cache is empty, check if we should be optimistic
+        guard !appInstallationCache.isEmpty else {
+            // Even with empty cache, check if watchface data is disabled
+            // If disabled and no datafield in cache, we know nothing will receive data
+            if isWatchfaceDataDisabled {
+                // No cache entries and watchface disabled means likely no receivers
+                debugGarmin("[\(formatTimeForLog())] Garmin: ⏩ Skipping data preparation - watchface disabled, no cache for datafield")
+                return false
             }
-            
-            // Skip if app is not installed
-            guard status.isInstalled else {
-                continue
-            }
-            
-            // If this is the watchface UUID and watchface data is disabled, it won't receive data
-            if uuidString == watchfaceUUIDString, isWatchfaceDataDisabled {
-                continue // Watchface installed but disabled - skip it
-            }
-            
-            // Found an app that is installed and will receive data!
+            // Be optimistic on first check - assume datafield might be installed
             return true
+        }
+        
+        // Check each app in cache (trust cache indefinitely - no timeout)
+        for (uuidString, status) in appInstallationCache {
+            // If this is the watchface and data is disabled, skip it regardless of cache
+            if uuidString == watchfaceUUIDString {
+                if isWatchfaceDataDisabled {
+                    continue // Watchface won't receive data (disabled) - check other apps
+                }
+            }
+            
+            // If app is installed (per cache), we have a receiver
+            if status.isInstalled {
+                return true // Found a receiver
+            }
         }
         
         // No apps will receive data (either not installed or watchface is disabled)

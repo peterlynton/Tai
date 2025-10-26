@@ -108,9 +108,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// Key: app UUID string, Value: (isInstalled, lastChecked)
     private var appInstallationCache: [String: (isInstalled: Bool, lastChecked: Date)] = [:]
     private let appStatusCacheLock = NSLock()
-    
+
     /// How long to trust cached app status (in seconds)
     private let appStatusCacheTimeout: TimeInterval = 60 // 1 minute
+
+    /// Deduplication: Track last prepared data hash to prevent duplicate expensive work
+    private var lastPreparedDataHash: Int?
+    private var lastPreparedWatchState: [GarminWatchState]?
+    private let hashLock = NSLock()
 
     /// Array of Garmin `IQDevice` objects currently tracked.
     /// Changing this property triggers re-registration and updates persisted devices.
@@ -219,9 +224,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                             guard self.areAppsLikelyInstalled() else {
                                 return
                             }
-                            
+
                             let loopAgeMinutes = Int(loopAge / 60)
-                            let watchState = try await self.setupGarminWatchState()
+                            let watchState = try await self.setupGarminWatchState(triggeredBy: "Glucose-Stale-Loop")
                             let watchStateData = try JSONEncoder().encode(watchState)
                             self.currentSendTrigger = "Glucose-Stale-Loop (\(loopAgeMinutes)m)"
                             self.sendWatchStateDataImmediately(watchStateData)
@@ -269,7 +274,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
                  Task {
                      do {
-                         let watchState = try await self.setupGarminWatchState()
+                         let watchState = try await self.setupGarminWatchState(triggeredBy: "IOB-Update")
                          let watchStateData = try JSONEncoder().encode(watchState)
                          self.currentSendTrigger = "IOB-Update"
                          // Use same throttled pipeline as determinations
@@ -349,7 +354,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
                 Task {
                     do {
-                        let watchState = try await self.setupGarminWatchState()
+                        let watchState = try await self.setupGarminWatchState(triggeredBy: "Determination")
                         let watchStateData = try JSONEncoder().encode(watchState)
                         self.currentSendTrigger = "Determination"
                         // Send to subject for additional 2s debouncing before Bluetooth transmission
@@ -491,10 +496,78 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
     // MARK: - Watch State Setup
 
+    /// Computes a hash of key data points to detect if watch state preparation would produce identical results.
+    /// This prevents expensive CoreData fetches and calculations when data hasn't actually changed.
+    /// - Returns: Hash value representing current state of glucose, IOB, COB, and basal data
+    private func computeDataHash() async -> Int {
+        var hasher = Hasher()
+
+        do {
+            // Hash latest glucose reading (most critical data point)
+            if let latestGlucose = try await glucoseStorage.fetchLatestGlucose() {
+                hasher.combine(latestGlucose.glucose)
+                hasher.combine(latestGlucose.date?.timeIntervalSince1970 ?? 0)
+                hasher.combine(latestGlucose.direction?.rawValue)
+            }
+
+            // Hash IOB (changes frequently with insulin activity)
+            if let iob = iobService.currentIOB {
+                let iobRounded = Double(iob).roundedDouble(toPlaces: 1)
+                hasher.combine(iobRounded)
+            }
+
+            // Hash latest determination data (includes COB, ISF, eventualBG, sensRatio)
+            let determinationIds = try await determinationStorage.fetchLastDeterminationObjectID(
+                predicate: NSPredicate.enactedDetermination
+            )
+            let determinationObjects: [OrefDetermination] = try await CoreDataStack.shared
+                .getNSManagedObject(with: determinationIds, context: backgroundContext)
+
+            if let determination = determinationObjects.first {
+                await backgroundContext.perform {
+                    if let cob = determination.cob, let cobInt = Int16(exactly: cob) {
+                        hasher.combine(cobInt)
+                    }
+                    if let sensRatio = determination.sensRatio {
+                        let sensRounded = Double(truncating: sensRatio).roundedDouble(toPlaces: 2)
+                        hasher.combine(sensRounded)
+                    }
+                    if let isf = determination.isf {
+                        hasher.combine(Int16(truncating: isf))
+                    }
+                    if let eventualBG = determination.eventualBG {
+                        hasher.combine(Int16(truncating: eventualBG))
+                    }
+                }
+            }
+
+            // Hash current basal rate (from temp basal or profile)
+            let tempBasalIds = try await fetchTempBasals()
+            let tempBasalObjects: [PumpEventStored] = try await CoreDataStack.shared
+                .getNSManagedObject(with: tempBasalIds, context: backgroundContext)
+
+            if let latestTempBasal = tempBasalObjects.first {
+                await backgroundContext.perform {
+                    if let rate = latestTempBasal.rate {
+                        let rateRounded = Double(truncating: rate).roundedDouble(toPlaces: 1)
+                        hasher.combine(rateRounded)
+                    }
+                }
+            }
+
+        } catch {
+            debugGarmin("[\(formatTimeForLog())] ⚠️ Error computing data hash: \(error)")
+        }
+
+        return hasher.finalize()
+    }
+
     /// Builds a GarminWatchState array for both Trio and SwissAlpine watchfaces.
     /// Uses the SwissAlpine numeric format for all data, sent as an array.
     /// Both watchfaces receive the same data structure with display configuration fields.
-    func setupGarminWatchState() async throws -> [GarminWatchState] {
+    /// - Parameter triggeredBy: Source of the trigger (for logging/debugging purposes)
+    /// - Returns: Array of GarminWatchState objects ready to be sent to watch
+    func setupGarminWatchState(triggeredBy: String = #function) async throws -> [GarminWatchState] {
         // Skip expensive calculations if no Garmin devices are connected (except in simulator)
         #if targetEnvironment(simulator)
             let skipDeviceCheck = true
@@ -505,6 +578,28 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         guard !devices.isEmpty || skipDeviceCheck else {
             debug(.watchManager, "⌚️⛔ Skipping setupGarminWatchState - No Garmin devices connected")
             return []
+        }
+
+        // Compute hash of current data to detect if preparation would produce identical results
+        let currentHash = await computeDataHash()
+
+        // Check if data is unchanged
+        hashLock.lock()
+        let hashMatches = (currentHash == lastPreparedDataHash)
+        let hasCachedState = (lastPreparedWatchState != nil)
+        hashLock.unlock()
+
+        if hashMatches, hasCachedState {
+            if debugWatchState {
+                debugGarmin(
+                    "[\(formatTimeForLog())] ⏭️ Skipping preparation - data unchanged (hash: \(currentHash)) [Triggered by: \(triggeredBy)]"
+                )
+            }
+            return lastPreparedWatchState!
+        }
+
+        if debugWatchState {
+            debugGarmin("[\(formatTimeForLog())] ⌚️ Preparing data (hash: \(currentHash)) [Triggered by: \(triggeredBy)]")
         }
 
         do {
@@ -758,6 +853,12 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     self.logWatchState(watchStates)
                 }
 
+                // Cache the hash and prepared state for deduplication
+                self.hashLock.lock()
+                self.lastPreparedDataHash = currentHash
+                self.lastPreparedWatchState = watchStates
+                self.hashLock.unlock()
+
                 return watchStates
             }
         } catch {
@@ -865,7 +966,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     private func registerDevices(_ devices: [IQDevice]) {
         // Clear out old references
         watchApps.removeAll()
-        
+
         // Clear app installation cache since we're re-registering
         appStatusCacheLock.lock()
         appInstallationCache.removeAll()
@@ -1033,12 +1134,12 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             connectIQ?.getAppStatus(app) { [weak self] status in
                 guard let self = self else { return }
                 let isInstalled = status?.isInstalled == true
-                
+
                 // Update cache with current status
                 if let uuid = app.uuid {
                     self.updateAppStatusCache(uuid: uuid, isInstalled: isInstalled)
                 }
-                
+
                 guard isInstalled else {
                     self.debugGarmin("[\(self.formatTimeForLog())] Garmin: App not installed on device: \(app.uuid!)")
                     return
@@ -1048,17 +1149,19 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             }
         }
     }
-    
+
     // MARK: - App Status Cache Management
-    
+
     /// Updates the installation status cache for a given app UUID
     private func updateAppStatusCache(uuid: UUID, isInstalled: Bool) {
         appStatusCacheLock.lock()
         defer { appStatusCacheLock.unlock() }
         appInstallationCache[uuid.uuidString] = (isInstalled, Date())
-        debugGarmin("[\(formatTimeForLog())] Garmin: Updated app cache - \(uuid) is \(isInstalled ? "installed" : "NOT installed")")
+        debugGarmin(
+            "[\(formatTimeForLog())] Garmin: Updated app cache - \(uuid) is \(isInstalled ? "installed" : "NOT installed")"
+        )
     }
-    
+
     /// Checks if any Garmin apps are likely to receive data based on cached status and settings
     /// Returns true if cache suggests apps will receive data, or if cache is empty (optimistic on first check)
     /// Considers both app installation status AND whether watchface data is disabled
@@ -1066,24 +1169,26 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     private func areAppsLikelyInstalled() -> Bool {
         appStatusCacheLock.lock()
         defer { appStatusCacheLock.unlock() }
-        
+
         // Get current watchface info for disabled check (always accurate, not cached)
         let watchface = currentWatchface
         let watchfaceUUIDString = watchface.watchfaceUUID?.uuidString
-        
+
         // If cache is empty, check if we should be optimistic
         guard !appInstallationCache.isEmpty else {
             // Even with empty cache, check if watchface data is disabled
             // If disabled and no datafield in cache, we know nothing will receive data
             if isWatchfaceDataDisabled {
                 // No cache entries and watchface disabled means likely no receivers
-                debugGarmin("[\(formatTimeForLog())] Garmin: ⏩ Skipping data preparation - watchface disabled, no cache for datafield")
+                debugGarmin(
+                    "[\(formatTimeForLog())] Garmin: ⏩ Skipping data preparation - watchface disabled, no cache for datafield"
+                )
                 return false
             }
             // Be optimistic on first check - assume datafield might be installed
             return true
         }
-        
+
         // Check each app in cache (trust cache indefinitely - no timeout)
         for (uuidString, status) in appInstallationCache {
             // If this is the watchface and data is disabled, skip it regardless of cache
@@ -1092,13 +1197,13 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                     continue // Watchface won't receive data (disabled) - check other apps
                 }
             }
-            
+
             // If app is installed (per cache), we have a receiver
             if status.isInstalled {
                 return true // Found a receiver
             }
         }
-        
+
         // No apps will receive data (either not installed or watchface is disabled)
         debugGarmin("[\(formatTimeForLog())] Garmin: ⏩ Skipping data preparation - no apps will receive data (cached)")
         return false
@@ -1334,9 +1439,9 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
                 debugGarmin("[\(self.formatTimeForLog())] ⏩ Skipping status request - no apps installed (cached)")
                 return
             }
-            
+
             do {
-                let watchState = try await self.setupGarminWatchState()
+                let watchState = try await self.setupGarminWatchState(triggeredBy: "Status-Request")
                 let watchStateData = try JSONEncoder().encode(watchState)
                 self.currentSendTrigger = "Status-Request"
                 // Use 30s throttle to prevent status request spam
@@ -1416,6 +1521,13 @@ extension BaseGarminManager: SettingsObserver {
             // Clear cached determination data after watchface change
             cachedDeterminationData = nil
             lastWatchfaceChangeTime = Date()
+
+            // Clear hash cache since data format differs between watchfaces
+            hashLock.lock()
+            lastPreparedDataHash = nil
+            lastPreparedWatchState = nil
+            hashLock.unlock()
+
             debugGarmin("Garmin: Cleared cached determination data due to watchface change")
 
             registerDevices(devices)
@@ -1441,7 +1553,7 @@ extension BaseGarminManager: SettingsObserver {
                     debugGarmin("⏩ Skipping immediate settings update - no apps installed (cached)")
                     return
                 }
-                
+
                 do {
                     // Try to use cached determination data first to avoid CoreData staleness
                     if let cachedData = self.cachedDeterminationData {
@@ -1452,7 +1564,7 @@ extension BaseGarminManager: SettingsObserver {
                         debugGarmin("Garmin: Immediate update sent for units/re-enable change (from cache)")
                     } else {
                         // Fallback to fresh query if no cache available
-                        let watchState = try await self.setupGarminWatchState()
+                        let watchState = try await self.setupGarminWatchState(triggeredBy: "Settings-Units/Re-enable")
                         let watchStateData = try JSONEncoder().encode(watchState)
                         self.currentSendTrigger = "Settings-Units/Re-enable"
                         self.sendWatchStateDataImmediately(watchStateData)
@@ -1475,9 +1587,9 @@ extension BaseGarminManager: SettingsObserver {
                     debugGarmin("⏩ Skipping throttled settings update - no apps installed (cached)")
                     return
                 }
-                
+
                 do {
-                    let watchState = try await self.setupGarminWatchState()
+                    let watchState = try await self.setupGarminWatchState(triggeredBy: "Settings-DataType")
                     let watchStateData = try JSONEncoder().encode(watchState)
                     self.currentSendTrigger = "Settings-DataType"
                     // DataType changes use 30s throttling

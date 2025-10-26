@@ -1059,8 +1059,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         debugGarmin("[\(formatTimeForLog())] Garmin: Updated app cache - \(uuid) is \(isInstalled ? "installed" : "NOT installed")")
     }
     
-    /// Checks if any Garmin apps are likely installed based on cached status
-    /// Returns true if cache suggests apps are installed, or if cache is empty/stale (optimistic)
+    /// Checks if any Garmin apps are likely to receive data based on cached status and settings
+    /// Returns true if cache suggests apps will receive data, or if cache is empty/stale (optimistic)
+    /// Considers both app installation status AND whether watchface data is disabled
     private func areAppsLikelyInstalled() -> Bool {
         appStatusCacheLock.lock()
         defer { appStatusCacheLock.unlock() }
@@ -1071,9 +1072,11 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         }
         
         let now = Date()
+        let watchface = currentWatchface
+        let watchfaceUUIDString = watchface.watchfaceUUID?.uuidString
         
-        // Check if ANY app is installed (and cache is fresh)
-        for (_, status) in appInstallationCache {
+        // Check if ANY app will actually receive data
+        for (uuidString, status) in appInstallationCache {
             let cacheAge = now.timeIntervalSince(status.lastChecked)
             
             // If cache is stale, be optimistic
@@ -1081,14 +1084,22 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 return true
             }
             
-            // If any app is installed, proceed
-            if status.isInstalled {
-                return true
+            // Skip if app is not installed
+            guard status.isInstalled else {
+                continue
             }
+            
+            // If this is the watchface UUID and watchface data is disabled, it won't receive data
+            if uuidString == watchfaceUUIDString, isWatchfaceDataDisabled {
+                continue // Watchface installed but disabled - skip it
+            }
+            
+            // Found an app that is installed and will receive data!
+            return true
         }
         
-        // All apps are confirmed not installed (with fresh cache)
-        debugGarmin("[\(formatTimeForLog())] Garmin: ⏩ Skipping data preparation - no apps installed (cached)")
+        // No apps will receive data (either not installed or watchface is disabled)
+        debugGarmin("[\(formatTimeForLog())] Garmin: ⏩ Skipping data preparation - no apps will receive data (cached)")
         return false
     }
 

@@ -504,10 +504,16 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
         do {
             // Hash latest glucose reading (most critical data point)
-            if let latestGlucose = try await glucoseStorage.fetchLatestGlucose() {
-                hasher.combine(latestGlucose.glucose)
-                hasher.combine(latestGlucose.date?.timeIntervalSince1970 ?? 0)
-                hasher.combine(latestGlucose.direction?.rawValue)
+            let glucoseIds = try await fetchGlucose(limit: 1)
+            let glucoseObjects: [GlucoseStored] = try await CoreDataStack.shared
+                .getNSManagedObject(with: glucoseIds, context: backgroundContext)
+
+            if let latestGlucose = glucoseObjects.first {
+                await backgroundContext.perform {
+                    hasher.combine(latestGlucose.glucose)
+                    hasher.combine(latestGlucose.date?.timeIntervalSince1970 ?? 0)
+                    hasher.combine(latestGlucose.direction ?? "")
+                }
             }
 
             // Hash IOB (changes frequently with insulin activity)
@@ -525,18 +531,34 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
             if let determination = determinationObjects.first {
                 await backgroundContext.perform {
-                    if let cob = determination.cob, let cobInt = Int16(exactly: cob) {
+                    // Hash COB (rounded to integer)
+                    let cobDouble = Double(determination.cob)
+                    if cobDouble.isFinite, !cobDouble.isNaN {
+                        let cobInt = Int16(cobDouble)
                         hasher.combine(cobInt)
                     }
-                    if let sensRatio = determination.sensRatio {
-                        let sensRounded = Double(truncating: sensRatio).roundedDouble(toPlaces: 2)
-                        hasher.combine(sensRounded)
+
+                    // Hash sensRatio (autoISFratio) with 2 decimal precision
+                    if let sensRatio = determination.autoISFratio {
+                        let sensRatioDouble = Double(truncating: sensRatio as NSNumber)
+                        if sensRatioDouble.isFinite, !sensRatioDouble.isNaN, sensRatioDouble > 0 {
+                            let sensRounded = sensRatioDouble.roundedDouble(toPlaces: 2)
+                            hasher.combine(sensRounded)
+                        }
                     }
-                    if let isf = determination.isf {
-                        hasher.combine(Int16(truncating: isf))
+
+                    // Hash ISF (insulinSensitivity)
+                    if let isf = determination.insulinSensitivity as? Int16 {
+                        if isf > 0, isf <= 300 {
+                            hasher.combine(isf)
+                        }
                     }
-                    if let eventualBG = determination.eventualBG {
-                        hasher.combine(Int16(truncating: eventualBG))
+
+                    // Hash eventualBG
+                    if let eventualBG = determination.eventualBG as? Int16 {
+                        if eventualBG >= 0, eventualBG <= 500 {
+                            hasher.combine(eventualBG)
+                        }
                     }
                 }
             }
@@ -548,7 +570,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
             if let latestTempBasal = tempBasalObjects.first {
                 await backgroundContext.perform {
-                    if let rate = latestTempBasal.rate {
+                    if let tempBasalData = latestTempBasal.tempBasal,
+                       let rate = tempBasalData.rate
+                    {
                         let rateRounded = Double(truncating: rate).roundedDouble(toPlaces: 1)
                         hasher.combine(rateRounded)
                     }

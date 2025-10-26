@@ -104,6 +104,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// Track when watchface was last changed to prevent caching stale format data
     private var lastWatchfaceChangeTime: Date?
 
+    /// Cache of app installation status to avoid expensive checks before data preparation
+    /// Key: app UUID string, Value: (isInstalled, lastChecked)
+    private var appInstallationCache: [String: (isInstalled: Bool, lastChecked: Date)] = [:]
+    private let appStatusCacheLock = NSLock()
+    
+    /// How long to trust cached app status (in seconds)
+    private let appStatusCacheTimeout: TimeInterval = 60 // 1 minute
+
     /// Array of Garmin `IQDevice` objects currently tracked.
     /// Changing this property triggers re-registration and updates persisted devices.
     private(set) var devices: [IQDevice] = [] {
@@ -207,6 +215,11 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         // Only send if loop is stale (> 8 minutes)
                         // Handle infinity case (no loop data available)
                         if loopAge.isFinite, loopAge > 480 { // 8 minutes in seconds
+                            // Skip expensive data preparation if no apps are installed (based on cache)
+                            guard self.areAppsLikelyInstalled() else {
+                                return
+                            }
+                            
                             let loopAgeMinutes = Int(loopAge / 60)
                             let watchState = try await self.setupGarminWatchState()
                             let watchStateData = try JSONEncoder().encode(watchState)
@@ -325,6 +338,11 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 #else
                     guard !self.devices.isEmpty else { return }
                 #endif
+
+                // Skip expensive data preparation if no apps are installed (based on cache)
+                guard self.areAppsLikelyInstalled() else {
+                    return
+                }
 
                 Task {
                     do {
@@ -844,6 +862,12 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     private func registerDevices(_ devices: [IQDevice]) {
         // Clear out old references
         watchApps.removeAll()
+        
+        // Clear app installation cache since we're re-registering
+        appStatusCacheLock.lock()
+        appInstallationCache.removeAll()
+        appStatusCacheLock.unlock()
+        debugGarmin("Garmin: Cleared app installation cache on device registration")
 
         for device in devices {
             // Listen for device-level status changes
@@ -1003,14 +1027,65 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             }
 
             connectIQ?.getAppStatus(app) { [weak self] status in
-                guard status?.isInstalled == true else {
-                    self?.debugGarmin("[\(self?.formatTimeForLog() ?? "")] Garmin: App not installed on device: \(app.uuid!)")
+                guard let self = self else { return }
+                let isInstalled = status?.isInstalled == true
+                
+                // Update cache with current status
+                if let uuid = app.uuid {
+                    self.updateAppStatusCache(uuid: uuid, isInstalled: isInstalled)
+                }
+                
+                guard isInstalled else {
+                    self.debugGarmin("[\(self.formatTimeForLog())] Garmin: App not installed on device: \(app.uuid!)")
                     return
                 }
-                debug(.watchManager, "[\(self?.formatTimeForLog() ?? "")] Garmin: Sending watch-state to app \(app.uuid!)")
-                self?.sendMessage(state, to: app)
+                debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Sending watch-state to app \(app.uuid!)")
+                self.sendMessage(state, to: app)
             }
         }
+    }
+    
+    // MARK: - App Status Cache Management
+    
+    /// Updates the installation status cache for a given app UUID
+    private func updateAppStatusCache(uuid: UUID, isInstalled: Bool) {
+        appStatusCacheLock.lock()
+        defer { appStatusCacheLock.unlock() }
+        appInstallationCache[uuid.uuidString] = (isInstalled, Date())
+        debugGarmin("[\(formatTimeForLog())] Garmin: Updated app cache - \(uuid) is \(isInstalled ? "installed" : "NOT installed")")
+    }
+    
+    /// Checks if any Garmin apps are likely installed based on cached status
+    /// Returns true if cache suggests apps are installed, or if cache is empty/stale (optimistic)
+    private func areAppsLikelyInstalled() -> Bool {
+        appStatusCacheLock.lock()
+        defer { appStatusCacheLock.unlock() }
+        
+        // If cache is empty, be optimistic and allow data preparation
+        guard !appInstallationCache.isEmpty else {
+            return true
+        }
+        
+        let now = Date()
+        
+        // Check if ANY app is installed (and cache is fresh)
+        for (_, status) in appInstallationCache {
+            let cacheAge = now.timeIntervalSince(status.lastChecked)
+            
+            // If cache is stale, be optimistic
+            if cacheAge > appStatusCacheTimeout {
+                return true
+            }
+            
+            // If any app is installed, proceed
+            if status.isInstalled {
+                return true
+            }
+        }
+        
+        // All apps are confirmed not installed (with fresh cache)
+        debugGarmin("[\(formatTimeForLog())] Garmin: ⏩ Skipping data preparation - no apps installed (cached)")
+        return false
     }
 
     // MARK: - GarminManager Conformance

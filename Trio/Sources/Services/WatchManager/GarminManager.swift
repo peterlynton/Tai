@@ -5,6 +5,14 @@ import Foundation
 import os // For thread-safe OSAllocatedUnfairLock
 import Swinject
 
+// SIMPLIFIED VERSION - Key Changes:
+// 1. If datafield UUID exists, ALWAYS send data (bypasses status checks)
+// 2. Only skip sending if:
+//    - No apps configured at all, OR
+//    - ONLY watchface configured AND data transmission is disabled
+// 3. Datafield messages are ALWAYS processed
+// 4. Datafield never requires ConnectIQ status check (unreliable)
+
 // MARK: - GarminManager Protocol
 
 /// Manages Garmin devices, allowing the app to select devices, update a known device list,
@@ -1146,8 +1154,8 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         deviceSelectionPromise = nil
     }
 
-    /// Sends the given state dictionary to all known watch apps (watchface & data field) by checking
-    /// if each app is installed and then sending messages asynchronously.
+    /// SIMPLIFIED: Broadcasts state to watch apps
+    /// Always sends to datafield (if exists), only checks status for watchface
     /// - Parameter state: The dictionary representing the watch state to be broadcast.
     private func broadcastStateToWatchApps(_ state: Any) {
         // Log connection health status if we have failures
@@ -1159,31 +1167,42 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             )
         }
 
-        watchApps.forEach { app in
-            // Check if this is the watchface app
-            let watchface = currentWatchface
-            let isWatchfaceApp = app.uuid == watchface.watchfaceUUID
+        let watchface = currentWatchface
 
-            // Skip broadcasting to watchface if data is disabled
-            if isWatchfaceDataDisabled, isWatchfaceApp {
-                debugGarmin("[\(formatTimeForLog())] Garmin: Watchface data disabled, skipping broadcast to watchface")
+        watchApps.forEach { app in
+            let isWatchfaceApp = app.uuid == watchface.watchfaceUUID
+            let isDatafieldApp = app.uuid == watchface.datafieldUUID
+
+            // SIMPLIFIED LOGIC:
+            // 1. If it's a datafield, ALWAYS send (no status check)
+            if isDatafieldApp {
+                debug(.watchManager, "[\(formatTimeForLog())] Garmin: Sending to datafield \(app.uuid!) (no status check)")
+                sendMessage(state, to: app)
                 return
             }
 
+            // 2. If it's a watchface and data is disabled, skip
+            if isWatchfaceApp, isWatchfaceDataDisabled {
+                debugGarmin("[\(formatTimeForLog())] Garmin: Watchface data disabled, skipping")
+                return
+            }
+
+            // 3. For watchface with data enabled, do normal status check
             connectIQ?.getAppStatus(app) { [weak self] status in
                 guard let self = self else { return }
                 let isInstalled = status?.isInstalled == true
 
-                // Update cache with current status
+                // Update cache
                 if let uuid = app.uuid {
                     self.updateAppStatusCache(uuid: uuid, isInstalled: isInstalled)
                 }
 
                 guard isInstalled else {
-                    self.debugGarmin("[\(self.formatTimeForLog())] Garmin: App not installed on device: \(app.uuid!)")
+                    self.debugGarmin("[\(self.formatTimeForLog())] Garmin: Watchface not installed: \(app.uuid!)")
                     return
                 }
-                debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Sending watch-state to app \(app.uuid!)")
+
+                debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Sending to watchface \(app.uuid!)")
                 self.sendMessage(state, to: app)
             }
         }
@@ -1201,50 +1220,29 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         )
     }
 
-    /// Checks if any Garmin apps are likely to receive data based on cached status and settings
-    /// Returns true if cache suggests apps will receive data, or if cache is empty (optimistic on first check)
-    /// Considers both app installation status AND whether watchface data is disabled
-    /// Cache is trusted indefinitely and only cleared on settings changes or device re-registration
+    /// SIMPLIFIED: Returns true if we should prepare and send data
+    /// True if: datafield exists OR (watchface exists AND data is enabled)
+    /// False only if: no apps at all OR (only watchface AND data disabled)
     private func areAppsLikelyInstalled() -> Bool {
-        appStatusCacheLock.lock()
-        defer { appStatusCacheLock.unlock() }
-
-        // Get current watchface info for disabled check (always accurate, not cached)
         let watchface = currentWatchface
-        let watchfaceUUIDString = watchface.watchfaceUUID?.uuidString
 
-        // If cache is empty, check if we should be optimistic
-        guard !appInstallationCache.isEmpty else {
-            // Even with empty cache, check if watchface data is disabled
-            // If disabled and no datafield in cache, we know nothing will receive data
+        // If datafield UUID exists, ALWAYS return true
+        if watchface.datafieldUUID != nil {
+            return true // Datafield exists, always send data
+        }
+
+        // No datafield, check watchface
+        if watchface.watchfaceUUID != nil {
+            // Watchface exists, check if data is enabled
             if isWatchfaceDataDisabled {
-                // No cache entries and watchface disabled means likely no receivers
-                debugGarmin(
-                    "[\(formatTimeForLog())] Garmin: ⏩ Skipping data preparation - watchface disabled, no cache for datafield"
-                )
+                debugGarmin("[\(formatTimeForLog())] Garmin: ⏩ Skipping - only watchface exists and data disabled")
                 return false
             }
-            // Be optimistic on first check - assume datafield might be installed
-            return true
+            return true // Watchface exists and data enabled
         }
 
-        // Check each app in cache (trust cache indefinitely - no timeout)
-        for (uuidString, status) in appInstallationCache {
-            // If this is the watchface and data is disabled, skip it regardless of cache
-            if uuidString == watchfaceUUIDString {
-                if isWatchfaceDataDisabled {
-                    continue // Watchface won't receive data (disabled) - check other apps
-                }
-            }
-
-            // If app is installed (per cache), we have a receiver
-            if status.isInstalled {
-                return true // Found a receiver
-            }
-        }
-
-        // No apps will receive data (either not installed or watchface is disabled)
-        debugGarmin("[\(formatTimeForLog())] Garmin: ⏩ Skipping data preparation - no apps will receive data (cached)")
+        // No apps configured at all
+        debugGarmin("[\(formatTimeForLog())] Garmin: ⏩ Skipping - no apps configured")
         return false
     }
 
@@ -1439,65 +1437,61 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     /// - Parameters:
     ///   - message: The message content from the watch app.
     ///   - app: The watch app sending the message.
+    /// SIMPLIFIED: Handle messages from watch apps
+    /// Always processes datafield messages, checks settings for watchface
     func receivedMessage(_ message: Any, from app: IQApp) {
         debugGarmin("[\(formatTimeForLog())] Garmin: Received message \(message) from app \(app.uuid!)")
 
-        // CRITICAL: Filter out messages from apps that aren't part of current watchface config
-        // This prevents processing status requests from datafields/watchfaces that aren't active
         let watchface = currentWatchface
         let validUUIDs = Set([watchface.watchfaceUUID, watchface.datafieldUUID].compactMap { $0 })
 
+        // Must be from a configured app
         guard validUUIDs.contains(app.uuid!) else {
             debugGarmin("[\(formatTimeForLog())] ⏭️ Ignoring message from unregistered app: \(app.uuid!)")
             return
         }
 
-        // Check if this message is from the watchface (not datafield)
         let isFromWatchface = app.uuid == watchface.watchfaceUUID
+        let isFromDatafield = app.uuid == watchface.datafieldUUID
 
-        // If data is disabled AND the message is from the watchface, ignore it
-        if isWatchfaceDataDisabled, isFromWatchface {
-            debugGarmin("[\(formatTimeForLog())] Garmin: Watchface data disabled, ignoring message from watchface")
+        // SIMPLIFIED LOGIC:
+        // Skip watchface messages only if data is disabled
+        if isFromWatchface, isWatchfaceDataDisabled {
+            debugGarmin("[\(formatTimeForLog())] Garmin: Watchface data disabled, ignoring watchface message")
             return
         }
 
+        // If from datafield, always mark it as installed in cache
+        if isFromDatafield {
+            updateAppStatusCache(uuid: app.uuid!, isInstalled: true)
+            debugGarmin("[\(formatTimeForLog())] Garmin: Datafield sent message - confirmed installed")
+        }
+
         Task {
-            // Check if the message is literally the string "status"
-            guard
-                let statusString = message as? String,
-                statusString == "status"
-            else {
+            // Check if requesting status
+            guard let statusString = message as? String, statusString == "status" else {
                 return
             }
 
-            // Check if we sent an update recently (as safety net)
-            // Primary filtering happens on watchface (320s timer reset)
-            // This is just additional protection against redundant requests
+            // Simple rate limiting: ignore if sent update recently
             if let lastImmediate = self.lastImmediateSendTime,
                Date().timeIntervalSince(lastImmediate) < self.statusRequestFilterDuration
             {
                 debugGarmin(
-                    "[\(self.formatTimeForLog())] Garmin: Status request ignored - sent update \(Int(Date().timeIntervalSince(lastImmediate)))s ago"
+                    "[\(self.formatTimeForLog())] Garmin: Status ignored - sent \(Int(Date().timeIntervalSince(lastImmediate)))s ago"
                 )
                 return
             }
 
-            // Use throttled send for status requests to avoid spam
-            // Skip if no apps are installed (based on cache)
-            guard self.areAppsLikelyInstalled() else {
-                debugGarmin("[\(self.formatTimeForLog())] ⏩ Skipping status request - no apps installed (cached)")
-                return
-            }
-
+            // Always prepare and send if we get here
             do {
                 let watchState = try await self.setupGarminWatchState(triggeredBy: "Status-Request")
                 let watchStateData = try JSONEncoder().encode(watchState)
                 self.currentSendTrigger = "Status-Request"
-                // Use 30s throttle to prevent status request spam
                 self.sendWatchStateDataWith30sThrottle(watchStateData)
-                debugGarmin("[\(self.formatTimeForLog())] Garmin: Status request queued for throttled send")
+                debugGarmin("[\(self.formatTimeForLog())] Garmin: Status request queued")
             } catch {
-                debugGarmin("[\(self.formatTimeForLog())] Garmin: Cannot encode watch state: \(error)")
+                debugGarmin("[\(self.formatTimeForLog())] Garmin: Error: \(error)")
             }
         }
     }

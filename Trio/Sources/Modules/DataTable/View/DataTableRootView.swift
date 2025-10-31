@@ -18,7 +18,9 @@ extension DataTable {
         @State private var showFutureEntries: Bool = false
         @State private var showManualGlucose: Bool = false
         @State private var isAmountUnconfirmed: Bool = true
-        @State private var selectedTreatmentTypes: Set<String> = []
+        @State private var showTreatmentTypeFilter = false
+        @State private var selectedTreatmentTypes: Set<TreatmentType> = Set(TreatmentType.allCases)
+        @State private var filterPopoverAnchor: CGRect = .zero
 
         @Environment(\.colorScheme) var colorScheme
         @Environment(\.managedObjectContext) var context

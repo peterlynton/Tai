@@ -13,6 +13,7 @@ enum DataTable {
         case tempBasal = "Temp Basal"
         case suspend = "Suspend"
         case other = "Other"
+        case carbs = "Meal"
 
         var displayName: String {
             switch self {
@@ -28,6 +29,8 @@ enum DataTable {
                 return String(localized: "Suspend")
             case .other:
                 return String(localized: "Other")
+            case .carbs:
+                return String(localized: "Meals")
             }
         }
     }

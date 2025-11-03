@@ -231,42 +231,39 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
                         let loopAge = await self.getLoopAge(determinationIds)
 
-                        // Only send if loop is stale (> 8 minutes)
-                        // Handle infinity case (no loop data available)
-                        if loopAge.isFinite, loopAge > 480 { // 8 minutes in seconds
+                        // Send if loop is stale (> 8 minutes) OR no recent loop data available (>30 min)
+                        if loopAge > 480 || loopAge.isInfinite {
                             // Skip expensive data preparation if no apps are installed (based on cache)
                             guard self.areAppsLikelyInstalled() else {
                                 return
                             }
 
-                            let loopAgeMinutes = Int(loopAge / 60)
                             let watchState = try await self.setupGarminWatchState(triggeredBy: "Glucose-Stale-Loop")
                             let watchStateData = try JSONEncoder().encode(watchState)
-                            self.currentSendTrigger = "Glucose-Stale-Loop (\(loopAgeMinutes)m)"
-                            self.sendWatchStateDataImmediately(watchStateData)
-                            self.lastImmediateSendTime = Date()
-                            debug(
-                                .watchManager,
-                                "[\(self.formatTimeForLog())] Garmin: Glucose sent immediately - loop age > 8 min (\(loopAgeMinutes)m)"
-                            )
-                        } else {
+
                             if loopAge.isInfinite {
+                                self.currentSendTrigger = "Glucose-Stale-Loop (no loop data)"
                                 debug(
                                     .watchManager,
-                                    "[\(self.formatTimeForLog())] Garmin: Glucose skipped - no loop data available (infinite loop age)"
+                                    "[\\(self.formatTimeForLog())] Garmin: Glucose sent immediately - no loop data available (>30m)"
                                 )
-                            } else if loopAge.isFinite {
+                            } else {
                                 let loopAgeMinutes = Int(loopAge / 60)
+                                self.currentSendTrigger = "Glucose-Stale-Loop (\\(loopAgeMinutes)m)"
                                 debug(
                                     .watchManager,
-                                    "[\(self.formatTimeForLog())] Garmin: Glucose skipped - loop age \(loopAgeMinutes)m < 8m"
+                                    "[\\(self.formatTimeForLog())] Garmin: Glucose sent immediately - loop age > 8 min (\\(loopAgeMinutes)m)"
                                 )
                             }
+
+                            self.sendWatchStateDataImmediately(watchStateData)
+                            self.lastImmediateSendTime = Date()
                         }
+                        // If loop age < 8 min, skip silently - determination trigger will handle it
                     } catch {
                         debug(
                             .watchManager,
-                            "\(DebuggingIdentifiers.failed) Error checking loop age: \(error)"
+                            "\\(DebuggingIdentifiers.failed) Error checking loop age: \\(error)"
                         )
                     }
                 }

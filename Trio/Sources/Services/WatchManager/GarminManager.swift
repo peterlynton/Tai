@@ -1177,24 +1177,53 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             }
 
             // 3. For watchface with data enabled, do normal status check
-            connectIQ?.getAppStatus(app) { [weak self] status in
-                guard let self = self else { return }
-                let isInstalled = status?.isInstalled == true
+            // OPTIMISTIC SEND FIX
+            // Replace lines 1179-1199 in your GarminManager.swift with this:
 
-                // Update cache
-                if let uuid = app.uuid {
-                    self.updateAppStatusCache(uuid: uuid, isInstalled: isInstalled)
+            // 3. For watchface with data enabled, check cache first then send
+            let appUUID = app.uuid!.uuidString
+
+            // Check cache first
+            appStatusCacheLock.lock()
+            let cachedStatus = appInstallationCache[appUUID]
+            appStatusCacheLock.unlock()
+
+            // If we have fresh cache data (< 60s old), use it
+            if let cached = cachedStatus, Date().timeIntervalSince(cached.lastChecked) < 60 {
+                if cached.isInstalled {
+                    debug(
+                        .watchManager,
+                        "[\(formatTimeForLog())] Garmin: Sending to watchface \(app.uuid!) (cached: installed)"
+                    )
+                    currentSendHash = hashToSend
+                    sendMessage(updatedState, to: app)
+                } else {
+                    debugGarmin(
+                        "[\(formatTimeForLog())] Garmin: Skipping watchface \(app.uuid!) (cached: not installed)"
+                    )
                 }
+            } else {
+                // Cache miss or stale - send optimistically and update cache in background
+                debug(
+                    .watchManager,
+                    "[\(formatTimeForLog())] Garmin: Sending to watchface \(app.uuid!) (optimistic - checking status async)"
+                )
+                currentSendHash = hashToSend
+                sendMessage(updatedState, to: app)
 
-                guard isInstalled else {
-                    self.debugGarmin("[\(self.formatTimeForLog())] Garmin: Watchface not installed: \(app.uuid!)")
-                    return
+                // Update cache in background (don't block on this!)
+                connectIQ?.getAppStatus(app) { [weak self] status in
+                    guard let self = self else { return }
+                    let isInstalled = status?.isInstalled == true
+                    self.appStatusCacheLock.lock()
+                    self.appInstallationCache[appUUID] = (isInstalled: isInstalled, lastChecked: Date())
+                    self.appStatusCacheLock.unlock()
+
+                    self
+                        .debugGarmin(
+                            "[\(self.formatTimeForLog())] Garmin: Updated app cache - \(app.uuid!) is \(isInstalled ? "installed" : "NOT installed")"
+                        )
                 }
-
-                debug(.watchManager, "[\(self.formatTimeForLog())] Garmin: Sending to watchface \(app.uuid!)")
-                // Store hash to mark as sent on successful send
-                self.currentSendHash = hashToSend
-                self.sendMessage(updatedState, to: app)
             }
         }
     }

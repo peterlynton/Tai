@@ -120,12 +120,31 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     private var lastWatchfaceChangeTime: Date?
 
     /// Cache of app installation status to avoid expensive checks before data preparation
-    /// Key: app UUID string, Value: (isInstalled, lastChecked)
-    private var appInstallationCache: [String: (isInstalled: Bool, lastChecked: Date)] = [:]
+    /// Key: app UUID string, Value: (status, lastChecked)
+    /// Using enum to distinguish between "not installed" vs "unknown due to connection issue"
+    private var appInstallationCache: [String: (status: AppCacheStatus, lastChecked: Date)] = [:]
     private let appStatusCacheLock = NSLock()
 
     /// How long to trust cached app status (in seconds)
     private let appStatusCacheTimeout: TimeInterval = 60 // 1 minute
+
+    /// Track device connection states to make intelligent caching decisions
+    private var deviceConnectionStates: [UUID: IQDeviceStatus] = [:]
+
+    /// App installation cache status enum
+    private enum AppCacheStatus {
+        case installed
+        case notInstalled
+        case unknown // Can't determine due to connection issues
+
+        var shouldSendData: Bool {
+            switch self {
+            case .installed: return true
+            case .notInstalled: return false
+            case .unknown: return true // Optimistic when uncertain
+            }
+        }
+    }
 
     /// Throttle duration for non-critical updates (settings changes, status requests)
     private let throttleDuration: TimeInterval = 10 // 10 seconds
@@ -1189,11 +1208,11 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             appStatusCacheLock.unlock()
 
             // If we have fresh cache data (< 60s old), use it
-            if let cached = cachedStatus, Date().timeIntervalSince(cached.lastChecked) < 60 {
-                if cached.isInstalled {
+            if let cached = cachedStatus, Date().timeIntervalSince(cached.lastChecked) < appStatusCacheTimeout {
+                if cached.status.shouldSendData {
                     debug(
                         .watchManager,
-                        "[\(formatTimeForLog())] Garmin: Sending to watchface \(app.uuid!) (cached: installed)"
+                        "[\(formatTimeForLog())] Garmin: Sending to watchface \(app.uuid!) (cached: \(cached.status))"
                     )
                     currentSendHash = hashToSend
                     sendMessage(updatedState, to: app)
@@ -1211,18 +1230,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                 currentSendHash = hashToSend
                 sendMessage(updatedState, to: app)
 
-                // Update cache in background (don't block on this!)
+                // Update cache in background with connection awareness
                 connectIQ?.getAppStatus(app) { [weak self] status in
                     guard let self = self else { return }
-                    let isInstalled = status?.isInstalled == true
-                    self.appStatusCacheLock.lock()
-                    self.appInstallationCache[appUUID] = (isInstalled: isInstalled, lastChecked: Date())
-                    self.appStatusCacheLock.unlock()
-
-                    self
-                        .debugGarmin(
-                            "[\(self.formatTimeForLog())] Garmin: Updated app cache - \(app.uuid!) is \(isInstalled ? "installed" : "NOT installed")"
-                        )
+                    self.updateAppStatusCache(app: app, isInstalled: status?.isInstalled == true)
                 }
             }
         }
@@ -1259,13 +1270,44 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     // MARK: - App Status Cache Management
 
     /// Updates the installation status cache for a given app UUID
-    private func updateAppStatusCache(uuid: UUID, isInstalled: Bool) {
+    /// Updates the installation status cache for a given app with connection awareness
+    private func updateAppStatusCache(app: IQApp, isInstalled: Bool) {
+        guard let appUUID = app.uuid else { return }
+
+        // Check if any device is actually connected using our tracked states
+        let deviceConnected = devices.contains { (device: IQDevice) in
+            if let deviceUUID = device.uuid {
+                let trackedStatus = deviceConnectionStates[deviceUUID]
+                return trackedStatus == .connected
+            }
+            return false
+        }
+
         appStatusCacheLock.lock()
         defer { appStatusCacheLock.unlock() }
-        appInstallationCache[uuid.uuidString] = (isInstalled, Date())
-        debugGarmin(
-            "[\(formatTimeForLog())] Garmin: Updated app cache - \(uuid) is \(isInstalled ? "installed" : "NOT installed")"
-        )
+
+        let newStatus: AppCacheStatus = {
+            if isInstalled {
+                return .installed
+            } else if deviceConnected {
+                // Device is connected, so "not installed" is likely accurate
+                return .notInstalled
+            } else {
+                // Device not connected - don't trust "not installed" result
+                debugGarmin(
+                    "[\(formatTimeForLog())] Garmin: Skipping cache update for \(appUUID) - device not connected"
+                )
+                return .unknown
+            }
+        }()
+
+        // Only update cache if we have meaningful information
+        if newStatus != .unknown || appInstallationCache[appUUID.uuidString] == nil {
+            appInstallationCache[appUUID.uuidString] = (status: newStatus, lastChecked: Date())
+            debugGarmin(
+                "[\(formatTimeForLog())] Garmin: Updated app cache - \(appUUID) is \(newStatus)"
+            )
+        }
     }
 
     /// SIMPLIFIED: Returns true if we should prepare and send data
@@ -1479,6 +1521,11 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     ///   - device: The device whose status has changed.
     ///   - status: The new status for the device.
     func deviceStatusChanged(_ device: IQDevice, status: IQDeviceStatus) {
+        // Track the current status for connection-aware caching
+        if let deviceUUID = device.uuid {
+            deviceConnectionStates[deviceUUID] = status
+        }
+
         switch status {
         case .invalidDevice:
             debugGarmin("[\(formatTimeForLog())] Garmin: invalidDevice (\(device.uuid!))")
@@ -1488,8 +1535,10 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
             debugGarmin("[\(formatTimeForLog())] Garmin: notFound (\(device.uuid!))")
         case .notConnected:
             debugGarmin("[\(formatTimeForLog())] Garmin: notConnected (\(device.uuid!))")
+        // Consider clearing app cache for this device when disconnected
         case .connected:
             debugGarmin("[\(formatTimeForLog())] Garmin: connected (\(device.uuid!))")
+        // Could trigger cache refresh here if needed
         @unknown default:
             debugGarmin("[\(formatTimeForLog())] Garmin: unknown state (\(device.uuid!))")
         }
@@ -1508,9 +1557,7 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     func receivedMessage(_ message: Any, from app: IQApp) {
         debugGarmin("[\(formatTimeForLog())] Garmin: Received message \(message) from app \(app.uuid!)")
 
-        let watchface = currentWatchface
-        let datafield = currentGarminSettings.datafield
-        let validUUIDs = Set([watchface.watchfaceUUID, datafield.datafieldUUID].compactMap { $0 })
+        let validUUIDs = Set([currentWatchface.watchfaceUUID, currentGarminSettings.datafield.datafieldUUID].compactMap { $0 })
 
         // Must be from a configured app
         guard validUUIDs.contains(app.uuid!) else {
@@ -1518,44 +1565,14 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
             return
         }
 
-        let isFromWatchface = app.uuid == watchface.watchfaceUUID
-        let isFromDatafield = app.uuid == datafield.datafieldUUID
-
-        // SIMPLIFIED LOGIC:
-        // Skip watchface messages only if data is disabled
-        if isFromWatchface, !isWatchfaceDataEnabled {
-            debugGarmin("[\(formatTimeForLog())] Garmin: Watchface data disabled, ignoring watchface message")
-            return
+        // If from datafield, mark as installed in cache (confirms installation)
+        if app.uuid == currentGarminSettings.datafield.datafieldUUID {
+            updateAppStatusCache(app: app, isInstalled: true)
+            debugGarmin("[\(formatTimeForLog())] Garmin: Datafield confirmed installed via status message")
         }
 
-        // If from datafield, always mark it as installed in cache
-        if isFromDatafield {
-            updateAppStatusCache(uuid: app.uuid!, isInstalled: true)
-            debugGarmin("[\(formatTimeForLog())] Garmin: Datafield sent message - confirmed installed")
-        }
-
-        Task {
-            // Check if requesting status
-            guard let statusString = message as? String, statusString == "status" else {
-                return
-            }
-
-            // Use helper to check if we should process this status request
-            guard self.shouldProcessStatusRequest() else {
-                return
-            }
-
-            // Always prepare and send if we get here
-            do {
-                let watchState = try await self.setupGarminWatchState(triggeredBy: "Status-Request")
-                let watchStateData = try JSONEncoder().encode(watchState)
-                self.currentSendTrigger = "Status-Request"
-                self.sendWatchStateDataWithThrottle(watchStateData)
-                debugGarmin("[\(self.formatTimeForLog())] Garmin: Status request queued")
-            } catch {
-                debugGarmin("[\(self.formatTimeForLog())] Garmin: Error: \(error)")
-            }
-        }
+        // All messages are "status" requests - ignore them (timer keeps watchface/datafield alive, no response needed)
+        debugGarmin("[\(formatTimeForLog())] ⏭️ Ignoring status request - apps receive proactive updates")
     }
 }
 
@@ -2036,7 +2053,7 @@ extension BaseGarminManager {
             return nil
         }
 
-        return cached.isInstalled
+        return cached.status.shouldSendData
     }
 
     /// Updates app installation cache
@@ -2047,6 +2064,5 @@ extension BaseGarminManager {
         appStatusCacheLock.lock()
         defer { appStatusCacheLock.unlock() }
 
-        appInstallationCache[appUUID] = (isInstalled: isInstalled, lastChecked: Date())
-    }
+        appInstallationCache[appUUID] = (status: isInstalled ? .installed : .notInstalled, lastChecked: Date()) }
 }

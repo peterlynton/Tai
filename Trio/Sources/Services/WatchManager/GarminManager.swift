@@ -2,16 +2,13 @@ import Combine
 import ConnectIQ
 import CoreData
 import Foundation
-import os // For thread-safe OSAllocatedUnfairLock
+import os
 import Swinject
 
-// SIMPLIFIED VERSION - Key Changes:
-// 1. If datafield UUID exists, ALWAYS send data (bypasses status checks)
-// 2. Only skip sending if:
-//    - No apps configured at all, OR
-//    - ONLY watchface configured AND data transmission is disabled
-// 3. Datafield messages are ALWAYS processed
-// 4. Datafield never requires ConnectIQ status check (unreliable)
+// Data transmission logic:
+// - Datafield apps always receive data (bypass status checks as ConnectIQ status can be unreliable)
+// - Watchface apps only receive data when watchface data transmission is enabled
+// - Skip sending only if no apps are configured at all, or only watchface is configured with data disabled
 
 // MARK: - GarminManager Protocol
 
@@ -146,8 +143,8 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         }
     }
 
-    /// Throttle duration for non-critical updates (settings changes, status requests)
-    private let throttleDuration: TimeInterval = 10 // 10 seconds
+    /// Throttle duration for non-critical updates (settings changes)
+    private let throttleDuration: TimeInterval = 10
 
     /// Deduplication: Track last prepared data hash to prevent duplicate expensive work
     private var lastPreparedDataHash: Int?
@@ -285,7 +282,8 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             }
             .store(in: &subscriptions)
 
-        // ⚠️ IOB TRIGGER TEMPORARILY COMMENTED OUT FOR TESTING
+        // IOB trigger - can be reactivated if needed
+        // Commented out to prevent duplicate updates since IOB changes are captured by determinations
         /*
          iobService.iobPublisher
              .receive(on: DispatchQueue.global(qos: .background))
@@ -341,7 +339,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         settingsManager.settings.garminSettings
     }
 
-    /// Check if watchface data is enabled (note: reversed logic from previous)
+    /// Check if watchface data transmission is enabled
     private var isWatchfaceDataEnabled: Bool {
         settingsManager.settings.garminSettings.isWatchfaceDataEnabled
     }
@@ -1111,7 +1109,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             .store(in: &cancellables)
     }
 
-    // Note: Old subscribeToWatchState() removed - using manual timer management instead
 
     // MARK: - Parsing & Broadcasting
 
@@ -1126,7 +1123,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         deviceSelectionPromise = nil
     }
 
-    /// SIMPLIFIED: Broadcasts state to watch apps
+    /// Broadcasts state to watch apps
     /// Always sends to datafield (if exists), only checks status for watchface
     /// - Parameter state: The dictionary representing the watch state to be broadcast.
     private func broadcastStateToWatchApps(_ state: Any) {
@@ -1175,7 +1172,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             let isWatchfaceApp = app.uuid == watchface.watchfaceUUID
             let isDatafieldApp = app.uuid == datafield.datafieldUUID
 
-            // SIMPLIFIED LOGIC:
             // 1. If it's a datafield, ALWAYS send (no status check)
             if isDatafieldApp {
                 debug(.watchManager, "[\(formatTimeForLog())] Garmin: Sending to datafield \(app.uuid!) (no status check)")
@@ -1192,7 +1188,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             }
 
             // 3. For watchface with data enabled, do normal status check
-            // OPTIMISTIC SEND FIX
             // Replace lines 1179-1199 in your GarminManager.swift with this:
 
             // 3. For watchface with data enabled, check cache first then send
@@ -1306,7 +1301,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         }
     }
 
-    /// SIMPLIFIED: Returns true if we should prepare and send data
+    /// Returns true if we should prepare and send data
     /// True if: datafield exists OR (watchface exists AND data is enabled)
     /// False only if: no apps at all OR (only watchface AND data disabled)
     private func areAppsLikelyInstalled() -> Bool {
@@ -1531,10 +1526,8 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
             debugGarmin("[\(formatTimeForLog())] Garmin: notFound (\(device.uuid!))")
         case .notConnected:
             debugGarmin("[\(formatTimeForLog())] Garmin: notConnected (\(device.uuid!))")
-        // Consider clearing app cache for this device when disconnected
         case .connected:
             debugGarmin("[\(formatTimeForLog())] Garmin: connected (\(device.uuid!))")
-        // Could trigger cache refresh here if needed
         @unknown default:
             debugGarmin("[\(formatTimeForLog())] Garmin: unknown state (\(device.uuid!))")
         }
@@ -1548,7 +1541,7 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     /// - Parameters:
     ///   - message: The message content from the watch app.
     ///   - app: The watch app sending the message.
-    /// SIMPLIFIED: Handle messages from watch apps
+    /// Handle messages from watch apps
     /// Always processes datafield messages, checks settings for watchface
     func receivedMessage(_ message: Any, from app: IQApp) {
         debugGarmin("[\(formatTimeForLog())] Garmin: Received message \(message) from app \(app.uuid!)")
@@ -1900,7 +1893,6 @@ extension BaseGarminManager {
         // Case 2: Only watchface - check if enabled
         return garminSettings.isWatchfaceDataEnabled
     }
-
 
     // MARK: - Numeric Value Validation
 

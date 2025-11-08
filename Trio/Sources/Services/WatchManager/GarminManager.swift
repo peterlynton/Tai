@@ -149,10 +149,6 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// Throttle duration for non-critical updates (settings changes, status requests)
     private let throttleDuration: TimeInterval = 10 // 10 seconds
 
-    /// Status request filter duration - ignore requests if we sent data this recently
-    /// Safety net since watchface handles this with 320s timer reset (agreed Oct 15)
-    private let statusRequestFilterDuration: TimeInterval = 120 // 2 minutes
-
     /// Deduplication: Track last prepared data hash to prevent duplicate expensive work
     private var lastPreparedDataHash: Int?
     private var lastPreparedWatchState: [GarminWatchState]?
@@ -1905,25 +1901,6 @@ extension BaseGarminManager {
         return garminSettings.isWatchfaceDataEnabled
     }
 
-    // MARK: - Status Request Validation
-
-    /// Validates if status request should be processed
-    /// - Returns: True if request should be processed, false if filtered
-    private func shouldProcessStatusRequest() -> Bool {
-        guard let lastSend = lastImmediateSendTime else {
-            return true
-        }
-
-        let timeSinceLastSend = Date().timeIntervalSince(lastSend)
-        if timeSinceLastSend < statusRequestFilterDuration {
-            debugGarmin(
-                "Garmin: Ignoring status request - sent data \(Int(timeSinceLastSend))s ago (< \(Int(statusRequestFilterDuration))s filter)"
-            )
-            return false
-        }
-
-        return true
-    }
 
     // MARK: - Numeric Value Validation
 

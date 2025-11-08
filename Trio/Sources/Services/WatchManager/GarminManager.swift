@@ -1557,9 +1557,7 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     func receivedMessage(_ message: Any, from app: IQApp) {
         debugGarmin("[\(formatTimeForLog())] Garmin: Received message \(message) from app \(app.uuid!)")
 
-        let watchface = currentWatchface
-        let datafield = currentGarminSettings.datafield
-        let validUUIDs = Set([watchface.watchfaceUUID, datafield.datafieldUUID].compactMap { $0 })
+        let validUUIDs = Set([currentWatchface.watchfaceUUID, currentGarminSettings.datafield.datafieldUUID].compactMap { $0 })
 
         // Must be from a configured app
         guard validUUIDs.contains(app.uuid!) else {
@@ -1567,44 +1565,14 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
             return
         }
 
-        let isFromWatchface = app.uuid == watchface.watchfaceUUID
-        let isFromDatafield = app.uuid == datafield.datafieldUUID
-
-        // SIMPLIFIED LOGIC:
-        // Skip watchface messages only if data is disabled
-        if isFromWatchface, !isWatchfaceDataEnabled {
-            debugGarmin("[\(formatTimeForLog())] Garmin: Watchface data disabled, ignoring watchface message")
-            return
-        }
-
-        // If from datafield, always mark it as installed in cache
-        if isFromDatafield {
+        // If from datafield, mark as installed in cache (confirms installation)
+        if app.uuid == currentGarminSettings.datafield.datafieldUUID {
             updateAppStatusCache(app: app, isInstalled: true)
-            debugGarmin("[\(formatTimeForLog())] Garmin: Datafield sent message - confirmed installed")
+            debugGarmin("[\(formatTimeForLog())] Garmin: Datafield confirmed installed via status message")
         }
 
-        Task {
-            // Check if requesting status
-            guard let statusString = message as? String, statusString == "status" else {
-                return
-            }
-
-            // Use helper to check if we should process this status request
-            guard self.shouldProcessStatusRequest() else {
-                return
-            }
-
-            // Always prepare and send if we get here
-            do {
-                let watchState = try await self.setupGarminWatchState(triggeredBy: "Status-Request")
-                let watchStateData = try JSONEncoder().encode(watchState)
-                self.currentSendTrigger = "Status-Request"
-                self.sendWatchStateDataWithThrottle(watchStateData)
-                debugGarmin("[\(self.formatTimeForLog())] Garmin: Status request queued")
-            } catch {
-                debugGarmin("[\(self.formatTimeForLog())] Garmin: Error: \(error)")
-            }
-        }
+        // All messages are "status" requests - ignore them (timer keeps watchface/datafield alive, no response needed)
+        debugGarmin("[\(formatTimeForLog())] ⏭️ Ignoring status request - apps receive proactive updates")
     }
 }
 
@@ -2085,7 +2053,7 @@ extension BaseGarminManager {
             return nil
         }
 
-        cached.status.shouldSendData
+        return cached.status.shouldSendData
     }
 
     /// Updates app installation cache

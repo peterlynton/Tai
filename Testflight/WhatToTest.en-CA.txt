@@ -1,4 +1,2 @@
-Trio dev 0.6.0.7
-+ Therapy Editor fixes
-+ hash dedup fixed + Glucose send immidiate
-optimistic send
+Trio dev 0.6.0.8
+caching connectedStatus

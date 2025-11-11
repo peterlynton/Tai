@@ -65,7 +65,8 @@ enum GarminWatchface: String, JSON, CaseIterable, Identifiable, Codable, Hashabl
         switch self {
         case .trio:
             // return UUID(uuidString: "EC3420F6-027D-49B3-B45F-D81D6D3ED90A")  // local build
-            return UUID(uuidString: "81204522-B1BE-4E19-8E6E-C4032AAF8C6D") // ConnectIQ build
+            // return UUID(uuidString: "81204522-B1BE-4E19-8E6E-C4032AAF8C6D") // ConnectIQ test build
+            return UUID(uuidString: "7a121867-140e-41ba-9982-2e82e2aa6579") // ConnectIQ live build
         case .swissalpine:
             return UUID(uuidString: "5A643C13-D5A7-40D4-B809-84789FDF4A1F")
         }

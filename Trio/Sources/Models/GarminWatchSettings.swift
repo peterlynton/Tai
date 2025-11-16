@@ -65,9 +65,11 @@ enum GarminWatchface: String, JSON, CaseIterable, Identifiable, Codable, Hashabl
         switch self {
         case .trio:
             // return UUID(uuidString: "EC3420F6-027D-49B3-B45F-D81D6D3ED90A")  // local build
-            return UUID(uuidString: "81204522-B1BE-4E19-8E6E-C4032AAF8C6D") // ConnectIQ build
+            // return UUID(uuidString: "81204522-B1BE-4E19-8E6E-C4032AAF8C6D") // ConnectIQ test build
+            return UUID(uuidString: "7a121867-140e-41ba-9982-2e82e2aa6579") // ConnectIQ live build
         case .swissalpine:
-            return UUID(uuidString: "5A643C13-D5A7-40D4-B809-84789FDF4A1F")
+            // return UUID(uuidString: "5A643C13-D5A7-40D4-B809-84789FDF4A1F") // ConnectIQ test build
+            return UUID(uuidString: "4cea4efd-4aaf-4db4-8891-ef36dde14303") // ConnectIQ live build
         }
     }
 }
@@ -97,9 +99,12 @@ enum GarminDatafield: String, JSON, CaseIterable, Identifiable, Codable, Hashabl
     var datafieldUUID: UUID? {
         switch self {
         case .trio:
-            return UUID(uuidString: "71cf0982-ca41-42a5-8441-ea81d36056c3")
+            //return UUID(uuidString: "71cf0982-ca41-42a5-8441-ea81d36056c3")  // local build
+            //return UUID(uuidString: "f07f4ef9-108b-4397-95c9-217b5173412e")  // ConnectIQ test build
+            return UUID(uuidString: "3d9b6528-8c84-459a-bbab-989b5f001ebd")  // ConnectIQ live build
         case .swissalpine:
-            return UUID(uuidString: "7A2268F6-3381-4474-81BD-0A3E7F458CB7")
+            // return UUID(uuidString: "7A2268F6-3381-4474-81BD-0A3E7F458CB7") // ConnectIQ test build
+            return UUID(uuidString: "dec5292a-74b0-41bc-8e45-cd93f1d5e137") // ConnectIQ live build
         case .none:
             return nil
         }

@@ -324,6 +324,8 @@ extension BasalProfileEditor {
                                         unit: .unitPerHour,
                                         timeOptions: state.timeValues,
                                         valueOptions: state.rateValues,
+                                        roundedIndices: state.roundedRateIndices,
+                                        originalRates: state.originalRates,
                                         validateOnDelete: state.validate,
                                         onItemAdded: {
                                             withAnimation {

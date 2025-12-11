@@ -499,7 +499,7 @@ final class BaseNightscoutManager: NightscoutManager, Injectable {
         var recommendedBolus: Decimal = 0
 
         if let latest = fetchedSuggestedDetermination ?? fetchedEnactedDetermination {
-            let minPredBG = latest.minPredBG ?? 0
+            let minPredBG = latest.minPredBGFromReason ?? 0
             let simulatedCOB: Int16? = latest.cob.map { Int16(truncating: NSDecimalNumber(decimal: $0)) }
 
             let result = await bolusCalculationManager.handleBolusCalculation(

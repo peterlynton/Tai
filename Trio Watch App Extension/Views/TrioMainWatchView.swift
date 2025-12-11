@@ -111,23 +111,20 @@ struct TrioMainWatchView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    HStack(alignment: .center, spacing: 4) {
+                    VStack {
                         Image(systemName: "drop.circle")
                             .foregroundStyle(Color.insulin)
                             .font(.caption2)
 
                         Text(isWatchStateDated || isSessionUnreachable ? "--" : state.iob ?? "--")
                             .foregroundStyle(isWatchStateDated ? Color.secondary : Color.white)
-                            .font(.caption2)
-                    }
+                            .frame(alignment: .leading)
+                            .minimumScaleFactor(0.5)
+                    }.font(.caption2)
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    HStack(alignment: .center, spacing: 4) {
-                        Text(isWatchStateDated || isSessionUnreachable ? "--" : state.cob ?? "--")
-                            .foregroundStyle(isWatchStateDated || isSessionUnreachable ? Color.secondary : Color.white)
-                            .font(.caption2)
-
+                    VStack {
                         Image("premeal")
                             .renderingMode(.template)
                             .resizable()
@@ -135,7 +132,12 @@ struct TrioMainWatchView: View {
                             .frame(width: 14, height: 14)
                             .offset(x: 1, y: -1)
                             .foregroundStyle(Color.orange)
-                    }
+
+                        Text(isWatchStateDated || isSessionUnreachable ? "--" : state.cob ?? "--")
+                            .foregroundStyle(isWatchStateDated || isSessionUnreachable ? Color.secondary : Color.white)
+                            .frame(alignment: .trailing)
+                            .minimumScaleFactor(0.5)
+                    }.font(.caption2)
                 }
 
                 ToolbarItemGroup(placement: .bottomBar) {

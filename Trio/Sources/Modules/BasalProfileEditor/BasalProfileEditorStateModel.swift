@@ -30,20 +30,6 @@ extension BasalProfileEditor {
             initialItems != items
         }
 
-        var settings: TrioSettings {
-            get { settingsManager.settings }
-            set { settingsManager.settings = newValue }
-        }
-
-        var preferences: Preferences {
-            get { settingsManager.preferences }
-            set { settingsManager.preferences = newValue }
-        }
-
-        var roundingHint: Bool = false
-        var roundedRateIndices: Set<Int> = []
-        var originalRates: [Int: Decimal] = [:]
-
         // Convert items to TherapySettingItem format
         func getTherapyItems() -> [TherapySettingItem] {
             items.map { item in
@@ -204,16 +190,6 @@ extension BasalProfileEditor {
                         self.roundedRateIndices.removeAll()
                         self.roundingHint = false
                         self.originalRates.removeAll()
-
-                        // Update initial items to current items
-                        self.initialItems = self.items.map {
-                            Item(rateIndex: $0.rateIndex, timeIndex: $0.timeIndex)
-                        }
-
-                        // Recalculate chart data to reset overwritten status
-                        Task { @MainActor in
-                            self.calculateChartData()
-                        }
 
                         DispatchQueue.main.async {
                             self.broadcaster.notify(BasalProfileObserver.self, on: .main) {

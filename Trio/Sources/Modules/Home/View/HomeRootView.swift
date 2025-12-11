@@ -256,6 +256,22 @@ extension Home {
             return nil
         }
 
+        // Returns the scheduled basal rate for the current time based on the saved basal scheduled.
+        // Would be better if in the future BasalDeliveryStatus could be updated to include this info.
+        func scheduledBasalDeliveryRate(at when: Date) -> NSNumber? {
+            let calendar = Calendar(identifier: .gregorian)
+            // calendar.timeZone = timeZone /// should come from pumpManager in case it's different!
+
+            let hours = calendar.component(.hour, from: when)
+            let minutes = calendar.component(.minute, from: when)
+            let totalMinutes = hours * 60 + minutes
+
+            if let rate = findBasalRateForOffset(for: totalMinutes, in: state.basalProfile) {
+                return NSDecimalNumber(decimal: rate)
+            }
+            return nil
+        }
+
         var overrideString: String? {
             guard let latestOverride = latestOverride.first else {
                 return nil

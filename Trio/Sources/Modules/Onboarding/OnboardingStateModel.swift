@@ -782,7 +782,7 @@ extension Onboarding {
                                 .bolusIncrement
                         )
                 )
-                preferences.bolusIncrement = bolusIncrement != 0.025 ? bolusIncrement : 0.1
+                preferences.bolusIncrement = bolusIncrement > 0 ? bolusIncrement : 0.1
             }
 
             settingsManager.preferences = preferences

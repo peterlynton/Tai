@@ -103,8 +103,8 @@ final class BaseDeviceDataManager: DeviceDataManager, Injectable {
                 let filteredSupportedIncrement = supportedPumpIncrement != 0.025 ? supportedPumpIncrement : 0.1
 
                 if concentration != 1 { bolusIncrement = filteredSupportedIncrement * concentration }
-                modifiedPreferences.bolusIncrement = bolusIncrement
-
+                modifiedPreferences
+                    .bolusIncrement = bolusIncrement > 0 ? bolusIncrement : 0.1
                 storage.save(modifiedPreferences, as: OpenAPS.Settings.preferences)
                 settingsManager.preferences = modifiedPreferences
                 debug(

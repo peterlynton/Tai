@@ -875,7 +875,7 @@ extension DataTable {
                             alertTitle = String(localized: "Delete Insulin?", comment: "Alert title for deleting insulin")
                             alertMessage = Formatter.dateFormatter
                                 .string(from: item.timestamp ?? Date()) + ", " +
-                                (Formatter.decimalFormatterWithTwoFractionDigits.string(from: item.bolus?.amount ?? 0) ?? "0") +
+                                (Formatter.decimalFormatterWithThreeFractionDigits.string(from: item.bolus?.amount ?? 0) ?? "0") +
                                 String(localized: " U", comment: "Insulin unit")
                             if let bolus = item.bolus {
                                 alertMessage += bolus.isSMB ? String(

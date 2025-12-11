@@ -61,6 +61,12 @@ extension Home {
         )) var latestTempTarget: FetchedResults<TempTargetStored>
 
         var bolusProgressFormatter: NumberFormatter {
+            let fractionDigits: Int = switch state.settingsManager.preferences.bolusIncrement {
+            case 0.1: 1
+            case 0.025: 3
+            default: 2
+            }
+
             let formatter = NumberFormatter()
             let bolusIncrement = state.bolusIncrement
             formatter.numberStyle = .decimal

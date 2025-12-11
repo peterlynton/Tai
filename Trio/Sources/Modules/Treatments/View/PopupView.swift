@@ -944,7 +944,7 @@ struct PopupView: View {
     private func insulinFormatter(
         _ value: Decimal,
         _ roundingMode: NSDecimalNumber.RoundingMode = .down,
-        _ roundedForPump: Bool = false
+        _: Bool = false
     ) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

@@ -30,6 +30,20 @@ extension BasalProfileEditor {
             initialItems != items
         }
 
+        var settings: TrioSettings {
+            get { settingsManager.settings }
+            set { settingsManager.settings = newValue }
+        }
+
+        var preferences: Preferences {
+            get { settingsManager.preferences }
+            set { settingsManager.preferences = newValue }
+        }
+
+        var roundingHint: Bool = false
+        var roundedRateIndices: Set<Int> = []
+        var originalRates: [Int: Decimal] = [:]
+
         // Convert items to TherapySettingItem format
         func getTherapyItems() -> [TherapySettingItem] {
             items.map { item in

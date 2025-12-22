@@ -41,7 +41,11 @@ struct EditTempTargetForm: View {
 
         let H = tempTargetHalfBasal
         let T = tempTargetToEdit.target?.decimalValue ?? 100
-        let calcPercentage = state.computeAdjustedPercentage(usingHBT: H, usingTarget: T)
+        let calcPercentage = TempTargetCalculations.computeAdjustedPercentage(
+            halfBasalTarget: H,
+            target: T,
+            autosensMax: state.autosensMax
+        )
         _percentage = State(initialValue: calcPercentage)
     }
 
@@ -86,39 +90,21 @@ struct EditTempTargetForm: View {
             }
             .onAppear {
                 // Determine if this is a custom slider adjustment or a standard with auto-adjustment
-                debug(
-                    .default,
-                    "checkStandardTT onAppear: halfBasalTarget=\(String(describing: halfBasalTarget)), settingHBT=\(state.settingHalfBasalTarget), percentage=\(percentage), target=\(target)"
-                )
-
                 if halfBasalTarget != nil,
                    halfBasalTarget != state.settingHalfBasalTarget
                 {
                     // Check if this was an auto-adjusted standard TT:
-                    // percentage is at minimum AND using settings HBT would have produced <= minimum (raw)
-                    let rawStandardPercentage = state.computeRawAdjustedPercentage(
-                        usingHBT: state.settingHalfBasalTarget,
-                        usingTarget: target
-                    )
-                    let isAutoAdjustedStandard = percentage == TempTargetCalculations.minSensitivityRatioTT &&
-                        rawStandardPercentage <= TempTargetCalculations.minSensitivityRatioTT
-
-                    debug(
-                        .default,
-                        "checkStandardTT onAppear: rawStandardPercentage=\(rawStandardPercentage), minSensitivityRatioTT=\(TempTargetCalculations.minSensitivityRatioTT), isAutoAdjustedStandard=\(isAutoAdjustedStandard)"
-                    )
+                    // If computeEffectiveHBT with nil stored HBT returns non-nil, settings HBT would produce <= 15%
+                    let isAutoAdjustedStandard = TempTargetCalculations.computeEffectiveHBT(
+                        tempTargetHalfBasalTarget: nil,
+                        settingHalfBasalTarget: state.settingHalfBasalTarget,
+                        target: target,
+                        autosensMax: state.autosensMax
+                    ) != nil
 
                     if !isAutoAdjustedStandard {
                         tempTargetSensitivityAdjustmentType = .slider
-                        debug(.default, "checkStandardTT onAppear: Setting adjustment type to .slider")
-                    } else {
-                        debug(.default, "checkStandardTT onAppear: Keeping adjustment type as .standard (auto-adjusted)")
                     }
-                } else {
-                    debug(
-                        .default,
-                        "checkStandardTT onAppear: Keeping adjustment type as .standard (HBT is nil or matches settings)"
-                    )
                 }
             }
             .sheet(isPresented: $state.isHelpSheetPresented) {
@@ -187,15 +173,17 @@ struct EditTempTargetForm: View {
                 .onChange(of: target) {
                     // percentage = state.computeAdjustedPercentage(usingHBT: halfBasalTarget, usingTarget: target)
                     // target value changes shall not alter the sensitivity, instead calculate new hbt with sensitivity from slider
-                    halfBasalTarget = Decimal(state.computeHalfBasalTarget(usingTarget: target, usingPercentage: percentage))
+                    halfBasalTarget = Decimal(
+                        TempTargetCalculations
+                            .computeHalfBasalTarget(target: target, percentage: percentage)
+                    )
                 }
             }
             .listRowBackground(Color.chart)
 
             if target != TempTargetCalculations.normalTarget {
                 let computedHalfBasalTarget = Decimal(
-                    state
-                        .computeHalfBasalTarget(usingTarget: target, usingPercentage: percentage)
+                    TempTargetCalculations.computeHalfBasalTarget(target: target, percentage: percentage)
                 )
 
                 if state.isAdjustSensEnabled(usingTarget: target) {
@@ -211,9 +199,10 @@ struct EditTempTargetForm: View {
                                     if newValue == .standard {
                                         halfBasalTarget = nil
                                         hasChanges = true
-                                        percentage = state.computeAdjustedPercentage(
-                                            usingHBT: halfBasalTarget,
-                                            usingTarget: target
+                                        percentage = TempTargetCalculations.computeAdjustedPercentage(
+                                            halfBasalTarget: state.settingHalfBasalTarget,
+                                            target: target,
+                                            autosensMax: state.autosensMax
                                         )
                                     }
                                 }
@@ -234,9 +223,9 @@ struct EditTempTargetForm: View {
                                         set: { newValue in
                                             percentage = newValue
                                             hasChanges = true
-                                            halfBasalTarget = Decimal(state.computeHalfBasalTarget(
-                                                usingTarget: target,
-                                                usingPercentage: percentage
+                                            halfBasalTarget = Decimal(TempTargetCalculations.computeHalfBasalTarget(
+                                                target: target,
+                                                percentage: percentage
                                             ))
                                         }
                                     ),
@@ -339,6 +328,10 @@ struct EditTempTargetForm: View {
             Spacer()
             Button(action: {
                 saveChanges()
+                debug(
+                    .default,
+                    "TempTarget: target=\(target), HBT=\(state.settingHalfBasalTarget), effectiveHBT=\(String(describing: halfBasalTarget)), percentage=\(Int(percentage))%, adjustmentType=\(tempTargetSensitivityAdjustmentType.rawValue)"
+                )
                 do {
                     guard let moc = tempTarget.managedObjectContext else { return }
                     guard moc.hasChanges else { return }

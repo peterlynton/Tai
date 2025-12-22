@@ -557,14 +557,14 @@ final class OpenAPS {
 
         // Check for active Temp Targets and adjust HBT if necessary
         try await context.perform {
-            // Check if a Temp Target is active
+            // Check if a Temp Target is active and check HBT differs from setting and adjust
             if let activeTempTarget = try self.fetchActiveTempTargets().first,
                activeTempTarget.enabled,
                let targetValue = activeTempTarget.target?.decimalValue
             {
                 // Compute effective HBT - handles both custom HBT and standard TT (where HBT might need adjustment)
                 let effectiveHBT = TempTargetCalculations.computeEffectiveHBT(
-                    storedHBT: activeTempTarget.halfBasalTarget?.decimalValue,
+                    tempTargetHalfBasalTarget: activeTempTarget.halfBasalTarget?.decimalValue,
                     settingHalfBasalTarget: defaultHalfBasalTarget,
                     target: targetValue,
                     autosensMax: preferences.autosensMax
@@ -572,9 +572,14 @@ final class OpenAPS {
 
                 if let effectiveHBT, effectiveHBT != defaultHalfBasalTarget {
                     adjustedPreferences.halfBasalExerciseTarget = effectiveHBT
+                    let percentage = Int(TempTargetCalculations.computeAdjustedPercentage(
+                        halfBasalTarget: effectiveHBT,
+                        target: targetValue,
+                        autosensMax: preferences.autosensMax
+                    ))
                     debug(
                         .openAPS,
-                        "checkStandardTT: Updated halfBasalExerciseTarget to \(effectiveHBT) for target \(targetValue) (stored HBT: \(String(describing: activeTempTarget.halfBasalTarget?.decimalValue)), settings HBT: \(defaultHalfBasalTarget))"
+                        "TempTarget: target=\(targetValue), HBT=\(defaultHalfBasalTarget), effectiveHBT=\(effectiveHBT), percentage=\(percentage)%, adjustmentType=Custom"
                     )
                 }
             }

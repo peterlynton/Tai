@@ -327,7 +327,7 @@ extension Home {
             var target = (latestTempTarget.target ?? 100) as Decimal
             // Use TempTargetCalculations to get effective HBT (handles both custom and auto-adjusted standard TT)
             let effectiveHBT = TempTargetCalculations.computeEffectiveHBT(
-                storedHBT: latestTempTarget.halfBasalTarget?.decimalValue,
+                tempTargetHalfBasalTarget: latestTempTarget.halfBasalTarget?.decimalValue,
                 settingHalfBasalTarget: state.settingHalfBasalTarget,
                 target: target,
                 autosensMax: state.autosensMax
@@ -337,7 +337,7 @@ extension Home {
             if target < 100, state.lowTTlowersSens, state.autosensMax > 1 { showPercentage = true }
             if showPercentage {
                 percentageString =
-                    " \(state.computeAdjustedPercentage(halfBasalTargetValue: effectiveHBT, tempTargetValue: target))%"
+                    " \(Int(TempTargetCalculations.computeAdjustedPercentage(halfBasalTarget: effectiveHBT, target: target, autosensMax: state.autosensMax)))%"
             }
             target = state.units == .mmolL ? target.asMmolL : target
             let targetString = target == 0 ? "" : (fetchedTargetFormatter.string(from: target as NSNumber) ?? "") + " " +

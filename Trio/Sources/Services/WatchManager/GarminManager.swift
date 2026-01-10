@@ -1390,6 +1390,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     private var lastReregistrationAttempt: Date?
     private let reregistrationCooldown: TimeInterval = 600 // 10 minutes
 
+    // Delayed recovery work item - cancelled if device reconnects quickly
+    private var delayedRecoveryWorkItem: DispatchWorkItem?
+    private let disconnectRecoveryDelay: TimeInterval = 120 // 2 minutes
+
     // Manual throttle for updates - using DispatchWorkItem instead of Timer
     private var throttleWorkItem: DispatchWorkItem?
     private var pendingThrottledData: Data?
@@ -1446,8 +1450,17 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
                         "[\(self.formatTimeForLog())] Garmin: FAILED to send to \(app.uuid!) [Trigger: \(self.currentSendTrigger)] (Failure #\(self.failedSendCount))"
                     )
 
-                    // After 3 consecutive failures, attempt recovery via re-registration
-                    if self.failedSendCount >= 3 {
+                    // If delayed recovery is pending (device reported notConnected), trigger immediately on first failure
+                    if self.delayedRecoveryWorkItem != nil {
+                        self.delayedRecoveryWorkItem?.cancel()
+                        self.delayedRecoveryWorkItem = nil
+                        debug(
+                            .watchManager,
+                            "[\(self.formatTimeForLog())] Garmin: Send failed while disconnected - triggering immediate recovery"
+                        )
+                        self.attemptConnectionRecovery()
+                    } else if self.failedSendCount >= 3 {
+                        // Fallback: After 3 consecutive failures without notConnected callback
                         self.attemptConnectionRecovery()
                     }
                 }
@@ -1466,6 +1479,42 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
         router.alertMessage.send(messageCont)
 
         debugGarmin("[\(formatTimeForLog())] Garmin: Connection lost alert shown to user")
+    }
+
+    /// Schedules a delayed recovery attempt after device disconnection
+    /// If device reconnects within the delay period, recovery is cancelled
+    private func scheduleDelayedRecovery() {
+        // Cancel any existing scheduled recovery
+        delayedRecoveryWorkItem?.cancel()
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            debug(
+                .watchManager,
+                "[\(self.formatTimeForLog())] Garmin: Device still disconnected after \(Int(self.disconnectRecoveryDelay))s - attempting recovery"
+            )
+            self.attemptConnectionRecovery()
+        }
+
+        delayedRecoveryWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + disconnectRecoveryDelay, execute: workItem)
+
+        debugGarmin(
+            "[\(formatTimeForLog())] Garmin: Scheduled recovery in \(Int(disconnectRecoveryDelay))s if device stays disconnected"
+        )
+    }
+
+    /// Cancels any pending delayed recovery (called when device reconnects)
+    private func cancelDelayedRecovery() {
+        if delayedRecoveryWorkItem != nil {
+            delayedRecoveryWorkItem?.cancel()
+            delayedRecoveryWorkItem = nil
+            debugGarmin("[\(formatTimeForLog())] Garmin: Cancelled scheduled recovery - device reconnected")
+
+            // Reset failure state since we reconnected
+            failedSendCount = 0
+            connectionAlertShown = false
+        }
     }
 
     /// Attempts to recover connection by re-registering devices
@@ -1497,7 +1546,13 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             "[\(formatTimeForLog())] Garmin: Attempting connection recovery via device re-registration (after \(failedSendCount) failures)"
         )
 
-        // Re-register devices - this clears cache and triggers SDK to report connection status
+        // Clear data hash cache to force fresh data preparation
+        hashLock.lock()
+        lastPreparedDataHash = nil
+        lastPreparedWatchState = nil
+        hashLock.unlock()
+
+        // Re-register devices - this clears app cache and triggers SDK to report connection status
         registerDevices(devices)
 
         // Send fresh data after re-registration
@@ -1554,8 +1609,10 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
             debugGarmin("[\(formatTimeForLog())] Garmin: notFound (\(device.uuid!))")
         case .notConnected:
             debugGarmin("[\(formatTimeForLog())] Garmin: notConnected (\(device.uuid!))")
+            scheduleDelayedRecovery()
         case .connected:
             debugGarmin("[\(formatTimeForLog())] Garmin: connected (\(device.uuid!))")
+            cancelDelayedRecovery()
         @unknown default:
             debugGarmin("[\(formatTimeForLog())] Garmin: unknown state (\(device.uuid!))")
         }

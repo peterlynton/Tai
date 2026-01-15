@@ -1,6 +1,6 @@
 // Some of the items can be modified to match the user's preference
 APP_DISPLAY_NAME = Tai
-APP_ICON = taiBlack
+APP_ICON = catWithPod
 APP_URL_SCHEME = Trio
 HIDE_SIMULATOR = 1 // Default is to hide glucose and pump simulator, change to 0 in your ConfigOverride to enable them in debug builds
 

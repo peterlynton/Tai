@@ -1,2 +1,4 @@
 Trio dev 0.6.0.42
-U40 insulin
+distribution for C@Study
+U40 concentration
+needs to switch ON "Allow diluted Insulin" in "Settings" > "Devices" > "Insulin Pump & Concentration" at the very bottom

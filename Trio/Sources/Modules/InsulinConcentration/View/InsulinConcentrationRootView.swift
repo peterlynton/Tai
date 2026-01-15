@@ -88,6 +88,7 @@ extension InsulinConcentration {
                     Text("100 U/mL").tag(Decimal(1))
                     if state.allowDilution {
                         Text("50 U/mL").tag(Decimal(0.5))
+                        Text("40 U/mL").tag(Decimal(0.4))
                         Text("10 U/mL").tag(Decimal(0.1))
                     }
                 }

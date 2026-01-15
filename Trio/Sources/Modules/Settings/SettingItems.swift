@@ -62,9 +62,11 @@ enum SettingItems {
                 "Duration Insulin Action",
                 "DIA",
                 "Badge",
-                "UU100100",
+                "UU100",
                 "U200",
                 "U50",
+                "U40",
+                "U10",
                 "hide"
             ],
             path: ["Devices"]

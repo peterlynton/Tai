@@ -270,7 +270,7 @@ struct DecimalPickerSettings {
     // Initializer that accepts bolusIncrementValue for dynamic step calculation
     init(bolusIncrementValue: Decimal = 0.1) {
         // Initialize maxIOB with step size based on bolusIncrement * 10, but cap at 1.0
-        let calculatedStep = bolusIncrementValue * 10
+        let calculatedStep = bolusIncrementValue * 5
         let maxIOBStep = min(calculatedStep, 1.0)
 
         maxIOB = PickerSetting(
@@ -281,20 +281,22 @@ struct DecimalPickerSettings {
             type: PickerSetting.PickerSettingType.insulinUnit
         )
 
-        let maxBolusStep = min(calculatedStep, 0.5)
+        let maxBolusStep = min(bolusIncrementValue * 2, 0.5)
+        let minBolus = min(bolusIncrementValue * 2, 0.5)
         maxBolus = PickerSetting(
             value: 10,
             step: maxBolusStep,
-            min: 0.5,
+            min: minBolus,
             max: 30,
             type: PickerSetting.PickerSettingType.insulinUnit
         )
 
-        let maxBasalStep = min(calculatedStep, 0.5)
+        let maxBasalStep = min(bolusIncrementValue * 2, 0.5)
+        let minBasal = min(bolusIncrementValue * 2, 0.5)
         maxBasal = PickerSetting(
             value: 10,
             step: maxBasalStep,
-            min: 0.5,
+            min: minBasal,
             max: 30,
             type: PickerSetting.PickerSettingType.insulinUnitPerHour
         )

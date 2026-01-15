@@ -1,4 +1,5 @@
 Trio dev 0.6.0.42
 distribution for C@Study
 U40 concentration
-needs to switch ON "Allow diluted Insulin" in "Settings" > "Devices" > "Insulin Pump & Concentration" at the very bottom
+needs to switch ON for Allow diluted Insulin in Settings > Devices > Insulin Pump & Concentration at the very bottom
+test wwhether granularity in Settings > Therapy > Units & Limits for maxIOB, -Basal, and -Bolus art C@friendly

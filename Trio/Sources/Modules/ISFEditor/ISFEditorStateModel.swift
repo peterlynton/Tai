@@ -28,8 +28,26 @@ extension ISFEditor {
 
         var rateValues: [Decimal] {
             let settingsProvider = PickerSettingsProvider.shared
-            let sensitivityPickerSetting = PickerSetting(value: 100, step: 1, min: 9, max: 540, type: .glucose)
-            return settingsProvider.generatePickerValues(from: sensitivityPickerSetting, units: units)
+            // Max ISF depends on insulin concentration:
+            // U100/U200 (>= 1): 540, U50 (>= 0.5): 750, U10 (< 0.5): 1000
+            let concentration = settingsManager?.settings.insulinConcentration ?? 1
+            let maxISF: Decimal
+            switch concentration {
+            case ..<Decimal(0.5): maxISF = 1500
+            case ..<1: maxISF = 1000
+            default: maxISF = 540
+            }
+            let sensitivityPickerSetting = PickerSetting(
+                value: 100,
+                step: 1,
+                min: 9,
+                max: maxISF,
+                type: .glucose
+            )
+            return settingsProvider.generatePickerValues(
+                from: sensitivityPickerSetting,
+                units: units
+            )
         }
 
         var canAdd: Bool {

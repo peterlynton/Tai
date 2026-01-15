@@ -3,3 +3,4 @@ distribution for C@Study
 U40 concentration
 needs to switch ON for Allow diluted Insulin in Settings > Devices > Insulin Pump & Concentration at the very bottom
 test wwhether granularity in Settings > Therapy > Units & Limits for maxIOB, -Basal, and -Bolus art C@friendly
+check whether ISF value options are good for highly sensisitve c@s (dependent on insulin concentration), higher dillution allows for higher sensitivity options)

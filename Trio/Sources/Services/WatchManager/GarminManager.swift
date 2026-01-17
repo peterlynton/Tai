@@ -952,6 +952,11 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// It also creates and registers watch apps (watchface + data field) for each device.
     /// - Parameter devices: The devices to register.
     private func registerDevices(_ devices: [IQDevice]) {
+        // IMPORTANT: Unregister all existing listeners first to prevent stacking
+        // This mimics app restart behavior and clears any corrupted SDK state
+        connectIQ?.unregister(forAllDeviceEvents: self)
+        connectIQ?.unregister(forAllAppMessages: self)
+
         // Clear out old references
         watchApps.removeAll()
 
@@ -1020,6 +1025,164 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// Restores previously persisted devices from local storage into `devices`.
     private func restoreDevices() {
         devices = persistedDevices.map(\.iqDevice)
+    }
+
+    // MARK: - SDK Reset
+
+    /// Performs a full ConnectIQ SDK reset to recover from stuck states.
+    /// This mimics what happens on app restart: unregister all listeners, re-initialize the SDK, and re-register.
+    /// Should be called when the SDK appears stuck (e.g., sends happening but no callbacks received).
+    private func resetConnectIQSDK() {
+        guard !sdkResetInProgress else {
+            debugGarmin("[\(formatTimeForLog())] Garmin: SDK reset already in progress, skipping")
+            return
+        }
+
+        sdkResetInProgress = true
+        debug(.watchManager, "[\(formatTimeForLog())] Garmin: 🔄 Initiating ConnectIQ SDK reset...")
+
+        // Step 1: Unregister all device event listeners
+        connectIQ?.unregister(forAllDeviceEvents: self)
+        debugGarmin("[\(formatTimeForLog())] Garmin: Unregistered all device event listeners")
+
+        // Step 2: Unregister all app message listeners
+        connectIQ?.unregister(forAllAppMessages: self)
+        debugGarmin("[\(formatTimeForLog())] Garmin: Unregistered all app message listeners")
+
+        // Step 3: Clear local tracking state
+        watchApps.removeAll()
+        deviceConnectionStates.removeAll()
+
+        appStatusCacheLock.lock()
+        appInstallationCache.removeAll()
+        appStatusCacheLock.unlock()
+
+        // Reset send tracking
+        lastSentHashLock.lock()
+        lastSentDataHash = nil
+        lastSentHashLock.unlock()
+        currentSendHash = nil
+
+        debugGarmin("[\(formatTimeForLog())] Garmin: Cleared all local state and caches")
+
+        // Step 4: Re-initialize the SDK (this resets internal SDK state)
+        connectIQ?.initialize(withUrlScheme: "Trio", uiOverrideDelegate: self)
+        debugGarmin("[\(formatTimeForLog())] Garmin: Re-initialized ConnectIQ SDK")
+
+        // Step 5: Re-register all devices (this triggers the didSet which calls registerDevices)
+        let currentDevices = devices
+        if !currentDevices.isEmpty {
+            // Directly call registerDevices since we're not changing the devices array
+            registerDevices(currentDevices)
+            debug(.watchManager, "[\(formatTimeForLog())] Garmin: Re-registered \(currentDevices.count) device(s)")
+        }
+
+        // Step 6: Reset health tracking
+        lastSuccessfulSendTime = nil
+        lastSendAttemptTime = nil
+        failedSendCount = 0
+        connectionAlertShown = false
+
+        // Clear connection state tracking
+        lastNotConnectedTime.removeAll()
+        lastBluetoothNotReadyTime = nil
+        lastWatchMessageTime = nil
+        cancelPendingRecoveryCheck()
+
+        sdkResetInProgress = false
+        debug(.watchManager, "[\(formatTimeForLog())] Garmin: ✅ SDK reset complete")
+
+        // Step 7: Trigger an immediate send with cached data if available
+        if let cachedData = cachedDeterminationData {
+            debugGarmin("[\(formatTimeForLog())] Garmin: Sending cached data after SDK reset")
+            currentSendTrigger = "SDK-Reset"
+            sendWatchStateDataImmediately(cachedData)
+        }
+    }
+
+    /// Checks if the SDK appears to be stuck (sends happening but no callbacks for extended period)
+    /// and triggers a reset if needed.
+    /// - Parameter callbackThresholdMinutes: Minutes without successful callback before considering stuck (default: 15)
+    private func checkAndResetIfStuck(callbackThresholdMinutes: Double = 15) {
+        guard lastSendAttemptTime != nil else {
+            return // No sends attempted yet
+        }
+
+        let now = Date()
+        let callbackThresholdSeconds = callbackThresholdMinutes * 60
+        let watchMsgThresholdSeconds = watchMessageStuckThresholdMinutes * 60
+
+        // Calculate time intervals
+        let timeSinceLastSuccess: TimeInterval? = lastSuccessfulSendTime.map { now.timeIntervalSince($0) }
+        let timeSinceLastAttempt: TimeInterval? = lastSendAttemptTime.map { now.timeIntervalSince($0) }
+        let timeSinceLastWatchMsg: TimeInterval? = lastWatchMessageTime.map { now.timeIntervalSince($0) }
+
+        // Log current health status (helps diagnose issues in logs)
+        let successStr = timeSinceLastSuccess.map { "\(Int($0))s ago" } ?? "never"
+        let attemptStr = timeSinceLastAttempt.map { "\(Int($0))s ago" } ?? "never"
+        let watchMsgStr = timeSinceLastWatchMsg.map { "\(Int($0))s ago" } ?? "never"
+
+        debugGarmin(
+            "[\(formatTimeForLog())] Garmin: 🔍 Health check - lastSuccess: \(successStr), lastAttempt: \(attemptStr), lastWatchMsg: \(watchMsgStr), failures: \(failedSendCount)"
+        )
+
+        // Check 1: Have we been sending but not getting success callbacks?
+        // This detects when SDK accepts sendMessage calls but never fires the completion handler
+        var noCallbacksDetected = false
+        var callbackGapMinutes: Int = 0
+
+        if let successInterval = timeSinceLastSuccess {
+            if successInterval > callbackThresholdSeconds {
+                noCallbacksDetected = true
+                callbackGapMinutes = Int(successInterval / 60)
+            }
+        } else if let attemptInterval = timeSinceLastAttempt {
+            // Never had a successful send - check how long we've been trying
+            if attemptInterval > callbackThresholdSeconds {
+                noCallbacksDetected = true
+                callbackGapMinutes = Int(attemptInterval / 60)
+            }
+        }
+
+        // Check 2: Have we stopped receiving messages from the watch?
+        // Watch sends status every ~5 min, so extended silence while actively sending is suspicious
+        var noWatchMessagesDetected = false
+        var watchMsgGapMinutes: Int = 0
+
+        if let watchMsgInterval = timeSinceLastWatchMsg, let attemptInterval = timeSinceLastAttempt {
+            // Only check if we sent recently (within last 5 min) - confirms we're actively trying
+            if attemptInterval < 300 {
+                if watchMsgInterval > watchMsgThresholdSeconds {
+                    noWatchMessagesDetected = true
+                    watchMsgGapMinutes = Int(watchMsgInterval / 60)
+                }
+                // Also log if watch messages are getting stale but not yet at threshold
+                else if watchMsgInterval > 600 { // 10+ minutes
+                    debugGarmin(
+                        "[\(formatTimeForLog())] Garmin: ⏳ Watch messages getting stale (\(Int(watchMsgInterval / 60))m) - monitoring"
+                    )
+                }
+            }
+        }
+
+        // Decision logic with detailed logging
+        if noCallbacksDetected {
+            let watchInfo = noWatchMessagesDetected ? ", watchMsgGap=\(watchMsgGapMinutes)m" : ""
+            debug(
+                .watchManager,
+                "[\(formatTimeForLog())] Garmin: ⚠️ SDK STUCK DETECTED - callbackGap=\(callbackGapMinutes)m (threshold=\(Int(callbackThresholdMinutes))m)\(watchInfo) → RESETTING"
+            )
+            resetConnectIQSDK()
+        } else if noWatchMessagesDetected {
+            // Watch messages missing but callbacks still working
+            // Log this prominently - could indicate impending stuck state
+            debug(
+                .watchManager,
+                "[\(formatTimeForLog())] Garmin: ⚠️ No watch messages for \(watchMsgGapMinutes)m but callbacks OK - monitoring (potential early warning)"
+            )
+            // TODO: Consider making this trigger a reset if pattern persists
+            // For now, just log so we can observe the correlation with stuck states
+        }
     }
 
     // MARK: - Combine Subscriptions
@@ -1106,6 +1269,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
     /// Always sends to datafield (if exists), only checks status for watchface
     /// - Parameter state: The dictionary representing the watch state to be broadcast.
     private func broadcastStateToWatchApps(_ state: Any) {
+        // Check if SDK appears stuck and needs reset before sending
+        checkAndResetIfStuck()
+
         // Deduplicate: Check if we're sending identical data by hashing the JSON content
         let currentHash: Int
         if let jsonData = try? JSONSerialization.data(withJSONObject: state, options: [.sortedKeys]) {
@@ -1383,8 +1549,22 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
 
     // Track connection health
     private var lastSuccessfulSendTime: Date?
+    private var lastSendAttemptTime: Date?
     private var failedSendCount = 0
     private var connectionAlertShown = false
+    private var sdkResetInProgress = false
+
+    // Track connection state changes for stuck detection
+    private var lastNotConnectedTime: [UUID: Date] = [:] // Per-device tracking
+    private var lastBluetoothNotReadyTime: Date?
+    private var pendingRecoveryWorkItem: DispatchWorkItem?
+    private let connectionRecoveryTimeoutSeconds: TimeInterval = 60 // Wait 60s for reconnection before reset
+
+    // Track messages received from watch (watch sends status every ~5 min)
+    private var lastWatchMessageTime: Date?
+    // Only consider "no watch messages" as stuck if we haven't heard for 20+ minutes
+    // AND we've been actively sending. Short gaps are normal during BT blips.
+    private let watchMessageStuckThresholdMinutes: Double = 20
 
     // Manual throttle for updates - using DispatchWorkItem instead of Timer
     private var throttleWorkItem: DispatchWorkItem?
@@ -1409,6 +1589,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable, @unchecked S
             debugGarmin("[\(formatTimeForLog())] Garmin: Watchface data disabled, not sending message to watchface")
             return
         }
+
+        // Track send attempt time for stuck detection
+        lastSendAttemptTime = Date()
 
         connectIQ?.sendMessage(
             msg,
@@ -1491,26 +1674,125 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     ///   - device: The device whose status has changed.
     ///   - status: The new status for the device.
     func deviceStatusChanged(_ device: IQDevice, status: IQDeviceStatus) {
+        guard let deviceUUID = device.uuid else { return }
+
         // Track the current status for connection-aware caching
         // Don't store .bluetoothNotReady - it's a transient state meaning "BT is resetting"
         // and we should keep the previous state until we get a real .connected or .notConnected
-        if let deviceUUID = device.uuid, status != .bluetoothNotReady {
+        if status != .bluetoothNotReady {
             deviceConnectionStates[deviceUUID] = status
         }
 
         switch status {
         case .invalidDevice:
-            debugGarmin("[\(formatTimeForLog())] Garmin: invalidDevice (\(device.uuid!))")
+            debugGarmin("[\(formatTimeForLog())] Garmin: invalidDevice (\(deviceUUID))")
+
         case .bluetoothNotReady:
-            debugGarmin("[\(formatTimeForLog())] Garmin: bluetoothNotReady (\(device.uuid!)) - not caching transient state")
+            debugGarmin("[\(formatTimeForLog())] Garmin: bluetoothNotReady (\(deviceUUID)) - not caching transient state")
+            lastBluetoothNotReadyTime = Date()
+            // Schedule a recovery check - bluetoothNotReady often precedes stuck states
+            scheduleConnectionRecoveryCheck(for: deviceUUID, reason: "bluetoothNotReady")
+
         case .notFound:
-            debugGarmin("[\(formatTimeForLog())] Garmin: notFound (\(device.uuid!))")
+            debugGarmin("[\(formatTimeForLog())] Garmin: notFound (\(deviceUUID))")
+
         case .notConnected:
-            debugGarmin("[\(formatTimeForLog())] Garmin: notConnected (\(device.uuid!))")
+            debugGarmin("[\(formatTimeForLog())] Garmin: notConnected (\(deviceUUID))")
+            lastNotConnectedTime[deviceUUID] = Date()
+            // Schedule a recovery check - if we don't get .connected soon, SDK may be stuck
+            scheduleConnectionRecoveryCheck(for: deviceUUID, reason: "notConnected")
+
         case .connected:
-            debugGarmin("[\(formatTimeForLog())] Garmin: connected (\(device.uuid!))")
+            debugGarmin("[\(formatTimeForLog())] Garmin: connected (\(deviceUUID))")
+            // Clear the notConnected tracking - connection recovered normally
+            lastNotConnectedTime.removeValue(forKey: deviceUUID)
+            // Cancel any pending recovery since we're connected now
+            cancelPendingRecoveryCheck()
+            // Trigger an immediate resend with cached data on reconnection
+            triggerResendOnReconnection()
+
         @unknown default:
-            debugGarmin("[\(formatTimeForLog())] Garmin: unknown state (\(device.uuid!))")
+            debugGarmin("[\(formatTimeForLog())] Garmin: unknown state (\(deviceUUID))")
+        }
+    }
+
+    /// Schedules a delayed check to see if connection recovered; if not, triggers SDK reset
+    private func scheduleConnectionRecoveryCheck(for deviceUUID: UUID, reason: String) {
+        // Cancel any existing pending check
+        pendingRecoveryWorkItem?.cancel()
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+
+            // Check if we're still in a disconnected state
+            let currentStatus = self.deviceConnectionStates[deviceUUID]
+            let stillDisconnected = currentStatus == .notConnected || currentStatus == nil
+
+            // Check if notConnected was recent and never resolved
+            let hasUnresolvedDisconnect: Bool
+            if let disconnectTime = self.lastNotConnectedTime[deviceUUID] {
+                let timeSinceDisconnect = Date().timeIntervalSince(disconnectTime)
+                hasUnresolvedDisconnect = timeSinceDisconnect >= self.connectionRecoveryTimeoutSeconds
+            } else {
+                hasUnresolvedDisconnect = false
+            }
+
+            // Check if we've been attempting sends without success
+            let hasSendIssues: Bool
+            if let lastAttempt = self.lastSendAttemptTime, let lastSuccess = self.lastSuccessfulSendTime {
+                // Sends attempted after last success, and it's been a while
+                hasSendIssues = lastAttempt > lastSuccess &&
+                    Date().timeIntervalSince(lastSuccess) > self.connectionRecoveryTimeoutSeconds
+            } else if let lastAttempt = self.lastSendAttemptTime, self.lastSuccessfulSendTime == nil {
+                // Never had success but have been attempting
+                hasSendIssues = Date().timeIntervalSince(lastAttempt) > 30 // 30s without any callback
+            } else {
+                hasSendIssues = false
+            }
+
+            if stillDisconnected || hasUnresolvedDisconnect || hasSendIssues {
+                debug(
+                    .watchManager,
+                    "[\(self.formatTimeForLog())] Garmin: ⚠️ Connection recovery timeout after \(reason) - " +
+                        "stillDisconnected=\(stillDisconnected), unresolvedDisconnect=\(hasUnresolvedDisconnect), sendIssues=\(hasSendIssues). " +
+                        "Triggering SDK reset."
+                )
+                self.resetConnectIQSDK()
+            } else {
+                self.debugGarmin("[\(self.formatTimeForLog())] Garmin: Connection recovery check passed - no reset needed")
+            }
+        }
+
+        pendingRecoveryWorkItem = workItem
+        // Schedule the check after the timeout period
+        DispatchQueue.global(qos: .utility).asyncAfter(
+            deadline: .now() + connectionRecoveryTimeoutSeconds,
+            execute: workItem
+        )
+        debugGarmin(
+            "[\(formatTimeForLog())] Garmin: Scheduled connection recovery check in \(Int(connectionRecoveryTimeoutSeconds))s (reason: \(reason))"
+        )
+    }
+
+    /// Cancels any pending connection recovery check
+    private func cancelPendingRecoveryCheck() {
+        pendingRecoveryWorkItem?.cancel()
+        pendingRecoveryWorkItem = nil
+    }
+
+    /// Triggers an immediate resend when connection is restored
+    private func triggerResendOnReconnection() {
+        guard let cachedData = cachedDeterminationData else {
+            debugGarmin("[\(formatTimeForLog())] Garmin: No cached data to resend on reconnection")
+            return
+        }
+
+        // Small delay to let the connection stabilize
+        DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            guard let self = self else { return }
+            self.debugGarmin("[\(self.formatTimeForLog())] Garmin: Resending cached data after reconnection")
+            self.currentSendTrigger = "Reconnection"
+            self.sendWatchStateDataImmediately(cachedData)
         }
     }
 
@@ -1526,6 +1808,9 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     /// Always processes datafield messages, checks settings for watchface
     func receivedMessage(_ message: Any, from app: IQApp) {
         debugGarmin("[\(formatTimeForLog())] Garmin: Received message \(message) from app \(app.uuid!)")
+
+        // Track that we received a message from the watch - this confirms SDK is working
+        lastWatchMessageTime = Date()
 
         let validUUIDs = Set([currentWatchface.watchfaceUUID, currentGarminSettings.datafield.datafieldUUID].compactMap { $0 })
 

@@ -80,6 +80,18 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     private var lastPreparedDataHash: Int?
     private var lastPreparedWatchState: [GarminWatchState]?
 
+    // MARK: - Glucose/Determination Coordination
+
+    /// Delay before sending glucose if determination hasn't arrived (seconds)
+    /// Based on log analysis: avg delay ~5s, max ~24s, >15s occurs <1% of time
+    private let glucoseFallbackDelay: TimeInterval = 20
+
+    /// Pending glucose fallback task - cancelled if determination arrives first
+    private var pendingGlucoseFallback: DispatchWorkItem?
+
+    /// Queue for glucose fallback timer
+    private let timerQueue = DispatchQueue(label: "BaseGarminManager.timerQueue", qos: .utility)
+
     /// Queue for handling Core Data change notifications
     private let queue = DispatchQueue(label: "BaseGarminManager.queue", qos: .utility)
 
@@ -120,15 +132,18 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                 .share()
                 .eraseToAnyPublisher()
 
-        // Glucose updates trigger watch state preparation
+        // Glucose updates - start 20s fallback timer
+        // When loop is working: determination arrives within ~5s, cancels timer, sends complete data
+        // When loop is slow/failing: timer fires after 20s, sends glucose with stale loop data
+        // This ensures watch gets fresh glucose even if loop doesn't complete
         glucoseStorage.updatePublisher
             .receive(on: DispatchQueue.global(qos: .background))
             .sink { [weak self] _ in
-                self?.triggerWatchStateUpdate(triggeredBy: "Glucose")
+                self?.handleGlucoseUpdate()
             }
             .store(in: &subscriptions)
 
-        // IOB updates trigger watch state preparation
+        // IOB updates - needed for manual boluses which update IOB independently of loop
         iobService.iobPublisher
             .receive(on: DispatchQueue.global(qos: .background))
             .sink { [weak self] _ in
@@ -183,9 +198,52 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             .store(in: &subscriptions)
     }
 
+    /// Handles glucose updates with delayed fallback
+    /// Waits up to 20 seconds for determination to arrive before sending glucose-only update
+    /// This ensures we send complete data when loop is working, but still update watch if loop is slow/failing
+    private func handleGlucoseUpdate() {
+        guard !devices.isEmpty else { return }
+
+        // Cancel any existing fallback timer
+        pendingGlucoseFallback?.cancel()
+
+        // Create new fallback task
+        let fallback = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+
+            Task {
+                do {
+                    self.debugGarmin("Garmin: Glucose fallback timer fired (no determination in \(Int(self.glucoseFallbackDelay))s)")
+
+                    let watchState = try await self.setupGarminWatchState(triggeredBy: "Glucose (fallback)")
+                    let watchStateData = try JSONEncoder().encode(watchState)
+                    self.watchStateSubject.send(watchStateData)
+                } catch {
+                    debug(.watchManager, "Garmin: Error in glucose fallback: \(error)")
+                }
+            }
+        }
+
+        pendingGlucoseFallback = fallback
+        timerQueue.asyncAfter(deadline: .now() + glucoseFallbackDelay, execute: fallback)
+
+        debugGarmin("Garmin: Glucose received - waiting \(Int(glucoseFallbackDelay))s for determination")
+    }
+
     /// Triggers watch state preparation and sends to debounce subject
+    /// If triggered by Determination, cancels pending glucose fallback timer
     private func triggerWatchStateUpdate(triggeredBy trigger: String) {
         guard !devices.isEmpty else { return }
+
+        // If determination arrived, cancel the glucose fallback timer
+        // Determination includes both fresh glucose and loop data
+        if trigger == "Determination" {
+            if pendingGlucoseFallback != nil {
+                pendingGlucoseFallback?.cancel()
+                pendingGlucoseFallback = nil
+                debugGarmin("Garmin: Determination arrived - cancelled glucose fallback timer")
+            }
+        }
 
         Task {
             do {
@@ -604,19 +662,20 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     // MARK: - IQDeviceEventDelegate
 
     func deviceStatusChanged(_ device: IQDevice, status: IQDeviceStatus) {
+        // Always log connection state changes - critical for diagnosing SDK issues
         switch status {
         case .invalidDevice:
-            debugGarmin("Garmin: invalidDevice (\(device.uuid!))")
+            debug(.watchManager, "Garmin: Device status -> invalidDevice")
         case .bluetoothNotReady:
-            debugGarmin("Garmin: bluetoothNotReady (\(device.uuid!))")
+            debug(.watchManager, "Garmin: Device status -> bluetoothNotReady")
         case .notFound:
-            debugGarmin("Garmin: notFound (\(device.uuid!))")
+            debug(.watchManager, "Garmin: Device status -> notFound")
         case .notConnected:
-            debugGarmin("Garmin: notConnected (\(device.uuid!))")
+            debug(.watchManager, "Garmin: Device status -> notConnected")
         case .connected:
-            debugGarmin("Garmin: connected (\(device.uuid!))")
+            debug(.watchManager, "Garmin: Device status -> connected")
         @unknown default:
-            debugGarmin("Garmin: unknown state (\(device.uuid!))")
+            debug(.watchManager, "Garmin: Device status -> unknown(\(status.rawValue))")
         }
     }
 

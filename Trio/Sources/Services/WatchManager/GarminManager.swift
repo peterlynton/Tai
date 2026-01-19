@@ -268,13 +268,11 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             var sensRatioValue: Double?
             var isfValue: Int16?
             var eventualBGValue: Int16?
-            var mostRecentTimestamp: UInt64?
+            var determinationTimestamp: Date?
 
             if let latestDetermination = determinationObjects.first {
-                // Timestamp in milliseconds
-                if let timestamp = latestDetermination.timestamp {
-                    mostRecentTimestamp = UInt64(timestamp.timeIntervalSince1970 * 1000)
-                }
+                // Store determination timestamp for staleness calculation
+                determinationTimestamp = latestDetermination.timestamp
 
                 // COB
                 let cob = latestDetermination.cob
@@ -352,9 +350,12 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
                 var watchState = GarminWatchState()
 
-                // Timestamp
+                // Timestamp: Use determination timestamp to indicate loop staleness
+                // If loop hasn't run recently, the old determination timestamp shows data is stale
+                // Fall back to glucose timestamp only if no determination exists
                 if index == 0 {
-                    watchState.date = mostRecentTimestamp ?? glucose.date.map { UInt64($0.timeIntervalSince1970 * 1000) }
+                    let timestamp = determinationTimestamp ?? glucose.date
+                    watchState.date = timestamp.map { UInt64($0.timeIntervalSince1970 * 1000) }
                 } else {
                     watchState.date = glucose.date.map { UInt64($0.timeIntervalSince1970 * 1000) }
                 }

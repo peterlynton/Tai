@@ -57,6 +57,20 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     /// Current glucose units
     private var units: GlucoseUnits = .mgdL
 
+    // MARK: - Debug Logging
+
+    /// Enable/disable verbose debug logging for watch state preparation
+    private let debugWatchState = true
+
+    /// Enable/disable general Garmin debug logging (connections, sends, etc.)
+    private let debugGarminEnabled = true
+
+    /// Helper method for conditional Garmin debug logging
+    private func debugGarmin(_ message: String) {
+        guard debugGarminEnabled else { return }
+        debug(.watchManager, message)
+    }
+
     // MARK: - Deduplication
 
     /// Hash of last sent data to prevent duplicate broadcasts
@@ -236,7 +250,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             return []
         }
 
-        debug(.watchManager, "Garmin: Preparing watch state [Trigger: \(triggeredBy)]")
+        if debugWatchState {
+            debug(.watchManager, "Garmin: Preparing watch state [Trigger: \(triggeredBy)]")
+        }
 
         // Fetch glucose - SwissAlpine needs 24, Trio needs 2 (for delta calculation)
         let glucoseLimit = needsHistoricalGlucoseData ? 24 : 2
@@ -391,14 +407,18 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             // Deduplicate: Check if data is unchanged from last preparation
             let currentHash = watchStates.hashValue
             if currentHash == self.lastPreparedDataHash {
-                debug(.watchManager, "Garmin: Skipping - data unchanged (hash: \(currentHash))")
+                if self.debugWatchState {
+                    debug(.watchManager, "Garmin: Skipping - data unchanged (hash: \(currentHash))")
+                }
                 return self.lastPreparedWatchState ?? watchStates
             }
 
-            debug(
-                .watchManager,
-                "Garmin: Prepared \(watchStates.count) entries - sgv: \(watchStates.first?.sgv ?? 0), iob: \(watchStates.first?.iob ?? 0), cob: \(watchStates.first?.cob ?? 0)"
-            )
+            if self.debugWatchState {
+                debug(
+                    .watchManager,
+                    "Garmin: Prepared \(watchStates.count) entries - sgv: \(watchStates.first?.sgv ?? 0), iob: \(watchStates.first?.iob ?? 0), cob: \(watchStates.first?.cob ?? 0), tbr: \(watchStates.first?.tbr ?? 0), eventualBG: \(watchStates.first?.eventualBG ?? 0), sensRatio: \(watchStates.first?.sensRatio ?? 0)"
+                )
+            }
 
             // Cache for deduplication
             self.lastPreparedDataHash = currentHash
@@ -430,18 +450,18 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                let watchfaceUUID = currentWatchface.watchfaceUUID,
                let watchfaceApp = IQApp(uuid: watchfaceUUID, store: UUID(), device: device)
             {
-                debug(.watchManager, "Garmin: Registered watchface:\(currentWatchface.displayName)")
+                debugGarmin("Garmin: Registered watchface:\(currentWatchface.displayName)")
                 watchApps.append(watchfaceApp)
                 connectIQ?.register(forAppMessages: watchfaceApp, delegate: self)
             } else if !isWatchfaceDataEnabled {
-                debug(.watchManager, "Garmin: Watchface data disabled - skipping watchface registration")
+                debugGarmin("Garmin: Watchface data disabled - skipping watchface registration")
             }
 
             // Always register datafield (if configured)
             if let datafieldUUID = currentDatafield.datafieldUUID,
                let datafieldApp = IQApp(uuid: datafieldUUID, store: UUID(), device: device)
             {
-                debug(.watchManager, "Garmin: Registered datafield:\(currentDatafield.displayName)")
+                debugGarmin("Garmin: Registered datafield:\(currentDatafield.displayName)")
                 watchApps.append(datafieldApp)
                 connectIQ?.register(forAppMessages: datafieldApp, delegate: self)
             }
@@ -497,7 +517,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         }
 
         if currentHash == lastSentDataHash {
-            debug(.watchManager, "Garmin: Skipping broadcast - data unchanged")
+            debugGarmin("Garmin: Skipping broadcast - data unchanged")
             return
         }
 
@@ -513,7 +533,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                     debug(.watchManager, "Garmin: App not installed: \(appName)")
                     return
                 }
-                debug(.watchManager, "Garmin: Sending to \(appName)")
+                self?.debugGarmin("Garmin: Sending to \(appName)")
                 self?.sendMessage(jsonObject as Any, to: app, appName: appName)
             }
         }
@@ -586,17 +606,17 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     func deviceStatusChanged(_ device: IQDevice, status: IQDeviceStatus) {
         switch status {
         case .invalidDevice:
-            debug(.watchManager, "Garmin: invalidDevice (\(device.uuid!))")
+            debugGarmin("Garmin: invalidDevice (\(device.uuid!))")
         case .bluetoothNotReady:
-            debug(.watchManager, "Garmin: bluetoothNotReady (\(device.uuid!))")
+            debugGarmin("Garmin: bluetoothNotReady (\(device.uuid!))")
         case .notFound:
-            debug(.watchManager, "Garmin: notFound (\(device.uuid!))")
+            debugGarmin("Garmin: notFound (\(device.uuid!))")
         case .notConnected:
-            debug(.watchManager, "Garmin: notConnected (\(device.uuid!))")
+            debugGarmin("Garmin: notConnected (\(device.uuid!))")
         case .connected:
-            debug(.watchManager, "Garmin: connected (\(device.uuid!))")
+            debugGarmin("Garmin: connected (\(device.uuid!))")
         @unknown default:
-            debug(.watchManager, "Garmin: unknown state (\(device.uuid!))")
+            debugGarmin("Garmin: unknown state (\(device.uuid!))")
         }
     }
 
@@ -604,7 +624,7 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
 
     func receivedMessage(_ message: Any, from app: IQApp) {
         let appName = appDisplayName(for: app.uuid!)
-        debug(.watchManager, "Garmin: Received message '\(message)' from \(appName)")
+        debugGarmin("Garmin: Received message '\(message)' from \(appName)")
 
         // If watch requests status update, send current data
         guard let statusString = message as? String, statusString == "status" else {

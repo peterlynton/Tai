@@ -65,6 +65,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     /// Enable/disable general Garmin debug logging (connections, sends, etc.)
     private let debugGarminEnabled = true
 
+    /// Enable simulated Garmin device for Xcode Simulator testing
+    /// When true, creates a fake Garmin device so you can test the workflow in Simulator
+    #if targetEnvironment(simulator)
+        private let enableSimulatedDevice = true
+    #else
+        private let enableSimulatedDevice = false
+    #endif
+
     /// Helper method for conditional Garmin debug logging
     private func debugGarmin(_ message: String) {
         guard debugGarminEnabled else { return }
@@ -119,6 +127,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         connectIQ?.initialize(withUrlScheme: "Trio", uiOverrideDelegate: self)
 
         restoreDevices()
+
+        // Add simulated device for Xcode Simulator testing
+        #if targetEnvironment(simulator)
+            if enableSimulatedDevice, devices.isEmpty {
+                addSimulatedDevice()
+            }
+        #endif
+
         subscribeToOpenFromGarminConnect()
         subscribeToWatchState()
 
@@ -213,7 +229,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
             Task {
                 do {
-                    self.debugGarmin("Garmin: Glucose fallback timer fired (no determination in \(Int(self.glucoseFallbackDelay))s)")
+                    self
+                        .debugGarmin(
+                            "Garmin: Glucose fallback timer fired (no determination in \(Int(self.glucoseFallbackDelay))s)"
+                        )
 
                     let watchState = try await self.setupGarminWatchState(triggeredBy: "Glucose (fallback)")
                     let watchStateData = try JSONEncoder().encode(watchState)
@@ -304,7 +323,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
     /// Builds GarminWatchState array for watchfaces
     func setupGarminWatchState(triggeredBy: String = #function) async throws -> [GarminWatchState] {
-        guard !devices.isEmpty else {
+        // Skip if no devices (unless in simulator with simulated device enabled)
+        #if targetEnvironment(simulator)
+            let skipDeviceCheck = enableSimulatedDevice
+        #else
+            let skipDeviceCheck = false
+        #endif
+
+        guard !devices.isEmpty || skipDeviceCheck else {
             return []
         }
 
@@ -530,6 +556,20 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         devices = persistedDevices.map(\.iqDevice)
     }
 
+    // MARK: - Simulator Support
+
+    #if targetEnvironment(simulator)
+        /// Creates a simulated Garmin device for testing in Xcode Simulator
+        /// This allows testing the data flow without actual hardware
+        private func addSimulatedDevice() {
+            let simulatedUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+            let simulatedDevice = GarminDevice(id: simulatedUUID, modelName: "Simulator", friendlyName: "Simulated Garmin")
+            persistedDevices = [simulatedDevice]
+            devices = [simulatedDevice.iqDevice]
+            debug(.watchManager, "Garmin: Added simulated device for Simulator testing")
+        }
+    #endif
+
     // MARK: - Combine Subscriptions
 
     private func subscribeToOpenFromGarminConnect() {
@@ -583,6 +623,15 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             debug(.watchManager, "Garmin: Invalid JSON for watch-state data")
             return
         }
+
+        // In simulator, just log what would be sent (no actual ConnectIQ)
+        #if targetEnvironment(simulator)
+            if enableSimulatedDevice {
+                debug(.watchManager, "Garmin: [SIMULATOR] Would send data: \(jsonObject)")
+                lastSentDataHash = currentHash
+                return
+            }
+        #endif
 
         watchApps.forEach { app in
             let appName = self.appDisplayName(for: app.uuid!)
@@ -661,7 +710,7 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
 
     // MARK: - IQDeviceEventDelegate
 
-    func deviceStatusChanged(_ device: IQDevice, status: IQDeviceStatus) {
+    func deviceStatusChanged(_: IQDevice, status: IQDeviceStatus) {
         // Always log connection state changes - critical for diagnosing SDK issues
         switch status {
         case .invalidDevice:

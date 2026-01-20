@@ -35,26 +35,48 @@ protocol GarminManager {
 final class BaseGarminManager: NSObject, GarminManager, Injectable {
     // MARK: - Dependencies & Properties
 
+    /// Observes system-wide notifications, including `.openFromGarminConnect`.
     @Injected() private var notificationCenter: NotificationCenter!
+
+    /// Broadcaster used for publishing or subscribing to global events (e.g., unit changes).
     @Injected() private var broadcaster: Broadcaster!
+
+    /// APSManager containing insulin pump logic, e.g., for making bolus requests, reading basal info, etc.
     @Injected() private var apsManager: APSManager!
+
+    /// Manages local user settings, such as glucose units (mg/dL or mmol/L).
     @Injected() private var settingsManager: SettingsManager!
+
+    /// Stores, retrieves, and updates glucose data in CoreData.
     @Injected() private var glucoseStorage: GlucoseStorage!
+
+    /// Stores, retrieves, and updates insulin dose determinations in CoreData.
     @Injected() private var determinationStorage: DeterminationStorage!
+
     @Injected() private var iobService: IOBService!
 
+    /// Persists the user's device list between app launches.
     @Persisted(key: "BaseGarminManager.persistedDevices") private var persistedDevices: [GarminDevice] = []
 
+    /// Router for presenting alerts or navigation flows (injected via Swinject).
     private let router: Router
+
+    /// Garmin ConnectIQ shared instance for watch interactions.
     private let connectIQ = ConnectIQ.sharedInstance()
+
+    /// Keeps references to watch apps (both watchface & data field) for each registered device.
     private var watchApps: [IQApp] = []
+
+    /// A set of Combine cancellables for managing the lifecycle of various subscriptions.
     private var cancellables = Set<AnyCancellable>()
+
+    /// Holds a promise used when the user is selecting devices (via `showDeviceSelection()`).
     private var deviceSelectionPromise: Future<[IQDevice], Never>.Promise?
 
     /// Subject for debouncing watch state updates
     private let watchStateSubject = PassthroughSubject<Data, Never>()
 
-    /// Current glucose units
+    /// Current glucose units, either mg/dL or mmol/L, read from user settings.
     private var units: GlucoseUnits = .mgdL
 
     // MARK: - Debug Logging
@@ -95,22 +117,34 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     /// Queue for handling Core Data change notifications
     private let queue = DispatchQueue(label: "BaseGarminManager.queue", qos: .utility)
 
+    /// Publishes any changed CoreData objects that match our filters (e.g., OrefDetermination, GlucoseStored).
     private var coreDataPublisher: AnyPublisher<Set<NSManagedObjectID>, Never>?
+
+    /// Additional local subscriptions (separate from `cancellables`) for CoreData events.
     private var subscriptions = Set<AnyCancellable>()
 
+    /// Represents the context for background tasks in CoreData.
     let backgroundContext = CoreDataStack.shared.newTaskContext()
+
+    /// Represents the main (view) context for CoreData, typically used on the main thread.
     let viewContext = CoreDataStack.shared.persistentContainer.viewContext
 
     /// Array of Garmin `IQDevice` objects currently tracked.
+    /// Changing this property triggers re-registration and updates persisted devices.
     private(set) var devices: [IQDevice] = [] {
         didSet {
+            // Persist newly updated device list
             persistedDevices = devices.map(GarminDevice.init)
+            // Re-register for events, app messages, etc.
             registerDevices(devices)
         }
     }
 
     // MARK: - Initialization
 
+    /// Creates a new `BaseGarminManager`, injecting required services, restoring any persisted devices,
+    /// and setting up watchers for data changes (e.g., glucose updates).
+    /// - Parameter resolver: Swinject resolver for injecting dependencies like the Router.
     init(resolver: Resolver) {
         router = resolver.resolve(Router.self)!
         super.init()
@@ -188,6 +222,8 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
     // MARK: - Internal Setup / Handlers
 
+    /// Sets up handlers for OrefDetermination and GlucoseStored entity changes in CoreData.
+    /// When these change, we re-compute the Garmin watch state and send updates to the watch.
     private func registerHandlers() {
         // OrefDetermination changes - debounce at CoreData level
         coreDataPublisher?
@@ -262,6 +298,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
     // MARK: - CoreData Fetch Methods
 
+    /// Fetches recent glucose readings from CoreData, up to specified limit.
+    /// - Parameter limit: Maximum number of glucose entries to fetch (default: 2)
+    /// - Returns: An array of `NSManagedObjectID`s for glucose readings.
     private func fetchGlucose(limit: Int = 2) async throws -> [NSManagedObjectID] {
         let results = try await CoreDataStack.shared.fetchEntitiesAsync(
             ofType: GlucoseStored.self,
@@ -482,6 +521,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
     // MARK: - Device & App Registration
 
+    /// Registers the given devices for ConnectIQ events (device status changes) and watch app messages.
+    /// It also creates and registers watch apps (watchface + data field) for each device.
+    /// - Parameter devices: The devices to register.
     private func registerDevices(_ devices: [IQDevice]) {
         watchApps.removeAll()
 
@@ -511,6 +553,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         }
     }
 
+    /// Restores previously persisted devices from local storage into `devices`.
     private func restoreDevices() {
         devices = persistedDevices.map(\.iqDevice)
     }
@@ -557,6 +600,8 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
     // MARK: - Combine Subscriptions
 
+    /// Subscribes to the `.openFromGarminConnect` notification, parsing devices from the given URL
+    /// and updating the device list accordingly.
     private func subscribeToOpenFromGarminConnect() {
         notificationCenter
             .publisher(for: .openFromGarminConnect)
@@ -579,6 +624,8 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
     // MARK: - Parsing & Broadcasting
 
+    /// Parses devices from a Garmin Connect URL and updates our `devices` property.
+    /// - Parameter url: The URL provided by Garmin Connect containing device selection info.
     private func parseDevices(for url: URL) {
         let parsed = connectIQ?.parseDeviceSelectionResponse(from: url) as? [IQDevice]
         devices = parsed ?? []
@@ -636,6 +683,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
     // MARK: - GarminManager Conformance
 
+    /// Prompts the user to select one or more Garmin devices, returning a publisher that emits
+    /// the final array of selected devices once the user finishes selection.
+    /// - Returns: An `AnyPublisher` emitting `[IQDevice]` on success, or empty array on error/timeout.
     func selectDevices() -> AnyPublisher<[IQDevice], Never> {
         Future { [weak self] promise in
             guard let self = self else {
@@ -650,16 +700,25 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         .eraseToAnyPublisher()
     }
 
+    /// Updates the manager's list of devices, typically after user selection or manual changes.
+    /// - Parameter devices: The new array of `IQDevice` objects to track.
     func updateDeviceList(_ devices: [IQDevice]) {
         self.devices = devices
     }
 
+    /// Sends the given watch state data to the debounce subject for eventual broadcast.
+    /// - Parameter data: JSON-encoded data representing the latest watch state.
     func sendWatchStateData(_ data: Data) {
         watchStateSubject.send(data)
     }
 
     // MARK: - Helper: Sending Messages
 
+    /// Sends a message to a given IQApp with optional progress and completion callbacks.
+    /// - Parameters:
+    ///   - msg: The data to send to the watch app.
+    ///   - app: The `IQApp` instance representing the watchface or data field.
+    ///   - appName: The display name of the app for logging.
     private func sendMessage(_ msg: Any, to app: IQApp, appName: String) {
         connectIQ?.sendMessage(
             msg,
@@ -682,6 +741,8 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppMessageDelegate {
     // MARK: - IQUIOverrideDelegate
 
+    /// Called if the Garmin Connect Mobile app is not installed or otherwise not available.
+    /// Typically, you would show an alert or prompt the user to install the app from the store.
     func needsToInstallConnectMobile() {
         debug(.apsManager, "Garmin is not available")
         let messageCont = MessageContent(
@@ -695,6 +756,10 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
 
     // MARK: - IQDeviceEventDelegate
 
+    /// Called whenever the status of a registered Garmin device changes (e.g., connected, not found, etc.).
+    /// - Parameters:
+    ///   - device: The device whose status has changed.
+    ///   - status: The new status for the device.
     func deviceStatusChanged(_: IQDevice, status: IQDeviceStatus) {
         // Always log connection state changes - critical for diagnosing SDK issues
         switch status {
@@ -715,6 +780,12 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
 
     // MARK: - IQAppMessageDelegate
 
+    /// Called when a message arrives from a Garmin watch app (watchface or data field).
+    /// If the watch requests a "status" update, we call `setupGarminWatchState()` asynchronously
+    /// and re-send the watch state data.
+    /// - Parameters:
+    ///   - message: The message content from the watch app.
+    ///   - app: The watch app sending the message.
     func receivedMessage(_ message: Any, from app: IQApp) {
         let appName = appDisplayName(for: app.uuid!)
         debugGarmin("Garmin: Received message '\(message)' from \(appName)")
@@ -737,6 +808,8 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
 }
 
 extension BaseGarminManager: SettingsObserver {
+    /// Called whenever TrioSettings changes (e.g., user toggles mg/dL vs. mmol/L).
+    /// - Parameter _: The updated TrioSettings instance.
     func settingsDidChange(_: TrioSettings) {
         units = settingsManager.settings.units
 

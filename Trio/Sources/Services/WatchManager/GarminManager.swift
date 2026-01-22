@@ -107,8 +107,8 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     // MARK: - Glucose/Determination Coordination
 
     /// Delay before sending glucose if determination hasn't arrived (seconds)
-    /// Based on log analysis: avg delay ~5s, max ~24s, >15s occurs <1% of time
-    private let glucoseFallbackDelay: TimeInterval = 20
+    /// Based on log analysis: avg delay ~5s, max ~11s with new timer coordination
+    private let glucoseFallbackDelay: TimeInterval = 10
 
     /// Pending glucose fallback task - cancelled if determination arrives first
     private var pendingGlucoseFallback: DispatchWorkItem?
@@ -255,7 +255,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     }
 
     /// Handles glucose updates with delayed fallback
-    /// Waits up to 20 seconds for determination to arrive before sending glucose-only update
+    /// Waits up to 10 seconds for determination to arrive before sending glucose-only update
     /// This ensures we send complete data when loop is working, but still update watch if loop is slow/failing
     private func handleGlucoseUpdate() {
         guard !devices.isEmpty else { return }
@@ -290,7 +290,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     }
 
     /// Handles IOB updates with delayed fallback
-    /// Also waits up to 20 seconds for determination to arrive, restarting the shared timer
+    /// Also waits up to 10 seconds for determination to arrive, restarting the shared timer
     /// This prevents IOB changes from triggering premature watch updates before determination arrives
     private func handleIOBUpdate() {
         guard !devices.isEmpty else { return }

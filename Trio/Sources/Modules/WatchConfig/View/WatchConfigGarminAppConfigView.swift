@@ -53,6 +53,9 @@ struct WatchConfigGarminAppConfigView: View {
                             ).buttonStyle(BorderlessButtonStyle())
                         }.padding(.top)
                         Spacer()
+                        // Inverted binding: "Disable" toggle controls "isEnabled" boolean
+                        // When toggle is ON → data transmission is DISABLED (isEnabled = false)
+                        // When toggle is OFF → data transmission is ENABLED (isEnabled = true)
                         Toggle("Disable Watchface Data", isOn: Binding(
                             get: { !state.garminSettings.isWatchfaceDataEnabled },
                             set: { state.garminSettings.isWatchfaceDataEnabled = !$0 }

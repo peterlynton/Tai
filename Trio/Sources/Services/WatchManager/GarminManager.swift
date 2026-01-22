@@ -180,11 +180,11 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             }
             .store(in: &subscriptions)
 
-        // IOB updates - needed for manual boluses which update IOB independently of loop
+        // IOB updates - also wait for determination like glucose does
         iobService.iobPublisher
             .receive(on: DispatchQueue.global(qos: .background))
             .sink { [weak self] _ in
-                self?.triggerWatchStateUpdate(triggeredBy: "IOB")
+                self?.handleIOBUpdate()
             }
             .store(in: &subscriptions)
 
@@ -289,6 +289,41 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         debugGarmin("Garmin: Glucose received - waiting \(Int(glucoseFallbackDelay))s for determination")
     }
 
+    /// Handles IOB updates with delayed fallback
+    /// Also waits up to 20 seconds for determination to arrive, restarting the shared timer
+    /// This prevents IOB changes from triggering premature watch updates before determination arrives
+    private func handleIOBUpdate() {
+        guard !devices.isEmpty else { return }
+
+        // Cancel any existing fallback timer (restart the 20s window)
+        pendingGlucoseFallback?.cancel()
+
+        // Create new fallback task
+        let fallback = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+
+            Task {
+                do {
+                    self
+                        .debugGarmin(
+                            "Garmin: IOB fallback timer fired (no determination in \(Int(self.glucoseFallbackDelay))s)"
+                        )
+
+                    let watchState = try await self.setupGarminWatchState(triggeredBy: "IOB (fallback)")
+                    let watchStateData = try JSONEncoder().encode(watchState)
+                    self.watchStateSubject.send(watchStateData)
+                } catch {
+                    debug(.watchManager, "Garmin: Error in IOB fallback: \(error)")
+                }
+            }
+        }
+
+        pendingGlucoseFallback = fallback
+        timerQueue.asyncAfter(deadline: .now() + glucoseFallbackDelay, execute: fallback)
+
+        debugGarmin("Garmin: IOB received - waiting \(Int(glucoseFallbackDelay))s for determination")
+    }
+
     /// Triggers watch state preparation and sends to debounce subject
     /// If triggered by Determination, cancels pending glucose fallback timer
     private func triggerWatchStateUpdate(triggeredBy trigger: String) {
@@ -364,6 +399,27 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         }
     }
 
+    /// Fetches all determinations from the last 30 minutes (no fetch limit).
+    /// Returns them sorted newest first, allowing us to find both enacted and suggested determinations.
+    /// - Returns: An array of `NSManagedObjectID`s for all determinations in the 30-minute window.
+    private func fetchDeterminations30Min() async throws -> [NSManagedObjectID] {
+        let results = try await CoreDataStack.shared.fetchEntitiesAsync(
+            ofType: OrefDetermination.self,
+            onContext: backgroundContext,
+            predicate: NSPredicate.predicateFor30MinAgoForDetermination,
+            key: "deliverAt",
+            ascending: false,
+            fetchLimit: 0 // No limit - get all determinations in 30min window
+        )
+
+        return try await backgroundContext.perform {
+            guard let fetchedResults = results as? [OrefDetermination] else {
+                throw CoreDataError.fetchError(function: #function, file: #file)
+            }
+            return fetchedResults.map(\.objectID)
+        }
+    }
+
     // MARK: - Watch State Setup
 
     /// Builds an array of GarminWatchState objects containing current glucose, trend, loop data, and historical readings.
@@ -384,16 +440,16 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         let glucoseLimit = needsHistoricalGlucoseData ? 24 : 2
         let glucoseIds = try await fetchGlucose(limit: glucoseLimit)
 
-        let determinationIds = try await determinationStorage.fetchLastDeterminationObjectID(
-            predicate: NSPredicate.enactedDetermination
-        )
+        // Fetch all determinations from last 30 minutes (no limit)
+        // This ensures we get both enacted and suggested determinations
+        let allDeterminationIds = try await fetchDeterminations30Min()
 
         let tempBasalIds = try await fetchTempBasals()
 
         let glucoseObjects: [GlucoseStored] = try await CoreDataStack.shared
             .getNSManagedObject(with: glucoseIds, context: backgroundContext)
-        let determinationObjects: [OrefDetermination] = try await CoreDataStack.shared
-            .getNSManagedObject(with: determinationIds, context: backgroundContext)
+        let allDeterminationObjects: [OrefDetermination] = try await CoreDataStack.shared
+            .getNSManagedObject(with: allDeterminationIds, context: backgroundContext)
         let tempBasalObjects: [PumpEventStored] = try await CoreDataStack.shared
             .getNSManagedObject(with: tempBasalIds, context: backgroundContext)
 
@@ -405,15 +461,22 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             // IOB with 1 decimal precision
             let iobValue = self.formatIOB(self.iobService.currentIOB ?? Decimal(0))
 
-            // Extract determination data
+            // Find enacted determination for timestamp (when loop actually ran)
+            // If no enacted determination exists in last 30 min, use a synthetic timestamp
+            // of "31 minutes ago" so watchface can distinguish between:
+            //   - nil = no data received yet (watch startup)
+            //   - 31+ min old = loop is stale
+            let enactedDetermination = allDeterminationObjects.first(where: { $0.enacted })
+            let enactedTimestamp: Date = enactedDetermination?.timestamp ?? Date().addingTimeInterval(-31 * 60)
+
+            // Extract data values from most recent determination (enacted or suggested)
+            // Suggested sets provide latest calculations even if loop hasn't run yet
             var cobValue: Double?
             var sensRatioValue: Double?
             var isfValue: Int16?
             var eventualBGValue: Int16?
-            var determinationTimestamp: Date?
 
-            if let latestDetermination = determinationObjects.first {
-                determinationTimestamp = latestDetermination.timestamp
+            if let latestDetermination = allDeterminationObjects.first {
                 cobValue = Double(latestDetermination.cob)
 
                 if let ratio = latestDetermination.autoISFratio {
@@ -467,12 +530,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
                 var watchState = GarminWatchState()
 
-                // Timestamp: Use determination timestamp to indicate loop staleness
-                // If loop hasn't run recently, the old determination timestamp shows data is stale
-                // Fall back to glucose timestamp only if no determination exists
+                // Loop timestamp: Only use enacted determination timestamp (never glucose timestamp)
+                // This shows when the loop actually executed, not when glucose was received
                 if index == 0 {
-                    let timestamp = determinationTimestamp ?? glucose.date
-                    watchState.date = timestamp.map { UInt64($0.timeIntervalSince1970 * 1000) }
+                    watchState.date = UInt64(enactedTimestamp.timeIntervalSince1970 * 1000)
                 } else {
                     watchState.date = glucose.date.map { UInt64($0.timeIntervalSince1970 * 1000) }
                 }
@@ -489,6 +550,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                     } else {
                         watchState.delta = 0
                     }
+
+                    // Glucose timestamp: Used by watchface to determine if glucose is fresh
+                    // Enables green coloring when: enacted loop is 6+ min old but glucose is <10 min old
+                    watchState.glucoseDate = glucose.date.map { UInt64($0.timeIntervalSince1970 * 1000) }
 
                     watchState.units_hint = unitsHint
                     watchState.iob = iobValue

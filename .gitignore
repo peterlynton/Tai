@@ -83,3 +83,6 @@ ConfigOverride.xcconfig
 
 # Logs
 logs/
+
+# Claude
+.claude/

@@ -214,14 +214,28 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         currentWatchface == .swissalpine
     }
 
-    /// Returns the display name for an app UUID (watchface or datafield)
+    /// Returns the display name for an app UUID (watchface or datafield).
+    /// Use this for routine log messages where UUID adds noise.
     private func appDisplayName(for uuid: UUID) -> String {
         if uuid == currentWatchface.watchfaceUUID {
             return "watchface:\(currentWatchface.displayName)"
         } else if uuid == currentDatafield.datafieldUUID {
             return "datafield:\(currentDatafield.displayName)"
         } else {
-            return uuid.uuidString
+            return "unknown app"
+        }
+    }
+
+    /// Returns the detailed display name including UUID for an app.
+    /// Use this for registration/connection messages and error scenarios where UUID identification is valuable.
+    /// This helps with debugging when multiple versions/distributions exist (local, test, live builds).
+    private func appDetailedName(for uuid: UUID) -> String {
+        if uuid == currentWatchface.watchfaceUUID {
+            return "watchface:\(currentWatchface.displayName) (\(uuid.uuidString))"
+        } else if uuid == currentDatafield.datafieldUUID {
+            return "datafield:\(currentDatafield.displayName) (\(uuid.uuidString))"
+        } else {
+            return "unknown app (\(uuid.uuidString))"
         }
     }
 
@@ -542,7 +556,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                let watchfaceUUID = currentWatchface.watchfaceUUID,
                let watchfaceApp = IQApp(uuid: watchfaceUUID, store: UUID(), device: device)
             {
-                debugGarmin("Garmin: Registered watchface:\(currentWatchface.displayName)")
+                debugGarmin("Garmin: Registered \(appDetailedName(for: watchfaceUUID))")
                 watchApps.append(watchfaceApp)
                 connectIQ?.register(forAppMessages: watchfaceApp, delegate: self)
             } else if !isWatchfaceDataEnabled {
@@ -553,7 +567,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             if let datafieldUUID = currentDatafield.datafieldUUID,
                let datafieldApp = IQApp(uuid: datafieldUUID, store: UUID(), device: device)
             {
-                debugGarmin("Garmin: Registered datafield:\(currentDatafield.displayName)")
+                debugGarmin("Garmin: Registered \(appDetailedName(for: datafieldUUID))")
                 watchApps.append(datafieldApp)
                 connectIQ?.register(forAppMessages: datafieldApp, delegate: self)
             }

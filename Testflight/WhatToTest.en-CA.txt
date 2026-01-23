@@ -1,2 +1,2 @@
 Trio dev 0.6.0.43
-reset Garmin completely to aiSR version
+test GarminSDK 1.8

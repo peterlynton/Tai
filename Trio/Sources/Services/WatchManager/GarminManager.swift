@@ -116,6 +116,22 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     /// Queue for glucose fallback timer
     private let timerQueue = DispatchQueue(label: "BaseGarminManager.timerQueue", qos: .utility)
 
+    // MARK: - Settings Change Throttle
+
+    /// Track previous Garmin settings to detect what specifically changed
+    private var previousGarminSettings = GarminWatchSettings()
+
+    /// Pending settings update task - waits for user to finish making changes
+    private var pendingSettingsUpdate: DispatchWorkItem?
+
+    /// Latest settings data to send when throttle timer fires
+    private var pendingSettingsData: Data?
+
+    /// How long to wait for additional settings changes before sending (seconds)
+    private let settingsThrottleDuration: TimeInterval = 10
+
+    // MARK: - CoreData & Subscriptions
+
     /// Queue for handling Core Data change notifications
     private let queue = DispatchQueue(label: "BaseGarminManager.queue", qos: .utility)
 
@@ -160,6 +176,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         subscribeToWatchState()
 
         units = settingsManager.settings.units
+        previousGarminSettings = settingsManager.settings.garminSettings
 
         broadcaster.register(SettingsObserver.self, observer: self)
 
@@ -255,8 +272,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
         // GlucoseStored changes - catches single glucose inserts that updatePublisher misses
         // (updatePublisher only fires for batch inserts, not single glucose readings)
+        // Debounce at subscriber level to collapse multiple rapid CoreData notifications into one
         coreDataPublisher?
             .filteredByEntityName("GlucoseStored")
+            .debounce(for: .milliseconds(500), scheduler: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.handleGlucoseUpdate()
             }
@@ -357,6 +376,45 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                 debug(.watchManager, "Garmin: Error preparing watch state (\(trigger)): \(error)")
             }
         }
+    }
+
+    /// Sends settings update with throttle - waits for user to finish making changes
+    /// If timer already running, just updates data without rescheduling
+    /// When timer fires, sends the latest collected data
+    private func sendSettingsUpdateThrottled() {
+        guard !devices.isEmpty else { return }
+
+        // If timer already scheduled, just log and return - data will be fresh when timer fires
+        if pendingSettingsUpdate != nil {
+            debugGarmin("Garmin: Settings throttle timer running, waiting for more changes")
+            return
+        }
+
+        // Create new throttled task
+        let throttledTask = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+
+            self.debugGarmin("Garmin: Settings throttle timer fired - sending update")
+
+            Task {
+                do {
+                    let watchState = try await self.setupGarminWatchState(triggeredBy: "Settings")
+                    let watchStateData = try JSONEncoder().encode(watchState)
+                    self.watchStateSubject.send(watchStateData)
+                } catch {
+                    debug(.watchManager, "Garmin: Error preparing settings watch state: \(error)")
+                }
+            }
+
+            // Clean up
+            self.pendingSettingsUpdate = nil
+            self.pendingSettingsData = nil
+        }
+
+        pendingSettingsUpdate = throttledTask
+        timerQueue.asyncAfter(deadline: .now() + settingsThrottleDuration, execute: throttledTask)
+
+        debugGarmin("Garmin: Settings throttle timer started (\(Int(settingsThrottleDuration))s)")
     }
 
     // MARK: - CoreData Fetch Methods
@@ -898,17 +956,50 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
 }
 
 extension BaseGarminManager: SettingsObserver {
-    /// Called whenever TrioSettings changes (e.g., user toggles mg/dL vs. mmol/L).
+    /// Called whenever TrioSettings changes (e.g., user toggles mg/dL vs. mmol/L, watchface selection, etc.).
+    /// Compares previous vs current settings to determine what changed and responds appropriately.
     /// - Parameter _: The updated TrioSettings instance.
     func settingsDidChange(_: TrioSettings) {
-        units = settingsManager.settings.units
+        let currentGarminSettings = settingsManager.settings.garminSettings
+        let currentUnits = settingsManager.settings.units
 
-        // Re-register devices to pick up watchface/datafield changes
-        if !devices.isEmpty {
-            registerDevices(devices)
+        // Detect what specifically changed
+        let unitsChanged = currentUnits != units
+        let watchfaceChanged = currentGarminSettings.watchface != previousGarminSettings.watchface
+        let datafieldChanged = currentGarminSettings.datafield != previousGarminSettings.datafield
+        let watchfaceDataEnabledChanged = currentGarminSettings.isWatchfaceDataEnabled != previousGarminSettings
+            .isWatchfaceDataEnabled
+        let displayAttributesChanged = currentGarminSettings.primaryAttributeChoice != previousGarminSettings
+            .primaryAttributeChoice ||
+            currentGarminSettings.secondaryAttributeChoice != previousGarminSettings.secondaryAttributeChoice
+
+        // Update stored values
+        units = currentUnits
+
+        // Re-register devices only if watchface/datafield configuration changed
+        if watchfaceChanged || datafieldChanged || watchfaceDataEnabledChanged {
+            debugGarmin("Garmin: Watchface/datafield config changed - re-registering devices")
+            if !devices.isEmpty {
+                registerDevices(devices)
+            }
         }
 
-        // Send updated state
-        triggerWatchStateUpdate(triggeredBy: "Settings")
+        // Send update for settings that affect displayed data
+        // Watchface/datafield changes only need re-registration, not data update
+        // Disabling watchface data doesn't need an update (nothing to send to)
+        let watchfaceDataJustEnabled = watchfaceDataEnabledChanged && currentGarminSettings.isWatchfaceDataEnabled
+
+        if watchfaceDataJustEnabled {
+            // Send immediately when watchface data is enabled - user wants to see data now
+            debugGarmin("Garmin: Watchface data enabled - sending update immediately")
+            triggerWatchStateUpdate(triggeredBy: "Settings")
+        } else if unitsChanged || displayAttributesChanged {
+            // Throttle other settings changes in case user makes multiple changes
+            debugGarmin("Garmin: Settings changed - scheduling throttled update")
+            sendSettingsUpdateThrottled()
+        }
+
+        // Store current Garmin settings for next comparison
+        previousGarminSettings = currentGarminSettings
     }
 }

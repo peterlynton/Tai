@@ -582,15 +582,19 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             let currentHash = watchStates.hashValue
             if currentHash == self.lastPreparedDataHash {
                 if self.debugWatchState {
-                    debug(.watchManager, "Garmin: Skipping - data unchanged (hash: \(currentHash))")
+                    debug(.watchManager, "Garmin: Skipping - data unchanged")
                 }
                 return self.lastPreparedWatchState ?? watchStates
             }
 
             if self.debugWatchState {
+                let iobFormatted = String(format: "%.1f", watchStates.first?.iob ?? 0)
+                let cobFormatted = String(format: "%.0f", watchStates.first?.cob ?? 0)
+                let tbrFormatted = String(format: "%.2f", watchStates.first?.tbr ?? 0)
+                let sensRatioFormatted = String(format: "%.2f", watchStates.first?.sensRatio ?? 0)
                 debug(
                     .watchManager,
-                    "Garmin: Prepared \(watchStates.count) entries - sgv: \(watchStates.first?.sgv ?? 0), iob: \(watchStates.first?.iob ?? 0), cob: \(watchStates.first?.cob ?? 0), tbr: \(watchStates.first?.tbr ?? 0), eventualBG: \(watchStates.first?.eventualBG ?? 0), sensRatio: \(watchStates.first?.sensRatio ?? 0)"
+                    "Garmin: Prepared \(watchStates.count) entries - sgv: \(watchStates.first?.sgv ?? 0), iob: \(iobFormatted), cob: \(cobFormatted), tbr: \(tbrFormatted), eventualBG: \(watchStates.first?.eventualBG ?? 0), sensRatio: \(sensRatioFormatted)"
                 )
             }
 

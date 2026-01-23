@@ -81,13 +81,21 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
     // MARK: - Debug Logging
 
-    /// Enable/disable verbose debug logging for watch state preparation
-    private let debugWatchState = true
+    /// Enable/disable watch state preparation and throttling logs:
+    /// - Glucose/IOB received, waiting for determination
+    /// - Determination arrived, cancelled timer
+    /// - Preparing/Prepared watch state, Skipping - data unchanged
+    /// - Settings throttle timer started/running/fired
+    private let debugWatchState = false
 
-    /// Enable/disable general Garmin debug logging (connections, sends, etc.)
+    /// Enable/disable watch status and communication logs:
+    /// - Device status changes (connected, notConnected, etc.)
+    /// - Registered watchface/datafield
+    /// - Sending to / Successfully sent
+    /// - Watchface/datafield config changed
     private let debugGarminEnabled = true
 
-    /// Helper method for conditional Garmin debug logging.
+    /// Helper method for conditional watch status/comms logging.
     /// Logs messages only if debugGarminEnabled is true.
     /// - Parameter message: The debug message to log.
     private func debugGarmin(_ message: String) {
@@ -297,10 +305,12 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
             Task {
                 do {
-                    self
-                        .debugGarmin(
+                    if self.debugWatchState {
+                        debug(
+                            .watchManager,
                             "Garmin: Glucose fallback timer fired (no determination in \(Int(self.glucoseFallbackDelay))s)"
                         )
+                    }
 
                     let watchState = try await self.setupGarminWatchState(triggeredBy: "Glucose")
                     let watchStateData = try JSONEncoder().encode(watchState)
@@ -314,7 +324,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         pendingGlucoseFallback = fallback
         timerQueue.asyncAfter(deadline: .now() + glucoseFallbackDelay, execute: fallback)
 
-        debugGarmin("Garmin: Glucose received - waiting \(Int(glucoseFallbackDelay))s for determination")
+        if debugWatchState {
+            debug(.watchManager, "Garmin: Glucose received - waiting \(Int(glucoseFallbackDelay))s for determination")
+        }
     }
 
     /// Handles IOB updates with delayed fallback
@@ -332,10 +344,12 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
             Task {
                 do {
-                    self
-                        .debugGarmin(
+                    if self.debugWatchState {
+                        debug(
+                            .watchManager,
                             "Garmin: IOB fallback timer fired (no determination in \(Int(self.glucoseFallbackDelay))s)"
                         )
+                    }
 
                     let watchState = try await self.setupGarminWatchState(triggeredBy: "IOB")
                     let watchStateData = try JSONEncoder().encode(watchState)
@@ -349,7 +363,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         pendingGlucoseFallback = fallback
         timerQueue.asyncAfter(deadline: .now() + glucoseFallbackDelay, execute: fallback)
 
-        debugGarmin("Garmin: IOB received - waiting \(Int(glucoseFallbackDelay))s for determination")
+        if debugWatchState {
+            debug(.watchManager, "Garmin: IOB received - waiting \(Int(glucoseFallbackDelay))s for determination")
+        }
     }
 
     /// Triggers watch state preparation and sends to debounce subject
@@ -363,7 +379,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             if pendingGlucoseFallback != nil {
                 pendingGlucoseFallback?.cancel()
                 pendingGlucoseFallback = nil
-                debugGarmin("Garmin: Determination arrived - cancelled glucose fallback timer")
+                if debugWatchState {
+                    debug(.watchManager, "Garmin: Determination arrived - cancelled glucose fallback timer")
+                }
             }
         }
 
@@ -386,7 +404,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
         // If timer already scheduled, just log and return - data will be fresh when timer fires
         if pendingSettingsUpdate != nil {
-            debugGarmin("Garmin: Settings throttle timer running, waiting for more changes")
+            if debugWatchState {
+                debug(.watchManager, "Garmin: Settings throttle timer running, waiting for more changes")
+            }
             return
         }
 
@@ -394,7 +414,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         let throttledTask = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
 
-            self.debugGarmin("Garmin: Settings throttle timer fired - sending update")
+            if self.debugWatchState {
+                debug(.watchManager, "Garmin: Settings throttle timer fired - sending update")
+            }
 
             Task {
                 do {
@@ -414,7 +436,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         pendingSettingsUpdate = throttledTask
         timerQueue.asyncAfter(deadline: .now() + settingsThrottleDuration, execute: throttledTask)
 
-        debugGarmin("Garmin: Settings throttle timer started (\(Int(settingsThrottleDuration))s)")
+        if debugWatchState {
+            debug(.watchManager, "Garmin: Settings throttle timer started (\(Int(settingsThrottleDuration))s)")
+        }
     }
 
     // MARK: - CoreData Fetch Methods
@@ -804,7 +828,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         }
 
         if currentHash == lastSentDataHash {
-            debugGarmin("Garmin: Skipping broadcast - data unchanged")
+            if debugWatchState {
+                debug(.watchManager, "Garmin: Skipping broadcast - data unchanged")
+            }
             return
         }
 
@@ -991,11 +1017,15 @@ extension BaseGarminManager: SettingsObserver {
 
         if watchfaceDataJustEnabled {
             // Send immediately when watchface data is enabled - user wants to see data now
-            debugGarmin("Garmin: Watchface data enabled - sending update immediately")
+            if debugWatchState {
+                debug(.watchManager, "Garmin: Watchface data enabled - sending update immediately")
+            }
             triggerWatchStateUpdate(triggeredBy: "Settings")
         } else if unitsChanged || displayAttributesChanged {
             // Throttle other settings changes in case user makes multiple changes
-            debugGarmin("Garmin: Settings changed - scheduling throttled update")
+            if debugWatchState {
+                debug(.watchManager, "Garmin: Settings changed - scheduling throttled update")
+            }
             sendSettingsUpdateThrottled()
         }
 

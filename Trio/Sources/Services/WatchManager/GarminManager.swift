@@ -893,21 +893,32 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     // MARK: - Helper: Sending Messages
 
     /// Sends a message to a given IQApp with optional progress and completion callbacks.
+    /// Retries once after a short delay if the first attempt fails (SDK may need time after re-registration).
     /// - Parameters:
     ///   - msg: The data to send to the watch app.
     ///   - app: The `IQApp` instance representing the watchface or data field.
     ///   - appName: The display name of the app for logging.
-    private func sendMessage(_ msg: Any, to app: IQApp, appName: String) {
+    ///   - isRetry: Whether this is a retry attempt (to prevent infinite retries).
+    private func sendMessage(_ msg: Any, to app: IQApp, appName: String, isRetry: Bool = false) {
         connectIQ?.sendMessage(
             msg,
             to: app,
             progress: { _, _ in },
-            completion: { result in
+            completion: { [weak self] result in
                 switch result {
                 case .success:
                     debug(.watchManager, "Garmin: Successfully sent to \(appName)")
                 default:
-                    debug(.watchManager, "Garmin: FAILED to send to \(appName)")
+                    if isRetry {
+                        debug(.watchManager, "Garmin: FAILED to send to \(appName) (retry also failed)")
+                    } else {
+                        debug(.watchManager, "Garmin: FAILED to send to \(appName) - will retry in 2s")
+                        // Retry after delay - SDK may need time after re-registration
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            self?.debugGarmin("Garmin: Retrying send to \(appName)")
+                            self?.sendMessage(msg, to: app, appName: appName, isRetry: true)
+                        }
+                    }
                 }
             }
         )

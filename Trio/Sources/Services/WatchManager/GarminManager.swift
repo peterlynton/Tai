@@ -719,9 +719,9 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         // Without this, hash deduplication could skip sending to new apps if data unchanged
         lastSentDataHash = nil
 
-        // Clear ready state - devices need to complete characteristic discovery again
-        // after re-registration (SDK 1.8+ requirement)
-        readyDevices.removeAll()
+        // Note: Do NOT clear readyDevices here. The device ready state is based on BLE
+        // characteristic discovery, which only happens on new connections. Re-registering
+        // for app messages doesn't affect the underlying BLE connection state.
 
         for device in devices {
             connectIQ?.register(forDeviceEvents: device, delegate: self)

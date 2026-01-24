@@ -103,6 +103,13 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         debug(.watchManager, message)
     }
 
+    // MARK: - Device Ready State (SDK 1.8+)
+
+    /// Tracks which devices have completed characteristic discovery and are ready for communication.
+    /// In SDK 1.8+, `deviceStatusChanged: connected` does NOT mean the device is ready.
+    /// We must wait for `deviceCharacteristicsDiscovered:` before sending messages.
+    private var readyDevices: Set<UUID> = []
+
     // MARK: - Deduplication
 
     /// Hash of last sent data to prevent duplicate broadcasts
@@ -712,6 +719,10 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         // Without this, hash deduplication could skip sending to new apps if data unchanged
         lastSentDataHash = nil
 
+        // Clear ready state - devices need to complete characteristic discovery again
+        // after re-registration (SDK 1.8+ requirement)
+        readyDevices.removeAll()
+
         for device in devices {
             connectIQ?.register(forDeviceEvents: device, delegate: self)
 
@@ -845,6 +856,13 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
 
         watchApps.forEach { app in
             let appName = self.appDisplayName(for: app.uuid!)
+
+            // Check if device is ready (SDK 1.8+ requirement)
+            guard let device = app.device, readyDevices.contains(device.uuid) else {
+                debugGarmin("Garmin: Skipping \(appName) - device not ready")
+                return
+            }
+
             connectIQ?.getAppStatus(app) { [weak self] status in
                 guard status?.isInstalled == true else {
                     debug(.watchManager, "Garmin: App not installed: \(appName)")
@@ -946,25 +964,43 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
     // MARK: - IQDeviceEventDelegate
 
     /// Called whenever the status of a registered Garmin device changes (e.g., connected, not found, etc.).
+    /// Note: In SDK 1.8+, `connected` does NOT mean ready for communication.
+    /// Wait for `deviceCharacteristicsDiscovered:` before sending messages.
     /// - Parameters:
     ///   - device: The device whose status has changed.
     ///   - status: The new status for the device.
-    func deviceStatusChanged(_: IQDevice, status: IQDeviceStatus) {
+    func deviceStatusChanged(_ device: IQDevice, status: IQDeviceStatus) {
         // Always log connection state changes - critical for diagnosing SDK issues
         switch status {
         case .invalidDevice:
             debug(.watchManager, "Garmin: Device status -> invalidDevice")
+            readyDevices.remove(device.uuid)
         case .bluetoothNotReady:
             debug(.watchManager, "Garmin: Device status -> bluetoothNotReady")
+            readyDevices.remove(device.uuid)
         case .notFound:
             debug(.watchManager, "Garmin: Device status -> notFound")
+            readyDevices.remove(device.uuid)
         case .notConnected:
             debug(.watchManager, "Garmin: Device status -> notConnected")
+            readyDevices.remove(device.uuid)
         case .connected:
-            debug(.watchManager, "Garmin: Device status -> connected")
+            debug(.watchManager, "Garmin: Device status -> connected (waiting for characteristics)")
         @unknown default:
             debug(.watchManager, "Garmin: Device status -> unknown(\(status.rawValue))")
         }
+    }
+
+    /// Called when device characteristics are discovered and the device is ready for communication.
+    /// This is required in SDK 1.8+ - sending before this callback may fail.
+    /// - Parameter device: The device whose characteristics have been discovered.
+    func deviceCharacteristicsDiscovered(_ device: IQDevice) {
+        debug(.watchManager, "Garmin: Device characteristics discovered - ready for communication")
+        readyDevices.insert(device.uuid)
+
+        // Trigger a data send now that device is ready
+        // This ensures newly connected devices get data promptly
+        triggerWatchStateUpdate(triggeredBy: "DeviceReady")
     }
 
     // MARK: - IQAppMessageDelegate

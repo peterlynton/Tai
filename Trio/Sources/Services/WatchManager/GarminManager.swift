@@ -86,7 +86,7 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     /// - Determination arrived, cancelled timer
     /// - Preparing/Prepared watch state, Skipping - data unchanged
     /// - Settings throttle timer started/running/fired
-    private let debugWatchState = false
+    private let debugWatchState = true
 
     /// Enable/disable watch status and communication logs:
     /// - Device status changes (connected, notConnected, etc.)
@@ -1015,20 +1015,14 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
         let appName = appDisplayName(for: app.uuid!)
         debugGarmin("Garmin: Received message '\(message)' from \(appName)")
 
-        // If watch requests status update, send current data
+        // If watch requests status update, send current data via unified path
         guard let statusString = message as? String, statusString == "status" else {
             return
         }
 
-        Task {
-            do {
-                let watchState = try await setupGarminWatchState(triggeredBy: "WatchRequest")
-                let watchStateData = try JSONEncoder().encode(watchState)
-                sendWatchStateData(watchStateData)
-            } catch {
-                debug(.watchManager, "Garmin: Cannot encode watch state: \(error)")
-            }
-        }
+        // Use triggerWatchStateUpdate for consistent deduplication and debouncing
+        // This prevents double sends when watchface request coincides with determination
+        triggerWatchStateUpdate(triggeredBy: "WatchRequest")
     }
 }
 

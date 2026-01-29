@@ -37,7 +37,6 @@ extension SettingsExport {
             case devices = "Devices"
             case therapy = "Therapy"
             case algorithm = "Algorithm"
-            case autoISF = "AutoISF"
             case features = "Features"
             case notifications = "Notifications"
             case services = "Services"
@@ -643,125 +642,120 @@ extension SettingsExport {
                     value: String(format: "%.0f", (preferences.noisyCGMTargetMultiplier as NSDecimalNumber).doubleValue * 100),
                     unit: "%"
                 )
-            }
 
-            // AutoISF Settings
-            if categoriesToExport.contains(.autoISF) {
-                let autoISFCategory = String(localized: "AutoISF")
-
-                // AutoISF Core Settings
+                // AutoISF Settings
                 let autoISFSubcategory = String(localized: "AutoISF")
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "Enable AutoISF"),
                     value: preferences.autoisf ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "Enable Autosens"),
                     value: preferences.enableAutosens ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "Enable SMB Even On Odd Off Always"),
                     value: preferences.enableSMBEvenOnOddOffAlways ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "AutoISF Off Sport"),
                     value: preferences.autoISFoffSport ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "AutoISF Max"),
                     value: String(describing: preferences.autoISFmax)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "AutoISF Min"),
                     value: String(describing: preferences.autoISFmin)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "SMB Delivery Ratio"),
                     value: String(describing: preferences.smbDeliveryRatio)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "SMB Delivery Ratio Min"),
                     value: String(describing: preferences.smbDeliveryRatioMin)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "SMB Delivery Ratio Max"),
                     value: String(describing: preferences.smbDeliveryRatioMax)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "SMB Delivery Ratio BG Range"),
                     value: String(describing: preferences.smbDeliveryRatioBGrange),
                     unit: trioSettings.units.rawValue
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "SMB Max Range Extension"),
                     value: String(describing: preferences.smbMaxRangeExtension)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "Enable BG Acceleration"),
                     value: preferences.enableBGacceleration ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "AutoISF Hourly Change"),
                     value: String(describing: preferences.autoISFhourlyChange)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "Lower ISF Range Weight"),
                     value: String(describing: preferences.lowerISFrangeWeight)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "Higher ISF Range Weight"),
                     value: String(describing: preferences.higherISFrangeWeight)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "BG Accel ISF Weight"),
                     value: String(describing: preferences.bgAccelISFweight)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "BG Brake ISF Weight"),
                     value: String(describing: preferences.bgBrakeISFweight)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "Post Meal ISF Weight"),
                     value: String(describing: preferences.postMealISFweight)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: autoISFSubcategory,
                     name: String(localized: "IOB Threshold Percent"),
                     value: String(describing: preferences.iobThresholdPercent)
@@ -770,48 +764,48 @@ extension SettingsExport {
                 // B30 Settings
                 let b30Subcategory = String(localized: "B30")
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: b30Subcategory,
                     name: String(localized: "Enable B30"),
                     value: preferences.enableB30 ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: b30Subcategory,
                     name: String(localized: "B30 iTime Start Bolus"),
                     value: String(describing: preferences.B30iTimeStartBolus),
                     unit: String(localized: "hours")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: b30Subcategory,
                     name: String(localized: "B30 iTime"),
                     value: String(describing: preferences.B30iTime),
                     unit: String(localized: "minutes")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: b30Subcategory,
                     name: String(localized: "B30 iTime Target"),
                     value: String(describing: preferences.B30iTimeTarget),
                     unit: trioSettings.units.rawValue
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: b30Subcategory,
                     name: String(localized: "B30 Upper Limit"),
                     value: String(describing: preferences.B30upperLimit),
                     unit: trioSettings.units.rawValue
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: b30Subcategory,
                     name: String(localized: "B30 Upper Delta"),
                     value: String(describing: preferences.B30upperDelta),
                     unit: trioSettings.units.rawValue
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: b30Subcategory,
                     name: String(localized: "B30 Basal Factor"),
                     value: String(describing: preferences.B30basalFactor)
@@ -820,31 +814,31 @@ extension SettingsExport {
                 // KetoProtect Settings
                 let ketoProtectSubcategory = String(localized: "KetoProtect")
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: ketoProtectSubcategory,
                     name: String(localized: "Enable KetoProtect"),
                     value: preferences.ketoProtect ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: ketoProtectSubcategory,
                     name: String(localized: "Variable KetoProtect"),
                     value: preferences.variableKetoProtect ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: ketoProtectSubcategory,
                     name: String(localized: "KetoProtect Basal Percent"),
                     value: String(describing: preferences.ketoProtectBasalPercent)
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: ketoProtectSubcategory,
                     name: String(localized: "KetoProtect Absolute"),
                     value: preferences.ketoProtectAbsolut ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
-                    category: autoISFCategory,
+                    category: algorithmCategory,
                     subcategory: ketoProtectSubcategory,
                     name: String(localized: "KetoProtect Basal Absolute"),
                     value: String(describing: preferences.ketoProtectBasalAbsolut),

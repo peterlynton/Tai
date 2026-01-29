@@ -383,7 +383,7 @@ enum SettingItems {
         SettingItem(title: "Apple Health", view: .healthkit, path: ["Services"]),
         SettingItem(
             title: "Export Settings",
-            view: .export,
+            view: .settingsExport,
             searchContents: ["Export", "CSV", "Backup", "Share"],
             path: ["Services"]
         )

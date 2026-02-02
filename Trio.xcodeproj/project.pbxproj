@@ -290,7 +290,6 @@
 		49B21BF32D7F21D100D0B6C3 /* AutoISFHistoryRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B21BEA2D7F21D100D0B6C3 /* AutoISFHistoryRootView.swift */; };
 		49B21BF52D7F222600D0B6C3 /* DetailPopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B21BF42D7F222600D0B6C3 /* DetailPopupView.swift */; };
 		49B21BF72D7F231500D0B6C3 /* autoISFHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B21BF62D7F231500D0B6C3 /* autoISFHistory.swift */; };
-		49239B432EEA27AD00469145 /* TempTargetCalculations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49239B422EEA27AD00469145 /* TempTargetCalculations.swift */; };
 		49B9B57F2D5768D2009C6B59 /* AdjustmentStored+Helper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49B9B57E2D5768D2009C6B59 /* AdjustmentStored+Helper.swift */; };
 		49C13F832DE1AFD900556D78 /* Trio.entitlements in Resources */ = {isa = PBXBuildFile; fileRef = 49C13F822DE1AFD900556D78 /* Trio.entitlements */; };
 		49C27EC92E1BBBCA00FC65DF /* TaiStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 492B87002D9EC02700D5E42B /* TaiStyle.swift */; };
@@ -1159,7 +1158,6 @@
 		49B21BEE2D7F21D100D0B6C3 /* AutoISFHistoryStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoISFHistoryStateModel.swift; sourceTree = "<group>"; };
 		49B21BF42D7F222600D0B6C3 /* DetailPopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailPopupView.swift; sourceTree = "<group>"; };
 		49B21BF62D7F231500D0B6C3 /* autoISFHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = autoISFHistory.swift; sourceTree = "<group>"; };
-		49239B422EEA27AD00469145 /* TempTargetCalculations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TempTargetCalculations.swift; sourceTree = "<group>"; };
 		49B9B57E2D5768D2009C6B59 /* AdjustmentStored+Helper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AdjustmentStored+Helper.swift"; sourceTree = "<group>"; };
 		49C13F822DE1AFD900556D78 /* Trio.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Trio.entitlements; sourceTree = "<group>"; };
 		49CCD2102CAE5E99002A9476 /* BulletList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulletList.swift; sourceTree = "<group>"; };
@@ -2520,11 +2518,6 @@
 				E06B9119275B5EEA003C04B6 /* Array+Extension.swift */,
 				DD73FA0E2D74F57300D19D1E /* BackgroundTask+Helper.swift */,
 				FE66D16A291F74F8005D6F77 /* Bundle+Extensions.swift */,
-				DD82D4B72DCAB2BA00BAFC77 /* PropertyPersistentFlags.swift */,
-				E06B9119275B5EEA003C04B6 /* Array+Extension.swift */,
-				DD73FA0E2D74F57300D19D1E /* BackgroundTask+Helper.swift */,
-				DD1DB7CB2BECCA1F0048B367 /* BuildDetails.swift */,
-				FE66D16A291F74F8005D6F77 /* Bundle+Extensions.swift */,
 				BD249DA62D42FE3800412DEB /* Calendar+GlucoseStatsChart.swift */,
 				CEF1ED6A2D58FB4600FAF41E /* CGMOptions.swift */,
 				38F37827261260DC009DB701 /* Color+Extensions.swift */,
@@ -2532,8 +2525,6 @@
 				C2A0A42E2CE0312C003B98E8 /* ConstantValues.swift */,
 				38192E0C261BAF980094D973 /* ConvenienceExtensions.swift */,
 				49AC5B632D7F2833005A47F3 /* CustomDateTimePicker.swift */,
-				BD1661302B82ADAB00256551 /* CustomProgressView.swift */,
-				581516A32BCED84A00BF67D7 /* DebuggingIdentifiers.swift */,
 				3871F39E25ED895A0013ECB5 /* Decimal+Extensions.swift */,
 				38C4D33625E9A1A200D30B77 /* DispatchQueue+Extensions.swift */,
 				389487392614928B004DF424 /* DispatchTimer.swift */,
@@ -2545,23 +2536,17 @@
 				388E5A5B25B6F0770019842D /* JSON.swift */,
 				38A00B2225FC2B55006BC0B0 /* LRUCache.swift */,
 				49B21BBC2D7F102100D0B6C3 /* MainChartHelper.swift */,
-				582DF9782C8CE1E5001F516D /* MainChartHelper.swift */,
 				38FCF3D525E8FDF40078B0D1 /* MD5.swift */,
 				38E98A2C25F52DC400C0CED0 /* NSLocking+Extensions.swift */,
 				38C4D33925E9A1ED00D30B77 /* NSObject+AssociatedValues.swift */,
 				3811DE5725C9D4D500A708ED /* ProgressBar.swift */,
 				DD82D4B72DCAB2BA00BAFC77 /* PropertyPersistentFlags.swift */,
 				3811DEE325CA063400A708ED /* PropertyWrappers */,
-				DD82D4B72DCAB2BA00BAFC77 /* PropertyPersistentFlags.swift */,
-				3811DEE325CA063400A708ED /* PropertyWrappers */,
 				3811DE5525C9D4D500A708ED /* Publisher.swift */,
 				38E98A3625F5509500C0CED0 /* String+Extensions.swift */,
 				49239B422EEA27AD00469145 /* TempTargetCalculations.swift */,
 				DDCAE8322D78D49C00B1BB51 /* TherapySettingsUtil.swift */,
-				49239B422EEA27AD00469145 /* TempTargetCalculations.swift */,
-				DDCAE8322D78D49C00B1BB51 /* TherapySettingsUtil.swift */,
 				DDD5889C2DDDC9A900C8848D /* TimeAgoFormatter.swift */,
-				BD2FF19F2AE29D43005D1C5D /* ToggleStyles.swift */,
 				CEB434E428B8FF5D00B70274 /* UIColor.swift */,
 				FEFFA7A12929FE49007B8193 /* UIDevice+Extensions.swift */,
 				CEA4F62229BE10F70011ADF7 /* SavitzkyGolayFilter.swift */,
@@ -5762,8 +5747,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/garmin/connectiq-companion-app-sdk-ios";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.7.0;
+				kind = exactVersion;
+				version = 1.7.0;
 			};
 		};
 		B958F1B52BA0711600484851 /* XCRemoteSwiftPackageReference "MKRingProgressView" */ = {

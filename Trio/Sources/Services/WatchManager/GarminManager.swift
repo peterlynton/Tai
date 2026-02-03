@@ -896,6 +896,30 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
         watchStateSubject.send(data)
     }
 
+    /// Prepares and sends watch state data to a single specific app, bypassing the broadcast pipeline.
+    private func sendToApp(_ app: IQApp, appName: String, triggeredBy trigger: String) {
+        Task {
+            do {
+                let watchState = try await setupGarminWatchState(triggeredBy: trigger)
+                let watchStateData = try JSONEncoder().encode(watchState)
+                guard let jsonObject = try? JSONSerialization.jsonObject(with: watchStateData, options: []) else {
+                    debug(.watchManager, "Garmin: Invalid JSON for targeted send to \(appName)")
+                    return
+                }
+                connectIQ?.getAppStatus(app) { [weak self] status in
+                    guard status?.isInstalled == true else {
+                        debug(.watchManager, "Garmin: App not installed: \(appName)")
+                        return
+                    }
+                    self?.debugGarmin("Garmin: Sending to \(appName)")
+                    self?.sendMessage(jsonObject as Any, to: app, appName: appName)
+                }
+            } catch {
+                debug(.watchManager, "Garmin: Error preparing watch state for \(appName): \(error)")
+            }
+        }
+    }
+
     // MARK: - Helper: Sending Messages
 
     /// Sends a message to a given IQApp with optional progress and completion callbacks.
@@ -1033,13 +1057,22 @@ extension BaseGarminManager: SettingsObserver {
         // Watchface/datafield changes only need re-registration, not data update
         // Disabling watchface data doesn't need an update (nothing to send to)
         let watchfaceDataJustEnabled = watchfaceDataEnabledChanged && currentGarminSettings.isWatchfaceDataEnabled
+        let datafieldJustEnabled = datafieldChanged && currentGarminSettings.datafield != .none
 
-        if watchfaceDataJustEnabled {
-            // Send immediately when watchface data is enabled - user wants to see data now
-            if debugWatchState {
-                debug(.watchManager, "Garmin: Watchface data enabled - sending update immediately")
+        if watchfaceDataJustEnabled || datafieldJustEnabled {
+            // Send immediately to just the newly enabled app
+            let targetUUID = datafieldJustEnabled
+                ? currentGarminSettings.datafield.datafieldUUID
+                : currentGarminSettings.watchface.watchfaceUUID
+            if let targetUUID = targetUUID,
+               let targetApp = watchApps.first(where: { $0.uuid == targetUUID })
+            {
+                let appName = appDisplayName(for: targetUUID)
+                if debugWatchState {
+                    debug(.watchManager, "Garmin: \(appName) enabled - sending update immediately")
+                }
+                sendToApp(targetApp, appName: appName, triggeredBy: "Settings")
             }
-            triggerWatchStateUpdate(triggeredBy: "Settings")
         } else if unitsChanged || displayAttributesChanged {
             // Throttle other settings changes in case user makes multiple changes
             if debugWatchState {

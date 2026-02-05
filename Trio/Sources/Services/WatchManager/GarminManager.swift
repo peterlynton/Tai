@@ -152,7 +152,11 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     /// Used to detect if watch background service is active and receiving messages.
     private var lastWatchfaceRequestTime: Date?
 
-    /// How long since last watchface request before we consider the watch inactive (seconds).
+    /// Tracks when the datafield last sent a "status" request.
+    /// Used to detect if an activity is running (datafield only sends requests during activities).
+    private var lastDatafieldRequestTime: Date?
+
+    /// How long since last watchface/datafield request before we consider it inactive (seconds).
     /// If no request in this period, we skip sending to avoid queue buildup.
     private let watchfaceActiveTimeout: TimeInterval = 5 * 60 // 5 minutes
 
@@ -893,11 +897,34 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
                 return
             }
 
-            // Gate watchface sends based on activity (skip if inactive to prevent queue buildup)
-            // Datafield always receives sends - it handles its own lifecycle
+            // Gate sends based on activity to prevent queue buildup
             let isWatchface = appUUID == currentWatchface.watchfaceUUID
-            if isWatchface && isWatchfaceInactive() {
-                debug(.watchManager, "Garmin: Skipping watchface send - inactive (no status request in \(Int(watchfaceActiveTimeout / 60)) min)")
+            let isDatafield = appUUID == currentDatafield.datafieldUUID
+
+            // Skip watchface if inactive OR if datafield is active (user is exercising, looking at datafield)
+            if isWatchface {
+                if isDatafieldActive() {
+                    debug(
+                        .watchManager,
+                        "Garmin: Skipping watchface send - datafield is active (user in activity)"
+                    )
+                    return
+                }
+                if isWatchfaceInactive() {
+                    debug(
+                        .watchManager,
+                        "Garmin: Skipping watchface send - inactive (no status request in \(Int(watchfaceActiveTimeout / 60)) min)"
+                    )
+                    return
+                }
+            }
+
+            // Skip datafield if inactive (no activity running - datafield won't process messages)
+            if isDatafield, isDatafieldInactive() {
+                debug(
+                    .watchManager,
+                    "Garmin: Skipping datafield send - inactive (no activity running)"
+                )
                 return
             }
 
@@ -1062,15 +1089,29 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
             return
         }
 
-        // Track watchface activity for queue prevention (only for watchface, not datafield)
+        // Track app activity for queue prevention
         let isWatchface = appUUID == currentWatchface.watchfaceUUID
+        let isDatafield = appUUID == currentDatafield.datafieldUUID
+
         if isWatchface {
             let wasInactive = isWatchfaceInactive()
             lastWatchfaceRequestTime = Date()
 
             if wasInactive {
                 // Watchface just woke up after being inactive - log this event
+                // Clear send hash to force data delivery to the resumed app
                 debug(.watchManager, "Garmin: Watchface resumed after inactivity - sending fresh data")
+                lastSentDataHash = nil
+            }
+        } else if isDatafield {
+            let wasInactive = isDatafieldInactive()
+            lastDatafieldRequestTime = Date()
+
+            if wasInactive {
+                // Datafield just started (activity began) - log this event
+                // Clear send hash to force data delivery to the resumed app
+                debug(.watchManager, "Garmin: Datafield activity started - sending fresh data")
+                lastSentDataHash = nil
             }
         }
 
@@ -1086,6 +1127,27 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
             return false
         }
         return Date().timeIntervalSince(lastRequest) > watchfaceActiveTimeout
+    }
+
+    /// Checks if the datafield has been inactive (no status requests) for longer than the timeout.
+    /// Datafield only sends requests during an activity, so inactive means no activity running.
+    /// - Returns: true if datafield is inactive, false if recently active or never seen.
+    private func isDatafieldInactive() -> Bool {
+        guard let lastRequest = lastDatafieldRequestTime else {
+            // Never received a request - consider inactive (datafield needs activity to be useful)
+            return true
+        }
+        return Date().timeIntervalSince(lastRequest) > watchfaceActiveTimeout
+    }
+
+    /// Checks if the datafield is currently active (receiving status requests).
+    /// Active datafield means user is in an activity and looking at the datafield, not the watchface.
+    /// - Returns: true if datafield recently sent a status request, false otherwise.
+    private func isDatafieldActive() -> Bool {
+        guard let lastRequest = lastDatafieldRequestTime else {
+            return false
+        }
+        return Date().timeIntervalSince(lastRequest) <= watchfaceActiveTimeout
     }
 }
 

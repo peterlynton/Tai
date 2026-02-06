@@ -160,6 +160,14 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     /// If no request in this period, we skip sending to avoid queue buildup.
     private let watchfaceActiveTimeout: TimeInterval = 5 * 60 // 5 minutes
 
+    /// How long datafield must be active before we suppress watchface sends (seconds).
+    /// Longer than watchfaceActiveTimeout to ensure activity is sustained before suppressing.
+    private let datafieldSuppressionTimeout: TimeInterval = 10 * 60 // 10 minutes
+
+    /// How long since last datafield request before we consider it inactive (seconds).
+    /// Longer timeout (15 min) to handle BLE connection blips without prematurely stopping sends.
+    private let datafieldInactiveTimeout: TimeInterval = 15 * 60 // 15 minutes
+
     /// Tracks if watchface was suppressed because datafield was active (user in activity).
     /// When activity ends, this allows watchface to resume receiving data immediately
     /// without waiting for its next status request.
@@ -1185,23 +1193,25 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
 
     /// Checks if the datafield has been inactive (no status requests) for longer than the timeout.
     /// Datafield only sends requests during an activity, so inactive means no activity running.
+    /// Uses 15-minute timeout to handle BLE blips without prematurely stopping sends.
     /// - Returns: true if datafield is inactive, false if recently active or never seen.
     private func isDatafieldInactive() -> Bool {
         guard let lastRequest = lastDatafieldRequestTime else {
             // Never received a request - consider inactive (datafield needs activity to be useful)
             return true
         }
-        return Date().timeIntervalSince(lastRequest) > watchfaceActiveTimeout
+        return Date().timeIntervalSince(lastRequest) > datafieldInactiveTimeout
     }
 
     /// Checks if the datafield is currently active (receiving status requests).
     /// Active datafield means user is in an activity and looking at the datafield, not the watchface.
+    /// Uses longer timeout (10 min) to ensure activity is sustained before suppressing watchface.
     /// - Returns: true if datafield recently sent a status request, false otherwise.
     private func isDatafieldActive() -> Bool {
         guard let lastRequest = lastDatafieldRequestTime else {
             return false
         }
-        return Date().timeIntervalSince(lastRequest) <= watchfaceActiveTimeout
+        return Date().timeIntervalSince(lastRequest) <= datafieldSuppressionTimeout
     }
 }
 

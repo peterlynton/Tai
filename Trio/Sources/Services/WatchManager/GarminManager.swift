@@ -1166,20 +1166,24 @@ extension BaseGarminManager: IQUIOverrideDelegate, IQDeviceEventDelegate, IQAppM
 
         if isWatchface {
             let wasInactive = isWatchfaceInactive()
+            let hadActiveDatafieldSession = datafieldActivityStartTime != nil
+
             lastWatchfaceRequestTime = Date()
 
-            // If watchface was suppressed during activity, ANY request ends suppression
-            // (activity ended, user is now looking at watchface)
-            if watchfaceSuppressedDuringActivity {
-                debug(.watchManager, "Garmin: Activity ended - watchface taking over from datafield")
+            // Watchface explicitly requested data - if datafield session was active, end it
+            // Watchface takes priority on explicit request (user switched from activity screen to watchface)
+            if hadActiveDatafieldSession {
+                debug(.watchManager, "Garmin: Watchface request - ending datafield session, watchface takes priority")
                 datafieldActivityStartTime = nil
                 watchfaceSuppressedDuringActivity = false
-                lastSentDataHash = nil // Force fresh data
+                lastPreparedDataHash = nil // Force data preparation
+                lastSentDataHash = nil // Force data send
             } else if wasInactive {
                 // Watchface just woke up after being inactive - log this event
-                // Clear send hash to force data delivery to the resumed app
+                // Clear hashes to force data delivery to the resumed app
                 debug(.watchManager, "Garmin: Watchface resumed after inactivity - sending fresh data")
-                lastSentDataHash = nil
+                lastPreparedDataHash = nil // Force data preparation
+                lastSentDataHash = nil // Force data send
             }
         } else if isDatafield {
             let wasInactive = isDatafieldInactive()

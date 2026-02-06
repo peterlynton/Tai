@@ -160,6 +160,11 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
     /// If no request in this period, we skip sending to avoid queue buildup.
     private let watchfaceActiveTimeout: TimeInterval = 5 * 60 // 5 minutes
 
+    /// Tracks if watchface was suppressed because datafield was active (user in activity).
+    /// When activity ends, this allows watchface to resume receiving data immediately
+    /// without waiting for its next status request.
+    private var watchfaceSuppressedDuringActivity: Bool = false
+
     // MARK: - CoreData & Subscriptions
 
     /// Queue for handling Core Data change notifications
@@ -935,18 +940,36 @@ final class BaseGarminManager: NSObject, GarminManager, Injectable {
             // Skip watchface if inactive OR if datafield is active (user is exercising, looking at datafield)
             if isWatchface {
                 if isDatafieldActive() {
+                    // User is in activity - suppress watchface and remember we suppressed it
+                    self.watchfaceSuppressedDuringActivity = true
                     debug(
                         .watchManager,
                         "Garmin: Skipping watchface send - datafield is active (user in activity)"
                     )
                     return
                 }
+
+                // Datafield is inactive - check if watchface should resume
                 if isWatchfaceInactive() {
-                    debug(
-                        .watchManager,
-                        "Garmin: Skipping watchface send - inactive (no status request in \(Int(watchfaceActiveTimeout / 60)) min)"
-                    )
-                    return
+                    // Watchface was suppressed during activity - allow it to resume now that activity ended
+                    if self.watchfaceSuppressedDuringActivity {
+                        debug(
+                            .watchManager,
+                            "Garmin: Watchface resuming after activity - datafield now inactive"
+                        )
+                        self.watchfaceSuppressedDuringActivity = false
+                        // Continue to send (don't return)
+                    } else {
+                        // Watchface genuinely inactive (not due to activity suppression)
+                        debug(
+                            .watchManager,
+                            "Garmin: Skipping watchface send - inactive (no status request in \(Int(watchfaceActiveTimeout / 60)) min)"
+                        )
+                        return
+                    }
+                } else {
+                    // Watchface is active - clear suppression flag if it was set
+                    self.watchfaceSuppressedDuringActivity = false
                 }
             }
 

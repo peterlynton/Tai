@@ -20,7 +20,7 @@ struct CarbView: ChartContent {
 
     /// Extra vertical offset applied when a carb marker collides with a peak label.
     private var collisionOffset: Decimal {
-        MainChartHelper.bolusOffset(units: units)
+        MainChartHelper.bolusOffset(units: units) * Decimal(1.3)
     }
 
     var body: some ChartContent {

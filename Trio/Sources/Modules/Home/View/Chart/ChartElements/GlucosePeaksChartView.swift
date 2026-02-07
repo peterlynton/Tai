@@ -29,7 +29,7 @@ struct GlucosePeaksChartView: ChartContent {
             .symbolSize(0)
             .annotation(position: annotationPosition(for: peak.type)) {
                 Text(formattedValue)
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(color)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)

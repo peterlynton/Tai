@@ -25,7 +25,7 @@ struct InsulinView: ChartContent {
 
     /// Extra vertical offset applied when an insulin marker collides with a peak label.
     private var collisionOffset: Decimal {
-        MainChartHelper.bolusOffset(units: units)
+        MainChartHelper.bolusOffset(units: units) * Decimal(1.3)
     }
 
     private func drawBoluses() -> some ChartContent {
@@ -80,8 +80,11 @@ struct InsulinView: ChartContent {
                         MainChartHelper.Config.bolusSize + CGFloat(truncating: amount) * MainChartHelper.Config
                             .bolusScale
                     )
-                    let yPosition = (units == .mgdL ? Decimal(glucose) : Decimal(glucose).asMmolL) + MainChartHelper
+                    // Original position (glucose + 1× offset); shift up extra if near a peak-max label
+                    let baseY = (units == .mgdL ? Decimal(glucose) : Decimal(glucose).asMmolL) + MainChartHelper
                         .bolusOffset(units: units)
+                    let nearPeak = nearbyPeakType(for: bolusDate)
+                    let yPosition = nearPeak == .max ? baseY + collisionOffset : baseY
 
                     PointMark(
                         x: .value("Time", bolusDate, unit: .second),

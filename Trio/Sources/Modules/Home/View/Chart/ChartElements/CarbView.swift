@@ -8,6 +8,20 @@ struct CarbView: ChartContent {
     let carbData: [CarbEntryStored]
     let fpuData: [CarbEntryStored]
     let minValue: Decimal
+    let peaks: [(date: Date, glucose: Int16, type: ExtremumType)]
+
+    /// Time proximity (seconds) within which a carb marker is considered to collide with a peak label.
+    private static let proximityWindow: TimeInterval = 15 * 60
+
+    /// Returns the nearby peak's `ExtremumType` if `date` is within ±15 min of any peak, otherwise `nil`.
+    private func nearbyPeakType(for date: Date) -> ExtremumType? {
+        peaks.first(where: { abs($0.date.timeIntervalSince(date)) <= Self.proximityWindow && $0.type != .none })?.type
+    }
+
+    /// Extra vertical offset applied when a carb marker collides with a peak label.
+    private var collisionOffset: Decimal {
+        MainChartHelper.bolusOffset(units: units)
+    }
 
     var body: some ChartContent {
         drawCarbs()
@@ -23,8 +37,11 @@ struct CarbView: ChartContent {
                 glucoseValues: glucoseData,
                 time: carbDate.timeIntervalSince1970
             )?.glucose {
-                let yPosition = (units == .mgdL ? Decimal(glucose) : Decimal(glucose).asMmolL) - MainChartHelper
+                // Original position (glucose − 1× offset); shift down extra if near a peak-min label
+                let baseY = (units == .mgdL ? Decimal(glucose) : Decimal(glucose).asMmolL) - MainChartHelper
                     .bolusOffset(units: units)
+                let nearPeak = nearbyPeakType(for: carbDate)
+                let yPosition = nearPeak == .min ? baseY - collisionOffset : baseY
                 let size = min(
                     sqrt(CGFloat(carbAmount) / .pi) * MainChartHelper.Config.carbsScale,
                     MainChartHelper.Config.maxCarbSize

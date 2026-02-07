@@ -162,7 +162,8 @@ extension MainChartView {
                     glucoseData: state.glucoseFromPersistence,
                     insulinData: state.insulinFromPersistence,
                     units: state.units,
-                    bolusIncrement: state.bolusIncrement
+                    bolusIncrement: state.bolusIncrement,
+                    peaks: state.showGlucosePeaks ? state.glucosePeaks : []
                 )
 
                 CarbView(
@@ -171,7 +172,8 @@ extension MainChartView {
                     carbData: state.carbsFromPersistence,
                     fpuData: state.fpusFromPersistence,
                     minValue: units == .mgdL ? state.minYAxisValue : state.minYAxisValue
-                        .asMmolL
+                        .asMmolL,
+                    peaks: state.showGlucosePeaks ? state.glucosePeaks : []
                 )
 
                 ForecastView(

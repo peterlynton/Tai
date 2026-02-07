@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!-- Generator: Adobe Illustrator 29.8.0, SVG Export Plug-In . SVG Version: 9.03 Build 0)  -->
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 1024 1024" style="enable-background:new 0 0 1024 1024;" xml:space="preserve">
+<g id="_x31__x5F_ring">
+	
+		<linearGradient id="ring_00000056405041335285527400000004493239690244311978_" gradientUnits="userSpaceOnUse" x1="1215.2148" y1="1879.8206" x2="723.2638" y2="3115.3633" gradientTransform="matrix(0.8 0 0 0.8 -291.6 -1415.2)">
+		<stop  offset="0" style="stop-color:#00D9F6"/>
+		<stop  offset="1" style="stop-color:#FF8C42"/>
+	</linearGradient>
+	
+		<path id="ring" style="fill-rule:evenodd;clip-rule:evenodd;fill:url(#ring_00000056405041335285527400000004493239690244311978_);" d="
+		M491.124,1013.48c-272.71-11.33-486.386-238.72-481.019-511.629C15.67,228.743,238.489,10.297,511.597,10.098
+		c273.107-0.199,496.125,217.85,502.287,490.957c5.963,272.909-207.315,500.697-480.025,512.424
+		c-14.113,0.596-28.424,0.596-42.536,0l0,0H491.124z M536.641,980.285c-16.696,0.795-33.592,0.795-50.288,0
+		C232.526,966.372,36.143,752.696,43.299,498.67c7.156-254.026,215.266-456.173,469.49-455.775
+		c254.224,0.398,461.738,202.942,468.298,457.167c6.559,254.026-190.619,467.105-444.446,480.423l0,0V980.285z"/>
+</g>
+<g id="Layer_1">
+</g>
+</svg>

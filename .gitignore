@@ -80,3 +80,9 @@ fastlane/test_output
 fastlane/FastlaneRunner
 
 ConfigOverride.xcconfig
+
+# Logs
+logs/
+
+# Claude
+.claude/

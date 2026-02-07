@@ -1,2 +1,3 @@
-Trio dev 0.6.0.43
-reset Garmin completely to aiSR version
+Trio dev 0.6.0.48
+revert to sdk 1.7 and back to 1.8
+nhances the Garmin watch manager to better detect watch and datafield activity.

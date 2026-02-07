@@ -163,6 +163,7 @@ extension UserInterfaceSettings {
                             Toggle("Show X-Axis Grid Lines", isOn: $state.xGridLines)
                             Toggle("Show Y-Axis Grid Lines", isOn: $state.yGridLines)
                             Toggle("Show COB-IOB Chart", isOn: $state.showCobIobChart)
+                            Toggle("Show Glucose Peaks", isOn: $state.showGlucosePeaks)
 
                             HStack(alignment: .center) {
                                 Text(

@@ -8,6 +8,7 @@ extension UserInterfaceSettings {
         @Published var yGridLines: Bool = false
         @Published var showCobIobChart: Bool = true
         @Published var rulerMarks: Bool = true
+        @Published var showGlucosePeaks: Bool = false
         @Published var forecastDisplayType: ForecastDisplayType = .cone
         @Published var showCarbsRequiredBadge: Bool = true
         @Published var carbsRequiredThreshold: Decimal = 0
@@ -25,6 +26,7 @@ extension UserInterfaceSettings {
             subscribeSetting(\.yGridLines, on: $yGridLines) { yGridLines = $0 }
             subscribeSetting(\.showCobIobChart, on: $showCobIobChart) { showCobIobChart = $0 }
             subscribeSetting(\.rulerMarks, on: $rulerMarks) { rulerMarks = $0 }
+            subscribeSetting(\.showGlucosePeaks, on: $showGlucosePeaks) { showGlucosePeaks = $0 }
 
             subscribeSetting(\.forecastDisplayType, on: $forecastDisplayType) { forecastDisplayType = $0 }
 

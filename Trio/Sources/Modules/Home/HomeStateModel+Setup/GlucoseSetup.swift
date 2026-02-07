@@ -44,5 +44,12 @@ extension Home.StateModel {
     @MainActor private func updateGlucoseArray(with objects: [GlucoseStored]) {
         glucoseFromPersistence = objects
         latestTwoGlucoseValues = Array(objects.suffix(2))
+
+        // Compute glucose turning points if enabled
+        if showGlucosePeaks {
+            glucosePeaks = PeakPicker.pick(data: objects)
+        } else {
+            glucosePeaks = []
+        }
     }
 }

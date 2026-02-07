@@ -147,6 +147,17 @@ extension MainChartView {
                     glucoseColorScheme: state.glucoseColorScheme
                 )
 
+                if state.showGlucosePeaks {
+                    GlucosePeaksChartView(
+                        peaks: state.glucosePeaks,
+                        units: state.units,
+                        highGlucose: state.highGlucose,
+                        lowGlucose: state.lowGlucose,
+                        glucoseColorScheme: state.glucoseColorScheme,
+                        currentGlucoseTarget: state.currentGlucoseTarget
+                    )
+                }
+
                 InsulinView(
                     glucoseData: state.glucoseFromPersistence,
                     insulinData: state.insulinFromPersistence,

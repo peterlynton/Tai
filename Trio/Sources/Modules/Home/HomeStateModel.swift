@@ -81,6 +81,8 @@ extension Home {
         var displayXgridLines: Bool = false
         var displayYgridLines: Bool = false
         var thresholdLines: Bool = false
+        var showGlucosePeaks: Bool = false
+        var glucosePeaks: [(date: Date, glucose: Int16, type: ExtremumType)] = []
         var hours: Int16 = 6
         var totalBolus: Decimal = 0
         var isStatusPopupPresented: Bool = false
@@ -426,6 +428,7 @@ extension Home {
             displayXgridLines = settingsManager.settings.xGridLines
             displayYgridLines = settingsManager.settings.yGridLines
             thresholdLines = settingsManager.settings.rulerMarks
+            showGlucosePeaks = settingsManager.settings.showGlucosePeaks
             showCarbsRequiredBadge = settingsManager.settings.showCarbsRequiredBadge
             forecastDisplayType = settingsManager.settings.forecastDisplayType
             isExerciseModeActive = settingsManager.preferences.exerciseMode
@@ -742,6 +745,12 @@ extension Home.StateModel:
         displayXgridLines = settingsManager.settings.xGridLines
         displayYgridLines = settingsManager.settings.yGridLines
         thresholdLines = settingsManager.settings.rulerMarks
+        showGlucosePeaks = settingsManager.settings.showGlucosePeaks
+        if showGlucosePeaks {
+            glucosePeaks = PeakPicker.pick(data: glucoseFromPersistence)
+        } else {
+            glucosePeaks = []
+        }
         showCarbsRequiredBadge = settingsManager.settings.showCarbsRequiredBadge
         forecastDisplayType = settingsManager.settings.forecastDisplayType
         cgmAvailable = (fetchGlucoseManager.cgmGlucoseSourceType != CGMType.none)

@@ -1018,6 +1018,12 @@ extension SettingsExport {
                 addSetting(
                     category: featuresCategory,
                     subcategory: userInterfaceSubcategory,
+                    name: String(localized: "Show Glucose Peaks"),
+                    value: trioSettings.showGlucosePeaks ? String(localized: "Enabled") : String(localized: "Disabled")
+                )
+                addSetting(
+                    category: featuresCategory,
+                    subcategory: userInterfaceSubcategory,
                     name: String(localized: "Low Threshold"),
                     value: trioSettings
                         .units == .mgdL ? String(describing: trioSettings.low) : String(describing: trioSettings.low.asMmolL),

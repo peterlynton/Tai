@@ -1,4 +1,4 @@
-<img src="https://github.com/mountrcg/Tai/blob/Tai-dev/Trio/Resources/Assets.xcassets/app_icons/taiCircledNoBackground.imageset/taiCircledNoBackground.png" width="120">
+<img img src="taiCircledNoBackground.png" width="300">
 
 # **T**rio **a**uto**I**SF fork aka *Tai*
 
@@ -90,6 +90,17 @@ Trio has implemented the excercise targets with configurable half basal exercise
 
 If you do have the appropriate settings, you can chose an insulin ratio with the slider for the TT you have set and the half basal exercise target will be calculated and set in background for the time the TT is active.
 
+## Garmin Watchface & Datafield Support
+
+Tai includes native support for Garmin devices through a companion watchface and datafield. The watchface displays current glucose values, trend arrows, IOB, COB, and loop status directly on your Garmin watch. The datafield can be added to activity profiles, allowing you to monitor your glucose and insulin data during workouts without switching screens.
+
+Communication between Tai and the Garmin device is established via Garmin Connect IQ, after that all comms is directly between Tai and device - 100% offline functionality. Due to this offline capability, watchface and datafield settings are configured directly in Tai rather than through Garmin Connect.
+Both watchface and datafield are available through the [Garmin Connect IQ Store](https://apps.garmin.com/de-DE/developer/eae8d754-7a90-4cc7-85f1-95d12ea93490/apps).
+
+| | Original | Swissalpine |
+|---|---|---|
+| **Watchface** | <img src="Original-WF.png" width="200"> ⭐ recommended | <img src="Swissalpine-WF.png" width="200"> |
+| **Datafield** | <img src="Original-DF.png" width="200"> | <img src="Swissalpine-DF.png" width="200"> ⭐ recommended |
 
 # Installation
 

@@ -53,7 +53,14 @@ enum PeakPicker {
     /// whose timestamp is closest to the midpoint of the gap.
     /// These neutral markers can be used for annotations or segmentation.
     ///
-    /// The function returns **all extrema of all three phases**, each annotated with
+    /// **Phase 4 — Derivative sign-change filter**
+    /// Each max/min extremum is validated by checking the first derivative (slope)
+    /// on both sides. A true maximum must have glucose rising before it and falling
+    /// after it; a true minimum must have glucose falling before and rising after.
+    /// Candidates on monotonic slopes (no actual direction change) are removed.
+    /// This prevents spurious labels on long steady rises or declines.
+    ///
+    /// The function returns **all extrema of all four phases**, each annotated with
     /// its `ExtremumType` ( `.max`, `.min`, or `.none` ), sorted in ascending
     /// chronological order.
     ///
@@ -291,6 +298,71 @@ enum PeakPicker {
 
         allPeaks.append(contentsOf: neutralPeaks)
         allPeaks.sort { times[$0.idx] < times[$1.idx] }
+
+        // MARK: - Phase 4: derivative sign-change filter
+
+        // Remove spurious extrema on monotonic slopes. A true maximum requires
+        // the glucose to be rising before the peak and falling after it; a true
+        // minimum requires falling before and rising after.
+        //
+        // We compute the average glucose over a window before and after the
+        // candidate and compare each average to the peak value. Using averages
+        // instead of a single neighbour makes the check robust against CGM noise.
+
+        let derivativeWindow: TimeInterval = 15 * 60 // 15 minutes
+
+        allPeaks = allPeaks.filter { peak in
+            let peakTime = times[peak.idx]
+            let peakVal = vals[peak.idx]
+
+            // Compute the average glucose in the window BEFORE the peak
+            var beforeSum = 0.0
+            var beforeCount = 0
+            for j in stride(from: peak.idx - 1, through: 0, by: -1) {
+                let dt = peakTime.timeIntervalSince(times[j])
+                if dt > derivativeWindow { break }
+                if dt > 0 {
+                    beforeSum += vals[j]
+                    beforeCount += 1
+                }
+            }
+
+            // Compute the average glucose in the window AFTER the peak
+            var afterSum = 0.0
+            var afterCount = 0
+            for j in (peak.idx + 1) ..< n {
+                let dt = times[j].timeIntervalSince(peakTime)
+                if dt > derivativeWindow { break }
+                if dt > 0 {
+                    afterSum += vals[j]
+                    afterCount += 1
+                }
+            }
+
+            // If we can't find neighbours on both sides, keep the peak (edge of data)
+            guard beforeCount > 0, afterCount > 0 else { return true }
+
+            let beforeAvg = beforeSum / Double(beforeCount)
+            let afterAvg = afterSum / Double(afterCount)
+
+            switch peak.type {
+            case .max:
+                // True max: average before < peak AND average after < peak
+                return beforeAvg < peakVal && afterAvg < peakVal
+            case .min:
+                // True min: average before > peak AND average after > peak
+                return beforeAvg > peakVal && afterAvg > peakVal
+            case .none:
+                // Neutral markers on monotonic slopes are also spurious.
+                // Keep only if the slope changes direction (before and after
+                // averages are on opposite sides of the peak value).
+                let risingBefore = beforeAvg < peakVal
+                let risingAfter = afterAvg > peakVal
+                let fallingBefore = beforeAvg > peakVal
+                let fallingAfter = afterAvg < peakVal
+                return (risingBefore && fallingAfter) || (fallingBefore && risingAfter)
+            }
+        }
 
         // Convert to final result
         let result: [(point: GlucosePoint, type: ExtremumType)] =

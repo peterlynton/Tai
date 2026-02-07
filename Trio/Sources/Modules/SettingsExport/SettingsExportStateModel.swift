@@ -179,14 +179,17 @@ extension SettingsExport {
                 }
 
                 // Insulin Settings
+                let insulinSubcategory = String(localized: "Insulin")
                 addSetting(
                     category: devicesCategory,
+                    subcategory: insulinSubcategory,
                     name: String(localized: "Insulin Curve"),
                     value: preferences.curve.rawValue
                 )
                 if let pumpSettings = storage.retrieve(OpenAPS.Settings.settings, as: PumpSettings.self) {
                     addSetting(
                         category: devicesCategory,
+                        subcategory: insulinSubcategory,
                         name: String(localized: "Duration of Insulin Action (DIA)"),
                         value: String(describing: pumpSettings.insulinActionCurve),
                         unit: String(localized: "hours")
@@ -194,28 +197,33 @@ extension SettingsExport {
                 }
                 addSetting(
                     category: devicesCategory,
+                    subcategory: insulinSubcategory,
                     name: String(localized: "Use Custom Peak Time"),
                     value: preferences.useCustomPeakTime ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
                     category: devicesCategory,
+                    subcategory: insulinSubcategory,
                     name: String(localized: "Insulin Peak Time"),
                     value: String(describing: preferences.insulinPeakTime),
                     unit: String(localized: "minutes")
                 )
                 addSetting(
                     category: devicesCategory,
+                    subcategory: insulinSubcategory,
                     name: String(localized: "Insulin Concentration"),
                     value: String(describing: trioSettings.insulinConcentration * 100),
                     unit: "U/mL"
                 )
                 addSetting(
                     category: devicesCategory,
+                    subcategory: insulinSubcategory,
                     name: String(localized: "Allow Dilution"),
                     value: trioSettings.allowDilution ? String(localized: "Enabled") : String(localized: "Disabled")
                 )
                 addSetting(
                     category: devicesCategory,
+                    subcategory: insulinSubcategory,
                     name: String(localized: "Hide Insulin Badge"),
                     value: trioSettings.hideInsulinBadge ? String(localized: "Enabled") : String(localized: "Disabled")
                 )

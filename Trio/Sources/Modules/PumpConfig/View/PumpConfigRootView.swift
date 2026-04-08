@@ -102,6 +102,9 @@ extension PumpConfig {
                                 } label: {
                                     HStack {
                                         Image(uiImage: pumpState.image ?? UIImage())
+                                            .resizable()
+                                            .scaledToFit()
+                                            .frame(maxWidth: 100)
                                         Text(pumpState.name)
                                     }
                                     .frame(maxWidth: .infinity, minHeight: 50, alignment: .center)
@@ -330,6 +333,7 @@ extension PumpConfig {
                                     Text("• Omnipod Eros")
                                     Text("• Omnipod DASH")
                                     Text("• Dana (RS/-i)")
+                                    Text("• Medtrum Nano (200u/300u)")
                                     Text("• Pump Simulator")
                                 }
                                 Text(
@@ -345,6 +349,7 @@ extension PumpConfig {
                     Button("Omnipod Eros") { state.addPump(.omnipod) }
                     Button("Omnipod DASH") { state.addPump(.omnipodBLE) }
                     Button("Dana(RS/-i)") { state.addPump(.dana) }
+                    Button("Medtrum Nano") { state.addPump(.medtrum) }
                     if !Bundle.main.simulatorVisibility.isHidden {
                         Button("Pump Simulator") { state.addPump(.simulator) }
                     }

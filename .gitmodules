@@ -40,3 +40,7 @@
 [submodule "MinimedKit"]
 	path = MinimedKit
 	url = https://github.com/loopandlearn/MinimedKit.git
+[submodule "MedtrumKit"]
+	path = MedtrumKit
+	branch = dev
+	url = https://github.com/loopandlearn/MedtrumKit

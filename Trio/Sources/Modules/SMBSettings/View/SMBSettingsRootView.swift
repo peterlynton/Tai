@@ -321,7 +321,7 @@ extension SMBSettings {
                         }
                     }
                 )
-                /// this setting has no effect for autoISF implementation
+
 //                SettingInputSection(
 //                    decimalValue: $state.maxDeltaBGthreshold,
 //                    booleanValue: $booleanPlaceholder,
@@ -330,18 +330,24 @@ extension SMBSettings {
 //                        get: { selectedVerboseHint },
 //                        set: {
 //                            selectedVerboseHint = $0.map { AnyView($0) }
-//                            hintLabel = String(localized: "Max Delta-BG Threshold SMB", comment: "Max Delta-BG Threshold")
+//                            hintLabel = String(
+//                                localized: "Max Allowed Glucose Rise for SMB",
+//                                comment: "Max Allowed Glucose Rise for SMB, formerly Max Delta-BG Threshold"
+//                            )
 //                        }
 //                    ),
 //                    units: state.units,
 //                    type: .decimal("maxDeltaBGthreshold"),
-//                    label: String(localized: "Max Delta-BG Threshold SMB", comment: "Max Delta-BG Threshold"),
+//                    label: String(
+//                        localized: "Max Allowed Glucose Rise for SMB",
+//                        comment: "Max Allowed Glucose Rise for SMB, formerly Max Delta-BG Threshold"
+//                    ),
 //                    miniHint: String(localized: "Disables SMBs if last two glucose values differ by more than this percent."),
 //                    verboseHint:
 //                    VStack(alignment: .leading, spacing: 10) {
 //                        Text("Default: 20% increase").bold()
 //                        Text(
-//                            "Maximum allowed positive percent change in glucose level to permit SMBs. If the difference in glucose is greater than this, Trio will disable SMBs."
+//                            "Maximum allowed positive percent change in glucose level to permit SMBs. If the difference in glucose is greater than this, Trio will only adjust Temp Basal Rate and not deliver an SMB that loop cycle."
 //                        )
 //                        Text(
 //                            "This is a safety limitation to avoid high SMB doses when glucose is rising abnormally fast, such as after a meal or with a very jumpy CGM sensor."

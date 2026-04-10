@@ -68,12 +68,13 @@ struct LoopView: View {
             return .blue
         }
 
-        let delta = timerDate.timeIntervalSince(lastLoopDate) - Config.lag
+        // Use the more recent timestamp to handle race condition between lastLoopDate and determination fetch
+        // lastLoopDate updates immediately when loop runs, but determination fetch is async
+        let enactedTimestamp = determination.first?.timestamp ?? .distantPast
+        let effectiveLoopDate = max(lastLoopDate, enactedTimestamp)
+        let delta = timerDate.timeIntervalSince(effectiveLoopDate) - Config.lag
 
         if delta <= 5.minutes.timeInterval {
-            guard determination.first?.timestamp != nil else {
-                return .loopYellow
-            }
             return .loopGreen
         } else if delta <= 10.minutes.timeInterval {
             return .loopYellow

@@ -273,10 +273,12 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         }
 
         let backfillGlucose = newGlucose.filter { $0.dateString <= syncDate }
+        var hasBackfilled = false
         if backfillGlucose.isNotEmpty {
             debug(.deviceManager, "Backfilling glucose...")
             do {
                 try await glucoseStorage.backfillGlucose(backfillGlucose)
+                hasBackfilled = true
             } catch {
                 debug(.deviceManager, "Unable to backfill glucose: \(error)")
             }
@@ -285,19 +287,31 @@ final class BaseFetchGlucoseManager: FetchGlucoseManager, Injectable {
         filteredByDate = newGlucose.filter { $0.dateString > syncDate }
         filtered = glucoseStorage.filterTooFrequentGlucose(filteredByDate, at: syncDate)
 
-        guard filtered.isNotEmpty else {
+        var hasStoredNew = false
+        if filtered.isNotEmpty {
+            debug(.deviceManager, "New glucose found: \(filtered.count) readings")
+            try await glucoseStorage.storeGlucose(filtered)
+            hasStoredNew = true
+        }
+
+        // Run smoothing if ANY glucose was stored (backfilled or new)
+        if (hasBackfilled || hasStoredNew) && settingsManager.settings.smoothGlucose {
+            debug(.deviceManager, "Triggering smoothing: hasBackfilled=\(hasBackfilled), hasStoredNew=\(hasStoredNew)")
+            // Create a fresh context for smoothing to ensure it sees the latest data from the persistent store
+            let smoothingContext = CoreDataStack.shared.newTaskContext()
+            await smoothGlucose(context: smoothingContext)
+        }
+
+        // Only trigger heartbeat if new glucose was stored (not backfill)
+        if hasStoredNew {
+            deviceDataManager.heartbeat(date: Date())
+        }
+
+        // Always end background task
+        guard hasBackfilled || hasStoredNew else {
             endBackgroundTaskSafely(&backgroundTaskID, taskName: "Glucose Store and Heartbeat Decision")
             return
         }
-        debug(.deviceManager, "New glucose found")
-
-        try await glucoseStorage.storeGlucose(filtered)
-
-        if settingsManager.settings.smoothGlucose {
-            await exponentialSmoothingGlucose(context: context)
-        }
-
-        deviceDataManager.heartbeat(date: Date())
 
         endBackgroundTaskSafely(&backgroundTaskID, taskName: "Glucose Store and Heartbeat Decision")
     }
@@ -371,7 +385,9 @@ extension BaseFetchGlucoseManager: SettingsObserver {
 
             self.glucoseStoreAndHeartLock.wait()
             Task {
-                await self.exponentialSmoothingGlucose(context: self.context)
+                // Create a fresh context for smoothing to ensure it sees the latest data
+                let smoothingContext = CoreDataStack.shared.newTaskContext()
+                await self.smoothGlucose(context: smoothingContext)
                 self.glucoseStoreAndHeartLock.signal()
             }
         }
@@ -410,24 +426,43 @@ extension BaseFetchGlucoseManager {
         return glucoseArray.map(\.objectID)
     }
 
+    /// Main smoothing entry point - dispatches to exponential or UKF based on settings.
+    /// - Important: Only stores `smoothedGlucose`. UI/alerts should still use `glucose`.
+    ///
+    func smoothGlucose(context: NSManagedObjectContext) async {
+        let algorithm = settingsManager.settings.smoothingAlgorithm
+        debug(.deviceManager, "Smoothing glucose with algorithm: \(algorithm.displayName)")
+
+        switch algorithm {
+        case .exponential:
+            await exponentialSmoothingGlucose(context: context)
+        case .ukf:
+            await ukfSmoothingGlucose(context: context)
+        }
+    }
+
     /// CoreData-friendly AAPS exponential smoothing + storage.
     /// - Important: Only stores `smoothedGlucose`. UI/alerts should still use `glucose`.
     ///
-    func exponentialSmoothingGlucose(context: NSManagedObjectContext) async {
+    private func exponentialSmoothingGlucose(context: NSManagedObjectContext) async {
         let startTime = Date()
 
         do {
             // get objectIDs
             let objectIDs = try await fetchGlucose(context: context)
+            debug(.deviceManager, "Exponential smoothing: fetched \(objectIDs.count) glucose readings")
 
-            try await context.perform {
+            try await context.perform(schedule: .immediate) {
                 // Load managed objects from object IDs
                 // Filtering (isManual, date) already done at DB level in fetchGlucose
                 let glucoseReadings = objectIDs.compactMap {
                     context.object(with: $0) as? GlucoseStored
                 }
 
-                guard !glucoseReadings.isEmpty else { return }
+                guard !glucoseReadings.isEmpty else {
+                    debug(.deviceManager, "Exponential smoothing: no readings after compactMap")
+                    return
+                }
 
                 // Static method call to avoid self-capture
                 Self.applyExponentialSmoothingAndStore(
@@ -443,6 +478,14 @@ extension BaseFetchGlucoseManager {
                 )
 
                 try context.save()
+            }
+
+            // Force viewContext to refresh so UI sees updated smoothed values immediately
+            // The viewContext has automaticallyMergesChangesFromParent = false and relies
+            // on persistent history tracking, which merges asynchronously
+            let viewContext = CoreDataStack.shared.persistentContainer.viewContext
+            await viewContext.perform {
+                viewContext.refreshAllObjects()
             }
 
             let duration = Date().timeIntervalSince(startTime)
@@ -465,6 +508,13 @@ extension BaseFetchGlucoseManager {
     ) {
         guard !data.isEmpty else { return }
 
+        // First, set fallback smoothed values for ALL readings
+        // This ensures no reading is left with nil smoothedGlucose
+        for object in data {
+            let raw = Decimal(Int(object.glucose))
+            object.smoothedGlucose = max(raw, minimumSmoothedGlucose) as NSDecimalNumber
+        }
+
         // Determine the size of the valid most-recent smoothing window.
         // We walk adjacent pairs from newest -> oldest to preserve the same window semantics
         // as the original implementation, but avoid manual reverse indexing.
@@ -477,30 +527,34 @@ extension BaseFetchGlucoseManager {
 
             let gapSeconds = newerDate.timeIntervalSince(olderDate)
             let gapMinutesRounded = Int((gapSeconds / 60.0).rounded())
-
             if gapMinutesRounded >= maximumAllowedGapMinutes {
                 validWindowCount = recentOffset + 1 // include the more recent reading
+                let dateFormatter = ISO8601DateFormatter()
+                debug(
+                    .deviceManager,
+                    "Exponential: Found gap of \(gapMinutesRounded) minutes at offset \(recentOffset), validWindowCount=\(validWindowCount). Newer: \(dateFormatter.string(from: newerDate)) (\(newer.glucose)), Older: \(dateFormatter.string(from: olderDate)) (\(older.glucose))"
+                )
                 break
             }
 
             // Ported from AAPS: 38 mg/dL may represent an xDrip error state.
             if Int(newer.glucose) == xDripErrorGlucose {
                 validWindowCount = recentOffset // exclude this 38 value
+                debug(
+                    .deviceManager,
+                    "Exponential: Found xDrip error glucose (38) at offset \(recentOffset), validWindowCount=\(validWindowCount)"
+                )
                 break
             }
         }
 
         // Not enough recent contiguous readings to smooth (e.g. after CGM gap).
-        // IMPORTANT: Only apply fallback to the recent window, not all data.
-        // Otherwise a recent gap would overwrite historical smoothed values.
+        // Fallback values already set above, so just return
         guard validWindowCount >= minimumWindowSize else {
-            let recentWindow = data.suffix(validWindowCount)
-
-            for object in recentWindow {
-                let raw = Decimal(Int(object.glucose))
-                object.smoothedGlucose = max(raw, minimumSmoothedGlucose) as NSDecimalNumber
-            }
-
+            debug(
+                .deviceManager,
+                "Exponential: Insufficient window size (\(validWindowCount) < \(minimumWindowSize)), keeping fallback values"
+            )
             return
         }
 
@@ -545,6 +599,10 @@ extension BaseFetchGlucoseManager {
             let nextSmoothed =
                 secondOrderAlpha * raw
                     + (1 - secondOrderAlpha) * (previousSecondOrderSmoothed + previousSecondOrderDelta)
+            let newLevel = secondOrderAlpha * raw + (1 - secondOrderAlpha) *
+                (previousSecondOrderSmoothed + previousSecondOrderDelta)
+            let newDelta = secondOrderBeta * (newLevel - previousSecondOrderSmoothed) + (1 - secondOrderBeta) *
+                previousSecondOrderDelta
 
             let nextDelta =
                 secondOrderBeta * (nextSmoothed - previousSecondOrderSmoothed)
@@ -567,6 +625,102 @@ extension BaseFetchGlucoseManager {
             let rounded = blendedValue.rounded(toPlaces: 0) // nearest integer, ties away from zero
             let clamped = max(rounded, minimumSmoothedGlucose)
             object.smoothedGlucose = clamped as NSDecimalNumber
+        }
+        debug(.deviceManager, "Exponential: Stored \(validWindow.count) smoothed values total")
+    }
+
+    /// UKF-based glucose smoothing + storage.
+    /// - Important: Only stores `smoothedGlucose`. UI/alerts should still use `glucose`.
+    ///
+    private func ukfSmoothingGlucose(context: NSManagedObjectContext) async {
+        let startTime = Date()
+
+        do {
+            // get objectIDs
+            let objectIDs = try await fetchGlucose(context: context)
+            let objectIDsCount = objectIDs.count
+            debug(.deviceManager, "UKF smoothing: fetched \(objectIDsCount) glucose readings")
+
+            try await context.perform(schedule: .immediate) {
+                debug(.deviceManager, "UKF smoothing: processing \(objectIDsCount) readings")
+                // Load managed objects from object IDs
+                let glucoseReadings = objectIDs.compactMap {
+                    context.object(with: $0) as? GlucoseStored
+                }
+
+                guard !glucoseReadings.isEmpty else {
+                    debug(.deviceManager, "UKF smoothing: no readings found after filtering")
+                    return
+                }
+
+                debug(.deviceManager, "UKF smoothing: converting \(glucoseReadings.count) readings to BloodGlucose")
+
+                // Convert GlucoseStored to BloodGlucose array
+                let bloodGlucoseArray: [BloodGlucose] = glucoseReadings.compactMap { stored -> BloodGlucose? in
+                    guard let date = stored.date else { return nil }
+                    let direction = stored.direction.flatMap { BloodGlucose.Direction(from: $0) }
+                    return BloodGlucose(
+                        _id: stored.id?.uuidString ?? UUID().uuidString,
+                        sgv: Int(stored.glucose),
+                        direction: direction,
+                        date: Decimal(date.timeIntervalSince1970 * 1000), // milliseconds
+                        dateString: date,
+                        unfiltered: nil,
+                        filtered: nil,
+                        noise: nil,
+                        glucose: Int(stored.glucose),
+                        type: nil,
+                        sessionStartDate: nil // UKF can work without sensor session info
+                    )
+                }
+
+                guard bloodGlucoseArray.count >= 2 else {
+                    debug(.deviceManager, "UKF smoothing: insufficient readings for smoothing, using raw values as fallback")
+                    debug(
+                        .deviceManager,
+                        "UKF smoothing: insufficient readings for smoothing (\(bloodGlucoseArray.count) < 2), using raw values as fallback"
+                    )
+                    // Fallback: set smoothed = raw for insufficient data
+                    for reading in glucoseReadings {
+                        reading.smoothedGlucose = NSDecimalNumber(value: Int(reading.glucose))
+                    }
+                    try context.save()
+                    return
+                }
+
+                // Apply UKF smoothing
+                var ukf = UnscentedKalmanFilter()
+                let smoothed = ukf.smooth(bloodGlucoseArray)
+
+                debug(.deviceManager, "UKF smoothing: storing smoothed values")
+
+                // Store smoothed values back to CoreData
+                for (idx, bloodGlucose) in smoothed.enumerated() where idx < glucoseReadings.count {
+                    if let smoothedValue = bloodGlucose.glucose {
+                        glucoseReadings[idx].smoothedGlucose = NSDecimalNumber(value: smoothedValue)
+                    } else {
+                        // Fallback: if UKF didn't produce a smoothed value, use raw
+                        debug(.deviceManager, "UKF smoothing: no smoothed value for index \(idx), using raw value")
+                        glucoseReadings[idx].smoothedGlucose = NSDecimalNumber(value: Int(glucoseReadings[idx].glucose))
+                    }
+                }
+
+                try context.save()
+                debug(.deviceManager, "UKF smoothing: saved \(smoothed.count) smoothed values to CoreData")
+            }
+
+            // Force viewContext to refresh so UI sees updated smoothed values immediately
+            // The viewContext has automaticallyMergesChangesFromParent = false and relies
+            // on persistent history tracking, which merges asynchronously
+            let viewContext = CoreDataStack.shared.persistentContainer.viewContext
+            await viewContext.perform {
+                viewContext.refreshAllObjects()
+            }
+
+            let duration = Date().timeIntervalSince(startTime)
+            debugPrint(String(format: "UKF smoothing duration: %0.04fs", duration))
+        } catch {
+            debug(.deviceManager, "Failed to smooth glucose with UKF: \(error)")
         }
     }
 }

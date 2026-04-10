@@ -88,13 +88,12 @@ struct TagCloudView: View {
                  textTag where textTag.contains("Basal ratio"),
                  textTag where textTag.contains("SMB Ratio"):
                 return .zt
-            case textTag where textTag.contains("Middleware:"):
+            case textTag where textTag.contains("Middleware:"),
+                 textTag where textTag.contains("Smoothing: On"):
                 return .red
             case textTag where textTag.contains("SMB Ratio"),
                  textTag where textTag.contains("iobTH:"):
                 return .orange
-            case textTag where textTag.contains("Smoothing: On"):
-                return .white
             default:
                 return .basal
             }

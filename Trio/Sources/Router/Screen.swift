@@ -13,6 +13,7 @@ enum Screen: Identifiable, Hashable {
     case pumpConfigDirect
     case basalProfileEditor
     case isfEditor
+    case csfEditor
     case crEditor
     case targetsEditor
     case treatmentView
@@ -92,6 +93,8 @@ extension Screen {
             BasalProfileEditor.RootView(resolver: resolver)
         case .isfEditor:
             ISFEditor.RootView(resolver: resolver)
+        case .csfEditor:
+            CSFEditor.RootView(resolver: resolver)
         case .crEditor:
             CarbRatioEditor.RootView(resolver: resolver)
         case .targetsEditor:

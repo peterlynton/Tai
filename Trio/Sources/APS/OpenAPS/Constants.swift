@@ -35,6 +35,7 @@ extension OpenAPS {
         static let settings = "settings/settings.json"
         static let bgTargets = "settings/bg_targets.json"
         static let insulinSensitivities = "settings/insulin_sensitivities.json"
+        static let carbSensitivities = "settings/carb_sensitivities.json"
         static let basalProfile = "settings/basal_profile.json"
         static let carbRatios = "settings/carb_ratios.json"
         static let tempTargets = "settings/temptargets.json"

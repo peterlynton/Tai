@@ -276,6 +276,11 @@
 		492B88F52DADAFBA00D5E42B /* AlertEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 492B88F42DADAFBA00D5E42B /* AlertEntry.swift */; };
 		492B89D82DAE5E1B00D5E42B /* HorizontalPumpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 492B89D72DAE5E1B00D5E42B /* HorizontalPumpView.swift */; };
 		492DD6B42F86C65900EA69C1 /* UnscentedKalmanFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 492DD6B32F86C65900EA69C1 /* UnscentedKalmanFilter.swift */; };
+		495A42CB2F891191005B0044 /* CarbSensitivities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A42CA2F891191005B0044 /* CarbSensitivities.swift */; };
+		495A42CF2F8911CC005B0044 /* CSFEditorDataFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A42CE2F8911CC005B0044 /* CSFEditorDataFlow.swift */; };
+		495A42D12F8911D7005B0044 /* CSFEditorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A42D02F8911D7005B0044 /* CSFEditorProvider.swift */; };
+		495A42D32F8911F0005B0044 /* CSFEditorStateModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A42D22F8911F0005B0044 /* CSFEditorStateModel.swift */; };
+		495A42D52F89121A005B0044 /* CSFEditorRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495A42D42F89121A005B0044 /* CSFEditorRootView.swift */; };
 		4961C4AA2DD26E1900A02420 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 19DA487F29CD2B8400EEA1E7 /* Assets.xcassets */; };
 		4963550D2EA22A2E002EDB9E /* WatchConfigGarminAppConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4963550B2EA22A2E002EDB9E /* WatchConfigGarminAppConfigView.swift */; };
 		4984D1D42EA2939E00263E83 /* WatchConfigGarminAppConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4984D1D32EA2939E00263E83 /* WatchConfigGarminAppConfigView.swift */; };
@@ -1160,6 +1165,11 @@
 		492B88F42DADAFBA00D5E42B /* AlertEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertEntry.swift; sourceTree = "<group>"; };
 		492B89D72DAE5E1B00D5E42B /* HorizontalPumpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HorizontalPumpView.swift; sourceTree = "<group>"; };
 		492DD6B32F86C65900EA69C1 /* UnscentedKalmanFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnscentedKalmanFilter.swift; sourceTree = "<group>"; };
+		495A42CA2F891191005B0044 /* CarbSensitivities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarbSensitivities.swift; sourceTree = "<group>"; };
+		495A42CE2F8911CC005B0044 /* CSFEditorDataFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSFEditorDataFlow.swift; sourceTree = "<group>"; };
+		495A42D02F8911D7005B0044 /* CSFEditorProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSFEditorProvider.swift; sourceTree = "<group>"; };
+		495A42D22F8911F0005B0044 /* CSFEditorStateModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSFEditorStateModel.swift; sourceTree = "<group>"; };
+		495A42D42F89121A005B0044 /* CSFEditorRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSFEditorRootView.swift; sourceTree = "<group>"; };
 		4963550B2EA22A2E002EDB9E /* WatchConfigGarminAppConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConfigGarminAppConfigView.swift; sourceTree = "<group>"; };
 		4984D1D32EA2939E00263E83 /* WatchConfigGarminAppConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConfigGarminAppConfigView.swift; sourceTree = "<group>"; };
 		498ED7022D80515B00D18CAF /* InsulinConcentrationDataFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsulinConcentrationDataFlow.swift; sourceTree = "<group>"; };
@@ -2041,6 +2051,7 @@
 				C2C98283C436DB934D7E7994 /* Treatments */,
 				190EBCC229FF134900BA767D /* UserInterfaceSettings */,
 				CE94597C29E9E1CD0047C9C6 /* WatchConfig */,
+				495A42CC2F8911C6005B0044 /* CSFEditor */,
 			);
 			path = Modules;
 			sourceTree = "<group>";
@@ -2543,6 +2554,7 @@
 				DD9ECB692CA99F6C00AA7C45 /* CommandPayload.swift */,
 				DDD6D4D22CDE90720029439A /* EstimatedA1cDisplayUnit.swift */,
 				C2BA6B982F758E7600348E6A /* NotificationIdentifiers.swift */,
+				495A42CA2F891191005B0044 /* CarbSensitivities.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -2771,6 +2783,25 @@
 				3BF85FE12E427312000D7351 /* IOBService.swift */,
 			);
 			path = IOB;
+			sourceTree = "<group>";
+		};
+		495A42CC2F8911C6005B0044 /* CSFEditor */ = {
+			isa = PBXGroup;
+			children = (
+				495A42CD2F8911C8005B0044 /* View */,
+				495A42CE2F8911CC005B0044 /* CSFEditorDataFlow.swift */,
+				495A42D02F8911D7005B0044 /* CSFEditorProvider.swift */,
+				495A42D22F8911F0005B0044 /* CSFEditorStateModel.swift */,
+			);
+			path = CSFEditor;
+			sourceTree = "<group>";
+		};
+		495A42CD2F8911C8005B0044 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				495A42D42F89121A005B0044 /* CSFEditorRootView.swift */,
+			);
+			path = View;
 			sourceTree = "<group>";
 		};
 		498ED7002D80510D00D18CAF /* InsulinConcentration */ = {
@@ -4424,6 +4455,7 @@
 				CE7CA3552A064973004BE681 /* ListStateIntent.swift in Sources */,
 				C28DD7262DBA9A9E00EC02DD /* GlucosePercentileDetailView.swift in Sources */,
 				DD906BF42EA6AA0100262772 /* NightscoutUploadPipeline.swift in Sources */,
+				495A42D32F8911F0005B0044 /* CSFEditorStateModel.swift in Sources */,
 				BDF530D82B40F8AC002CAF43 /* LockScreenView.swift in Sources */,
 				195D80B72AF697B800D25097 /* DynamicSettingsDataFlow.swift in Sources */,
 				DD98ACC02D71013200C0778F /* StatChartUtils.swift in Sources */,
@@ -4598,6 +4630,7 @@
 				118DF76D2C5ECBC60067FEB7 /* OverridePresetEntity.swift in Sources */,
 				58645B9F2CA2D2BE008AFCE7 /* PumpHistorySetup.swift in Sources */,
 				DD17454E2C55CA4D00211FAC /* UnitsLimitsSettingsDataFlow.swift in Sources */,
+				495A42CB2F891191005B0044 /* CarbSensitivities.swift in Sources */,
 				DDF847E62C5D66490049BB3B /* AddMealPresetView.swift in Sources */,
 				3811DEAE25C9D88300A708ED /* Cache.swift in Sources */,
 				BDA6CC882CAF219B00F942F9 /* TempTargetSetup.swift in Sources */,
@@ -4807,6 +4840,7 @@
 				38192E07261BA9960094D973 /* FetchTreatmentsManager.swift in Sources */,
 				19012CDC291D2CB900FB8210 /* LoopStats.swift in Sources */,
 				6632A0DC746872439A858B44 /* ISFEditorDataFlow.swift in Sources */,
+				495A42D52F89121A005B0044 /* CSFEditorRootView.swift in Sources */,
 				DD17454B2C55C62800211FAC /* AutosensSettingsRootView.swift in Sources */,
 				DDF847DF2C5C28780049BB3B /* LiveActivitySettingsProvider.swift in Sources */,
 				DDB37CC52D05048F00D99BF4 /* ContactImageStorage.swift in Sources */,
@@ -4860,6 +4894,7 @@
 				5075C1608E6249A51495C422 /* TargetsEditorProvider.swift in Sources */,
 				E13B7DAB2A435F57066AF02E /* TargetsEditorStateModel.swift in Sources */,
 				3B997DCB2DC00849006B6BB2 /* JSONImporter.swift in Sources */,
+				495A42D12F8911D7005B0044 /* CSFEditorProvider.swift in Sources */,
 				BD249D992D42FCCD00412DEB /* BolusStatsSetup.swift in Sources */,
 				9702FF92A09C53942F20D7EA /* TargetsEditorRootView.swift in Sources */,
 				1967DFBE29D052C200759F30 /* Icons.swift in Sources */,
@@ -4957,6 +4992,7 @@
 				DD1745202C55523E00211FAC /* SMBSettingsDataFlow.swift in Sources */,
 				D6D02515BBFBE64FEBE89856 /* HistoryRootView.swift in Sources */,
 				DD1745292C55642100211FAC /* SettingInputSection.swift in Sources */,
+				495A42CF2F8911CC005B0044 /* CSFEditorDataFlow.swift in Sources */,
 				38569349270B5DFB0002C50D /* AppGroupSource.swift in Sources */,
 				49D659722F3737EA00CF5074 /* PeakPicker.swift in Sources */,
 				F5CA3DB1F9DC8B05792BBFAA /* CGMSettingsDataFlow.swift in Sources */,

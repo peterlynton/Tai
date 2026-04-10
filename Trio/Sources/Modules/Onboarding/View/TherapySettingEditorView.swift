@@ -289,10 +289,12 @@ struct TherapySettingEditorView: View {
     private func displayText(for unit: TherapySettingUnit, decimalValue: Decimal) -> String {
         switch unit {
         case .mmolL,
+             .mmolLPerGram,
              .mmolLPerUnit:
             return decimalValue.formattedAsMmolL
         case .gramPerUnit,
              .mgdL,
+             .mgdLPerGram,
              .mgdLPerUnit,
              .unitPerHour:
             return decimalValue.description
@@ -336,6 +338,8 @@ enum TherapySettingUnit: String, CaseIterable {
     case gramPerUnit
     case mmolL
     case mgdL
+    case mgdLPerGram
+    case mmolLPerGram
 
     var id: String { rawValue }
 
@@ -353,6 +357,10 @@ enum TherapySettingUnit: String, CaseIterable {
             return "mmol/L"
         case .mgdL:
             return "mg/dL"
+        case .mgdLPerGram:
+            return "mg/dL/g"
+        case .mmolLPerGram:
+            return "mmol/L/g"
         }
     }
 }

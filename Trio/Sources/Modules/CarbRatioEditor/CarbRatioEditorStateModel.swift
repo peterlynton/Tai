@@ -12,6 +12,10 @@ extension CarbRatioEditor {
 
         let rateValues = stride(from: 10.0, to: 501.0, by: 1.0).map { ($0.decimal ?? .zero) / 10 }
 
+        var units: GlucoseUnits {
+            settingsManager.settings.units
+        }
+
         var canAdd: Bool {
             guard let lastItem = items.last else { return true }
             return lastItem.timeIndex < timeValues.count - 1
@@ -108,6 +112,76 @@ extension CarbRatioEditor {
                     self.items = sorted
                 }
             }
+        }
+
+        /// Calculate CR values from ISF and CSF profiles
+        /// Formula: CR = ISF / CSF
+        /// Note: All calculations are done in mg/dL. CSF values are stored in mg/dL.
+        /// This creates CR entries for all time slots where either ISF or CSF changes.
+        func calculateCRFromCSF() {
+            // Fetch CSF profile (always stored in mg/dL)
+            let csfProfile = provider.csfProfile
+            guard !csfProfile.sensitivities.isEmpty else { return }
+
+            // Fetch ISF profile (always stored in mg/dL)
+            let isfProfile = provider.isfProfile
+            guard !isfProfile.sensitivities.isEmpty else { return }
+
+            // Clear existing CR items
+            items.removeAll()
+
+            // Create a combined list of all unique time points from both ISF and CSF profiles
+            var allTimeOffsets = Set<Int>()
+
+            // Add ISF time points
+            for isfEntry in isfProfile.sensitivities {
+                allTimeOffsets.insert(isfEntry.offset)
+            }
+
+            // Add CSF time points
+            for csfEntry in csfProfile.sensitivities {
+                allTimeOffsets.insert(csfEntry.offset)
+            }
+
+            // Sort all time offsets
+            let sortedTimeOffsets = allTimeOffsets.sorted()
+
+            // For each unique time point, calculate CR
+            for offsetMinutes in sortedTimeOffsets {
+                // Find the active ISF value for this time
+                let activeISF = isfProfile.sensitivities
+                    .filter { $0.offset <= offsetMinutes }
+                    .max(by: { $0.offset < $1.offset })?.sensitivity ?? isfProfile.sensitivities.first!.sensitivity
+
+                // Find the active CSF value for this time (both in mg/dL)
+                let activeCSF = csfProfile.sensitivities
+                    .filter { $0.offset <= offsetMinutes }
+                    .max(by: { $0.offset < $1.offset })?.sensitivity ?? csfProfile.sensitivities.first!.sensitivity
+
+                // Calculate CR using formula: CR = ISF / CSF (both in mg/dL)
+                let calculatedCR = activeISF / activeCSF
+
+                // Find the closest CR value in rateValues
+                guard let rateIndex = rateValues.firstIndex(where: { abs($0 - calculatedCR) < 0.05 })
+                    ?? rateValues.enumerated().min(by: { abs($0.element - calculatedCR) < abs($1.element - calculatedCR) })?
+                    .offset
+                else {
+                    continue
+                }
+
+                // Find time index
+                let timeIndex = timeValues.firstIndex(of: Double(offsetMinutes * 60)) ?? 0
+
+                // Add new item
+                let newItem = Item(rateIndex: rateIndex, timeIndex: timeIndex)
+                items.append(newItem)
+            }
+
+            // Validate and sort
+            validate()
+
+            // Update therapy items for UI
+            therapyItems = getTherapyItems()
         }
     }
 }

@@ -70,6 +70,11 @@ extension CarbRatioEditor {
                     ScrollView {
                         LazyVStack {
                             VStack(alignment: .leading, spacing: 0) {
+                                // Calculate from CSF button
+                                calculateFromCSFButton
+                                    .padding(.horizontal)
+                                    .padding(.top)
+
                                 // Chart visualization
                                 if !state.items.isEmpty {
                                     carbRatioChart
@@ -135,6 +140,22 @@ extension CarbRatioEditor {
             }
         }
 
+        // Calculate from CSF Button
+        private var calculateFromCSFButton: some View {
+            Button {
+                let impactMedium = UIImpactFeedbackGenerator(style: .medium)
+                impactMedium.impactOccurred()
+                state.calculateCRFromCSF()
+            } label: {
+                Text("Calculate CR from CSF & ISF Profiles")
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue.opacity(0.1))
+                    .foregroundColor(.blue)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+        }
+
         // Chart for visualizing carb ratios
         private var carbRatioChart: some View {
             Chart {
@@ -196,5 +217,15 @@ extension CarbRatioEditor {
                 }
             }
         }
+    }
+}
+
+extension NumberFormatter {
+    static var csfFormatter: NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 1
+        formatter.minimumFractionDigits = 0
+        return formatter
     }
 }

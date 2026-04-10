@@ -44,12 +44,12 @@ extension AlgorithmAdvancedSettings {
                     units: state.units,
                     type: .boolean,
                     label: String(localized: "Use Profile CSF", comment: "Use Profile CSF"),
-                    miniHint: String(localized: "Calculate CSF from profile CR and ISF."),
+                    miniHint: String(localized: "Calculate CSF from profile CR and ISF.", comment: "Mini hint for Use Profile CSF"),
                     verboseHint:
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Default: OFF").bold()
                         Text(
-                            "When enabled, oref will calculate CSF (Carb Sensitivity Factor) from your profile's Carb Ratio and Insulin Sensitivity Factor, keeping CSF stable as a profile-based value."
+                            "When enabled, oref will calculate CSF (Carb Sensitivity Factor) from your profile's Carb Ratio and profile's Insulin Sensitivity Factor, keeping CSF stable as a profile-based value."
                         )
                         Text(
                             "This makes CSF independent of short-term ISF changes that occur with features like Dynamic ISF, autoISF, or Autosens."
@@ -58,6 +58,9 @@ extension AlgorithmAdvancedSettings {
                             Text("What is CSF?").bold()
                             Text(
                                 "Carb Sensitivity Factor (CSF) represents how much your blood glucose rises per gram of carbohydrate consumed. It is calculated as: CSF = ISF / CR (Insulin Sensitivity Factor divided by Carb Ratio)."
+                            )
+                            Text(
+                                "CSF describes the digestive process of carbs entering your bloodstream as glucose. This process is not dependent on insulin sensitivity, which describes a different process: removing glucose from the blood."
                             )
                         }
                         VStack(alignment: .leading, spacing: 5) {
@@ -70,7 +73,7 @@ extension AlgorithmAdvancedSettings {
                             )
                         }
                     },
-                    headerText: String(localized: "Carb Sensitivity Factor (CSF)")
+                    headerText: String(localized: "Carb Sensitivity Factor (CSF)", comment: "Header for CSF section")
                 )
 
                 SettingInputSection(

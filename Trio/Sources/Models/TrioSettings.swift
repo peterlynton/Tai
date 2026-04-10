@@ -23,9 +23,9 @@ enum GlucoseSmoothingAlgorithm: String, JSON, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .exponential:
-            return String(localized: "2nd Order Exponential")
+            return String(localized: "2nd Order Exponential", comment: "Exponential smoothing algorithm display name")
         case .ukf:
-            return String(localized: "Unscented Kalman Filter")
+            return String(localized: "Unscented Kalman Filter", comment: "UKF smoothing algorithm display name")
         }
     }
 }

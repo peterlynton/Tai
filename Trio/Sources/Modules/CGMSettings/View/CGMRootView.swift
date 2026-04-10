@@ -101,13 +101,13 @@ extension CGMSettings {
                     get: { selectedVerboseHint },
                     set: {
                         selectedVerboseHint = $0.map { AnyView($0) }
-                        hintLabel = String(localized: "Smooth Glucose Value")
+                        hintLabel = String(localized: "Smooth Glucose Value", comment: "Smooth Glucose Value")
                     }
                 ),
                 units: state.units,
                 type: .boolean,
-                label: String(localized: "Smooth Glucose Value"),
-                miniHint: String(localized: "Smooth CGM readings to reduce noise."),
+                label: String(localized: "Smooth Glucose Value", comment: "Smooth Glucose Value"),
+                miniHint: String(localized: "Smooth CGM readings to reduce noise.", comment: "Mini hint for smooth glucose value"),
                 verboseHint: VStack(alignment: .leading, spacing: 10) {
                     Text("Default: OFF").bold()
 

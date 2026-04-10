@@ -15,7 +15,7 @@ struct AddCarbPresetIntent: AppIntent {
         description: "Quantity of carbs in g",
         controlStyle: .field,
         inclusiveRange: (lowerBound: 0, upperBound: 300),
-        requestValueDialog: IntentDialog(stringLiteral: String(localized: "How many grams of carbs?"))
+        requestValueDialog: IntentDialog(stringLiteral: String(localized: "How many grams of carbs?", comment: "Request carbs quantity"))
     ) var carbQuantity: Int?
 
     @Parameter(
@@ -23,7 +23,7 @@ struct AddCarbPresetIntent: AppIntent {
         description: "Quantity of fat in g",
         default: 0,
         inclusiveRange: (0, 300),
-        requestValueDialog: IntentDialog(stringLiteral: String(localized: "How many grams of fat?"))
+        requestValueDialog: IntentDialog(stringLiteral: String(localized: "How many grams of fat?", comment: "Request fat quantity"))
     ) var fatQuantity: Int
 
     @Parameter(
@@ -31,13 +31,13 @@ struct AddCarbPresetIntent: AppIntent {
         description: "Quantity of Protein in g",
         default: 0,
         inclusiveRange: (0, 300),
-        requestValueDialog: IntentDialog(stringLiteral: String(localized: "How many grams of protein?"))
+        requestValueDialog: IntentDialog(stringLiteral: String(localized: "How many grams of protein?", comment: "Request protein quantity"))
     ) var proteinQuantity: Int
 
     @Parameter(
         title: "Date",
         description: "Date of adding",
-        requestValueDialog: IntentDialog(stringLiteral: String(localized: "When did you eat ?"))
+        requestValueDialog: IntentDialog(stringLiteral: String(localized: "When did you eat ?", comment: "Request meal time"))
     ) var dateAdded: Date?
 
     @Parameter(
@@ -87,7 +87,8 @@ struct AddCarbPresetIntent: AppIntent {
                 return .result(
                     dialog: IntentDialog(
                         stringLiteral: String(
-                            localized: "Logging Failed: Max Carbs = \(maxCarbs) g"
+                            localized: "Logging Failed: Max Carbs = \(maxCarbs) g",
+                            comment: "Max carbs exceeded error"
                         )
                     )
                 )
@@ -96,7 +97,8 @@ struct AddCarbPresetIntent: AppIntent {
                 return .result(
                     dialog: IntentDialog(
                         stringLiteral: String(
-                            localized: "Logging Failed: Max Protein = \(maxProtein) g"
+                            localized: "Logging Failed: Max Protein = \(maxProtein) g",
+                            comment: "Max protein exceeded error"
                         )
                     )
                 )
@@ -105,7 +107,8 @@ struct AddCarbPresetIntent: AppIntent {
                 return .result(
                     dialog: IntentDialog(
                         stringLiteral: String(
-                            localized: "Logging Failed: Max Fat = \(maxFat) g"
+                            localized: "Logging Failed: Max Fat = \(maxFat) g",
+                            comment: "Max fat exceeded error"
                         )
                     )
                 )
@@ -123,14 +126,14 @@ struct AddCarbPresetIntent: AppIntent {
 
             if confirmBeforeApplying {
                 var confirmationMessage: String
-                confirmationMessage = String(localized: "Add \(quantityCarbs) g carbs")
+                confirmationMessage = "Add \(quantityCarbs) g carbs"
                 if fatQuantity > 0 {
-                    confirmationMessage = String(localized: "\(confirmationMessage) and \(fatQuantity) g fat")
+                    confirmationMessage = "\(confirmationMessage) and \(fatQuantity) g fat"
                 }
                 if proteinQuantity > 0 {
-                    confirmationMessage = String(localized: "\(confirmationMessage) and \(proteinQuantity) g protein")
+                    confirmationMessage = "\(confirmationMessage) and \(proteinQuantity) g protein"
                 }
-                confirmationMessage = String(localized: "\(confirmationMessage)?")
+                confirmationMessage = "\(confirmationMessage)?"
 
                 try await requestConfirmation(
                     result: .result(

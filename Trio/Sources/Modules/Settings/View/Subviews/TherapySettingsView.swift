@@ -30,7 +30,7 @@ struct TherapySettingsView: BaseView {
             )
         }
     )
-    @State var hintLabel: String? = String(localized: "Carb Sensitivity Profile")
+    @State var hintLabel: String? = String(localized: "Carb Sensitivity Profile", comment: "Carb Sensitivity Profile")
 
     @Environment(\.colorScheme) var colorScheme
     @Environment(AppState.self) var appState

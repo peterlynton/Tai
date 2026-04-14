@@ -5,3 +5,4 @@ Add switch for Dynamic CR in Algorithm > Additionals
 Adapt oref accordingly
 fix glucose fetching crash
 isfRatios to NS
+change CSF profile to 10g carb scale

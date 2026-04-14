@@ -158,8 +158,9 @@ extension CarbRatioEditor {
                     .filter { $0.offset <= offsetMinutes }
                     .max(by: { $0.offset < $1.offset })?.sensitivity ?? csfProfile.sensitivities.first!.sensitivity
 
-                // Calculate CR using formula: CR = ISF / CSF (both in mg/dL)
-                let calculatedCR = activeISF / activeCSF
+                // Calculate CR using formula: CR = ISF / (CSF * 0.1)
+                // CSF is stored as mg/dL per 10g of carbs, so multiply by 0.1 to convert to mg/dL/g
+                let calculatedCR = activeISF / (activeCSF * 0.1)
 
                 // Find the closest CR value in rateValues
                 guard let rateIndex = rateValues.firstIndex(where: { abs($0 - calculatedCR) < 0.05 })

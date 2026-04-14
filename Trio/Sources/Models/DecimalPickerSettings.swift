@@ -145,7 +145,7 @@ struct DecimalPickerSettings {
     var timeCap = PickerSetting(value: 8, step: 1, min: 5, max: 12, type: PickerSetting.PickerSettingType.hour)
     var hours = PickerSetting(value: 6, step: 0.5, min: 2, max: 24, type: PickerSetting.PickerSettingType.hour)
     var dia = PickerSetting(value: 10, step: 0.5, min: 5, max: 10, type: PickerSetting.PickerSettingType.hour)
-    var carbSensitivity = PickerSetting(value: 4, step: 1, min: 1, max: 20, type: PickerSetting.PickerSettingType.glucose)
+    var carbSensitivity = PickerSetting(value: 40, step: 1, min: 5, max: 200, type: PickerSetting.PickerSettingType.glucose)
 
     // maxBolus and maxBasal now use calculated step based on bolusIncrement
     var maxBolus: PickerSetting

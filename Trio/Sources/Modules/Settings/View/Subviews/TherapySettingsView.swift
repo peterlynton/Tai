@@ -20,6 +20,9 @@ struct TherapySettingsView: BaseView {
                 "Carb Sensitivity Factor (CSF) represents how much your blood glucose rises per gram of carbohydrate consumed. It describes your digestive process - how effectively carbs are absorbed into your blood."
             )
             Text(
+                "Note: For practical reasons the profile is entered in units of mg/dL per 10g of carbs consumed (or mmol/L per 10g). This makes values easier to measure and document — eat 10g of fast carbs and observe the BG rise to determine your CSF. The conversion to per-gram is handled internally."
+            )
+            Text(
                 "The CSF profile is used to optionally re-calculate your Carb Ratio (CR) from your Insulin Sensitivity Factor (ISF) using the formula: CR = ISF / CSF"
             )
             Text(

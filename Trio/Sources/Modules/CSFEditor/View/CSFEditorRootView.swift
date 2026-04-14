@@ -102,7 +102,7 @@ extension CSFEditor {
                                 // CSF list
                                 TherapySettingEditorView(
                                     items: $state.therapyItems,
-                                    unit: state.units == .mgdL ? .mgdLPerGram : .mmolLPerGram,
+                                    unit: state.units == .mgdL ? .mgdLPer10Gram : .mmolLPer10Gram,
                                     timeOptions: state.timeValues,
                                     valueOptions: state.rateValues,
                                     validateOnDelete: state.validate,
@@ -125,6 +125,21 @@ extension CSFEditor {
                                 .fontWeight(.light)
                                 .foregroundStyle(.secondary)
                                 .padding()
+
+                                HStack {
+                                    Image(systemName: "info.circle")
+                                        .padding(.leading)
+
+                                    Text(
+                                        "CSF is defined as the expected BG rise per 10g of carbs consumed. Using 10g units keeps values in a practical range and makes it easier to test and document: e.g. eat 10g of fast carbs and observe the BG rise."
+                                    )
+                                    .padding(.trailing)
+                                }
+                                .font(.subheadline)
+                                .fontWeight(.light)
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal)
+                                .padding(.bottom)
                             }
                         }
                     }

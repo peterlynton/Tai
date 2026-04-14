@@ -146,8 +146,8 @@ extension CSFEditor {
             // Find CR value at 1pm
             let crAt1pm = crProfile.schedule.last(where: { $0.offset <= targetMinutes })?.ratio ?? 10
 
-            // Calculate CSF = ISF / CR (both in mg/dL)
-            let calculatedCSF = isfAt1pm / crAt1pm
+            // Calculate CSF = ISF / CR * 10 (stored as mg/dL per 10g of carbs)
+            let calculatedCSF = isfAt1pm / crAt1pm * 10
 
             // Find closest rate index to the calculated CSF
             var rateIndex = rateValues.firstIndex(of: calculatedCSF) ?? 0

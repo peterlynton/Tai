@@ -107,7 +107,7 @@ Both watchface and datafield are available through the [Garmin Connect IQ Store]
 In Terminal, `cd` to the folder where you want your download to reside, change `<branch>` in the command below to the branch you want to download (ie. `Tai-dev`), and press `return`.
 
 ```
-git clone --branch=Tai-dev --recurse-submodules https://github.com/mountrcg/Trio.git && cd Trio
+git clone --branch=Tai-dev --recurse-submodules https://github.com/mountrcg/Tai.git && cd Tai
 ```
 
 Create a ConfigOverride.xcconfig file that contains your Apple Developer ID (something like `123A4BCDE5`). This will automate signing of the build targets in Xcode:
@@ -128,13 +128,14 @@ xed .
 **Instructions**:
 
 For main branch:
-* https://github.com/mountrcg/Trio/blob/Tai-main/fastlane/testflight.md
+* https://github.com/mountrcg/Tai/blob/Tai-main/fastlane/testflight.md
 
 For dev branch:
-* https://github.com/mountrcg/Trio/blob/Tai-dev/fastlane/testflight.md
+* https://github.com/mountrcg/Tai/blob/Tai-dev/fastlane/testflight.md
 
-Instructions in greater detail, but not Trio-specific:
-* https://loopkit.github.io/loopdocs/gh-actions/gh-overview/
+Instructions in greater detail:
+* https://triodocs.org/install/build/browser/browser-build-overview/
+
 
 ## Please understand that Trio with autoISF aka Tai:
 - is an open-source system developed by enthusiasts and for use at your own risk

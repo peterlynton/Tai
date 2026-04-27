@@ -1,7 +1,7 @@
 // Some of the items can be modified to match the user's preference
 APP_DISPLAY_NAME = Tai
 APP_ICON = taiBlack
-APP_URL_SCHEME = Trio
+APP_URL_SCHEME = Tai
 HIDE_SIMULATOR = 1 // Default is to hide glucose and pump simulator, change to 0 in your ConfigOverride to enable them in debug builds
 
 // DEVELOPER_TEAM will be set to your Apple Developer ID - typically using ConfigOverride.xcconfig

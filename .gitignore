@@ -81,6 +81,10 @@ fastlane/FastlaneRunner
 
 ConfigOverride.xcconfig
 
+# to keep my naming scheme
+
+Config.xcconfig
+
 # Logs
 logs/
 

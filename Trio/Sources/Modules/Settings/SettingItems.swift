@@ -426,7 +426,7 @@ enum SettingItems {
                 "AI Insights"
             ],
             path: ["Services", "AI Analysis"]
-        )
+        ),
         SettingItem(
             title: "Export Settings",
             view: .settingsExport,

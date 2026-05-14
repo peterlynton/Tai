@@ -56,6 +56,7 @@ enum Screen: Identifiable, Hashable {
     case KetoConfig
     case autoisfHistory
     case insulinConcentration
+	case aiInsightsConfig
 
     var id: Int { String(reflecting: self).hashValue }
 }
@@ -183,6 +184,8 @@ extension Screen {
             AutoISFHistory.RootView(resolver: resolver)
         case .insulinConcentration:
             InsulinConcentration.RootView(resolver: resolver)
+        case .aiInsightsConfig:
+            AIInsightsConfig.RootView(resolver: resolver)
         }
     }
 
